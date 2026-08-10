@@ -10,64 +10,45 @@
       position: absolute;
       left: 0;
       right: 0;
-      bottom: 0;
-      top: 1260px;
-      padding: 0 64px 140px;
+      bottom: 280px;
+      top: 1170px;
+      padding: 0 64px 60px;
       box-sizing: border-box;
       background: linear-gradient(
         to top,
-        rgba(6, 7, 12, 0.85) 0%,
-        rgba(6, 7, 12, 0.55) 40%,
+        rgba(6, 7, 12, 0.82) 0%,
+        rgba(6, 7, 12, 0.5) 45%,
         rgba(6, 7, 12, 0) 100%
       );
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      -webkit-mask-image: linear-gradient(to top, black 0%, black 40%, transparent 100%);
-      mask-image: linear-gradient(to top, black 0%, black 40%, transparent 100%);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      -webkit-mask-image: linear-gradient(to top, black 0%, black 45%, transparent 100%);
+      mask-image: linear-gradient(to top, black 0%, black 45%, transparent 100%);
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      gap: 24px;
-    }
-    .card[data-card-id="card-04"] .kicker {
-      display: flex;
       align-items: center;
-      gap: 12px;
-      font: 700 24px/1 "Inter", sans-serif;
-      letter-spacing: 0.16em;
-      color: #e8c468;
-      text-transform: uppercase;
-      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+      gap: 20px;
+      text-align: center;
     }
-    .card[data-card-id="card-04"] .kicker-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #e8c468;
-      box-shadow: 0 0 18px #e8c468;
-    }
-    .card[data-card-id="card-04"] .arabic {
-      margin: 0;
-      direction: rtl;
-      font: 700 62px/1.5 "DejaVu Sans", "FreeSerif", sans-serif;
+    .card[data-card-id="card-04"] .icon {
+      font-size: 54px;
       color: #f5f3ff;
-      text-align: right;
-      text-shadow: 0 4px 24px rgba(0, 0, 0, 0.65);
     }
-    .card[data-card-id="card-04"] .translit {
+    .card[data-card-id="card-04"] .title {
       margin: 0;
-      font: 500 34px/1.4 "Inter", sans-serif;
-      color: #cbc8e6;
-      font-style: italic;
-      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+      font: 800 58px/1.25 "Inter", sans-serif;
+      color: #f5f3ff;
+      white-space: pre-line;
+      text-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
     }
   </style>
 
   <div class="root">
     <div class="scrim">
-      <div class="kicker" id="card-04-kicker"><span class="kicker-dot"></span>2 / 2</div>
-      <p class="arabic" id="card-04-arabic">وَأَغْنِنِي بِفَضْلِكَ عَمَّنْ سِوَاكَ</p>
-      <p class="translit" id="card-04-translit">уа агнини бифадлика амман сиуак</p>
+      <span class="icon" id="card-04-icon">📖</span>
+      <h2 class="title" id="card-04-title">Перевод и транскрипция —
+в описании</h2>
     </div>
   </div>
 </div>

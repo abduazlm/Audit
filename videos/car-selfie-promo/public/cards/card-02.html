@@ -10,9 +10,9 @@
       position: absolute;
       left: 0;
       right: 0;
-      bottom: 0;
-      top: 1300px;
-      padding: 0 64px 140px;
+      bottom: 280px;
+      top: 980px;
+      padding: 0 64px 40px;
       box-sizing: border-box;
       background: linear-gradient(
         to top,
@@ -27,15 +27,15 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      gap: 20px;
+      gap: 24px;
     }
     .card[data-card-id="card-02"] .kicker {
       display: flex;
       align-items: center;
       gap: 12px;
-      font: 700 26px/1 "Inter", sans-serif;
+      font: 700 24px/1 "Inter", sans-serif;
       letter-spacing: 0.16em;
-      color: #a78bfa;
+      color: #e8c468;
       text-transform: uppercase;
       text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
     }
@@ -43,23 +43,31 @@
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: #a78bfa;
-      box-shadow: 0 0 18px #a78bfa;
+      background: #e8c468;
+      box-shadow: 0 0 18px #e8c468;
     }
-    .card[data-card-id="card-02"] .title {
+    .card[data-card-id="card-02"] .arabic {
       margin: 0;
-      font: 800 76px/1.18 "Inter", sans-serif;
+      direction: rtl;
+      font: 700 62px/1.5 "DejaVu Sans", "FreeSerif", sans-serif;
       color: #f5f3ff;
-      white-space: pre-line;
-      text-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+      text-align: right;
+      text-shadow: 0 4px 24px rgba(0, 0, 0, 0.65);
+    }
+    .card[data-card-id="card-02"] .translit {
+      margin: 0;
+      font: 500 34px/1.4 "Inter", sans-serif;
+      color: #cbc8e6;
+      font-style: italic;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
     }
   </style>
 
   <div class="root">
     <div class="scrim">
-      <div class="kicker" id="card-02-kicker"><span class="kicker-dot"></span>помогает выплатить</div>
-      <h2 class="title" id="card-02-title">Дуа, которое поможет
-выплатить долги</h2>
+      <div class="kicker" id="card-02-kicker"><span class="kicker-dot"></span>1 / 2</div>
+      <p class="arabic" id="card-02-arabic">اللَّهُمَّ اكْفِنِي بِحَلَالِكَ عَنْ حَرَامِكَ</p>
+      <p class="translit" id="card-02-translit">Аллохумма кфини би халялика ан харомика</p>
     </div>
   </div>
 </div>

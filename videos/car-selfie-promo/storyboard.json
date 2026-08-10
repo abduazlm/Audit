@@ -19,29 +19,21 @@
   "cards": [
     {
       "id": "card-01",
-      "intent": "Kicker tag pop — 'dua of the day' label sets the frame before the headline",
-      "startSec": 0.15,
-      "endSec": 1.35,
-      "accentIndex": 0,
-      "zone": "video-overlay",
-      "contentHints": { "kicker": "ДУА ДНЯ" }
-    },
-    {
-      "id": "card-02",
-      "intent": "Hook headline — what this dua does, matches spoken segment 1 (0.4-3.1s)",
-      "startSec": 1.35,
-      "endSec": 3.35,
+      "intent": "Hook — kicker + headline, lands right at speech onset (~0.43s), no separate lead-in beat",
+      "startSec": 0.4,
+      "endSec": 3.55,
       "accentIndex": 0,
       "zone": "video-overlay",
       "contentHints": {
+        "kicker": "🤲 Дуа дня",
         "title": "Дуа, которое поможет\nвыплатить долги"
       }
     },
     {
-      "id": "card-03",
-      "intent": "Arabic recitation part 1 + Cyrillic transliteration, matches spoken segment 2 (3.7-6.4s)",
-      "startSec": 3.4,
-      "endSec": 6.55,
+      "id": "card-02",
+      "intent": "Arabic recitation part 1 + transliteration, lands right at speech onset (~3.70s)",
+      "startSec": 3.65,
+      "endSec": 6.58,
       "accentIndex": 1,
       "zone": "video-overlay",
       "contentHints": {
@@ -50,10 +42,10 @@
       }
     },
     {
-      "id": "card-04",
-      "intent": "Arabic recitation part 2 (continuation) + transliteration, matches spoken segment 3 (6.7-8.9s)",
-      "startSec": 6.6,
-      "endSec": 9.05,
+      "id": "card-03",
+      "intent": "Arabic recitation part 2 + transliteration, lands right at speech onset (~6.73s)",
+      "startSec": 6.68,
+      "endSec": 9.4,
       "accentIndex": 1,
       "zone": "video-overlay",
       "contentHints": {
@@ -62,9 +54,9 @@
       }
     },
     {
-      "id": "card-05",
-      "intent": "Outro CTA — matches spoken segment 4 (9.6-12.1s), points to description for translation/transcript",
-      "startSec": 9.1,
+      "id": "card-04",
+      "intent": "Outro CTA, lands right at speech onset (~9.55s), pushed higher above the Instagram Reels UI safe zone",
+      "startSec": 9.5,
       "endSec": 12.133,
       "accentIndex": 2,
       "zone": "video-overlay",
