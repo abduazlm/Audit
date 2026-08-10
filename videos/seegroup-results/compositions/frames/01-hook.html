@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          background: #0d3a2c;
+          overflow: hidden;
+          font-family: "Montserrat", sans-serif;
+        }
+        .checker {
+          position: absolute;
+          top: 72px;
+          right: 96px;
+          width: 220px;
+          height: 220px;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          grid-template-rows: repeat(3, 1fr);
+          opacity: 0;
+        }
+        .checker div:nth-child(odd) {
+          background: #a37e2d;
+        }
+        .checker div:nth-child(even) {
+          background: #104434;
+        }
+        .kicker {
+          position: absolute;
+          top: 76px;
+          left: 96px;
+          font-size: 30px;
+          font-weight: 600;
+          letter-spacing: 0.14em;
+          color: #f4f1e9;
+          opacity: 0;
+        }
+        .center-wrap {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 28px;
+        }
+        .tag {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          opacity: 0;
+        }
+        .tag-dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: #c99a3a;
+          box-shadow: 0 0 16px #c99a3a;
+        }
+        .tag-label {
+          font-size: 28px;
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #c99a3a;
+        }
+        .headline {
+          font-size: 96px;
+          font-weight: 800;
+          line-height: 1.12;
+          color: #f4f1e9;
+          text-align: center;
+          max-width: 1400px;
+        }
+        .subline {
+          font-size: 40px;
+          font-weight: 600;
+          color: rgba(244, 241, 233, 0.72);
+          text-align: center;
+          opacity: 0;
+        }
+      </style>
+
+      <div
+        id="root"
+        data-composition-id="hook"
+        data-width="1920"
+        data-height="1080"
+        data-duration="6.0"
+      >
+        <div class="checker" id="hook-checker">
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+        </div>
+        <div class="kicker" id="hook-kicker">SEE GROUP</div>
+        <div class="center-wrap">
+          <div class="tag" id="hook-tag">
+            <span class="tag-dot"></span>
+            <span class="tag-label">Реальные результаты</span>
+          </div>
+          <div class="headline" id="hook-headline">Контент, который<br />реально работает</div>
+          <div class="subline" id="hook-subline">Кейсы. Охваты. Гарантия.</div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo("#hook-checker", { opacity: 0 }, { opacity: 0.12, duration: 0.45, ease: "power2.out" }, 0);
+        tl.fromTo("#hook-kicker", { opacity: 0 }, { opacity: 0.72, duration: 0.4, ease: "power2.out" }, 0.05);
+
+        tl.fromTo(
+          "#hook-tag",
+          { opacity: 0, y: 14 },
+          { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" },
+          0.15,
+        );
+        tl.fromTo(
+          "#hook-tag .tag-dot",
+          { scale: 0 },
+          { scale: 1, duration: 0.3, ease: "back.out(1.8)" },
+          0.2,
+        );
+
+        tl.fromTo(
+          "#hook-headline",
+          { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+          0.45,
+        );
+        tl.fromTo(
+          "#hook-subline",
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+          1.0,
+        );
+
+        // Hold, then soft dissolve out before the cut to the first case.
+        tl.to("#root", { opacity: 0, duration: 0.35, ease: "power1.in" }, 5.55);
+
+        window.__timelines["hook"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

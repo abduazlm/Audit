@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #0d3a2c;
+      }
+      body {
+        font-family: "Montserrat", sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="45.5"
+      data-width="1920"
+      data-height="1080"
+    >
+      <!-- SEE Group — results/case-study motion-graphics reel. Same brandbook as
+           videos/seegroup-promo. No BGM (no provider available in this
+           environment) — SFX-only texture. -->
+      <div
+        id="el-hook"
+        data-composition-id="hook"
+        data-composition-src="compositions/frames/01-hook.html"
+        data-start="0"
+        data-duration="6.0"
+        data-track-index="1"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <div
+        id="el-case-mrkazan"
+        data-composition-id="case-mrkazan"
+        data-composition-src="compositions/frames/02-case-mrkazan.html"
+        data-start="6.0"
+        data-duration="10.5"
+        data-track-index="1"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <div
+        id="el-case-cokkos"
+        data-composition-id="case-cokkos"
+        data-composition-src="compositions/frames/03-case-cokkos.html"
+        data-start="16.5"
+        data-duration="10.0"
+        data-track-index="1"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <div
+        id="el-ad-performance"
+        data-composition-id="ad-performance"
+        data-composition-src="compositions/frames/04-ad-performance.html"
+        data-start="26.5"
+        data-duration="9.0"
+        data-track-index="1"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <div
+        id="el-guarantee"
+        data-composition-id="guarantee"
+        data-composition-src="compositions/frames/05-guarantee.html"
+        data-start="35.5"
+        data-duration="5.5"
+        data-track-index="1"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <div
+        id="el-outro"
+        data-composition-id="outro"
+        data-composition-src="compositions/frames/06-outro.html"
+        data-start="41.0"
+        data-duration="4.5"
+        data-track-index="1"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- SFX — bundled media-use library, offline. -->
+      <audio id="sfx-hook-pop" src="assets/sfx/pop.mp3" data-start="0.15" data-duration="0.72" data-track-index="10" data-volume="0.7"></audio>
+
+      <audio id="sfx-mk-whoosh" src="assets/sfx/whoosh-short.mp3" data-start="6.4" data-duration="0.5" data-track-index="10" data-volume="0.6"></audio>
+      <audio id="sfx-mk-pop" src="assets/sfx/pop.mp3" data-start="8.15" data-duration="0.72" data-track-index="11" data-volume="0.8"></audio>
+
+      <audio id="sfx-ck-whoosh" src="assets/sfx/whoosh-short.mp3" data-start="16.9" data-duration="0.5" data-track-index="10" data-volume="0.6"></audio>
+      <audio id="sfx-ck-pop" src="assets/sfx/pop.mp3" data-start="18.65" data-duration="0.72" data-track-index="11" data-volume="0.8"></audio>
+
+      <audio id="sfx-ad-pop1" src="assets/sfx/click-soft.mp3" data-start="27.2" data-duration="0.37" data-track-index="10" data-volume="0.7"></audio>
+      <audio id="sfx-ad-pop2" src="assets/sfx/click-soft.mp3" data-start="27.6" data-duration="0.37" data-track-index="11" data-volume="0.7"></audio>
+
+      <audio id="sfx-gr-impact" src="assets/sfx/impact-bass-1.mp3" data-start="36.65" data-duration="2.12" data-track-index="10" data-volume="0.9"></audio>
+      <audio id="sfx-gr-chime" src="assets/sfx/chime.mp3" data-start="37.55" data-duration="2.5" data-track-index="11" data-volume="0.7"></audio>
+
+      <audio id="sfx-outro-sparkle" src="assets/sfx/sparkle.mp3" data-start="41.3" data-duration="1.7" data-track-index="10" data-volume="0.7"></audio>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      // Root timeline stays thin — all animation lives in the sub-compositions.
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

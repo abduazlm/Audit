@@ -1,0 +1,272 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          background: #0d3a2c;
+          overflow: hidden;
+          font-family: "Montserrat", sans-serif;
+          opacity: 0;
+        }
+        .kicker-row {
+          position: absolute;
+          top: 84px;
+          left: 0;
+          right: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          opacity: 0;
+        }
+        .kicker-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: #c99a3a;
+          box-shadow: 0 0 14px #c99a3a;
+        }
+        .kicker-label {
+          font-size: 28px;
+          font-weight: 700;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: #c99a3a;
+        }
+        .kicker-brand {
+          font-size: 28px;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          color: #f4f1e9;
+        }
+        .cards-row {
+          position: absolute;
+          top: 240px;
+          left: 0;
+          right: 0;
+          height: 620px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 64px;
+        }
+        .panel {
+          width: 700px;
+          height: 580px;
+          border-radius: 28px;
+          padding: 36px 40px;
+          box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          opacity: 0;
+        }
+        .panel.before {
+          background: #104434;
+          border: 1px solid rgba(163, 126, 45, 0.25);
+        }
+        .panel.after {
+          background: #104434;
+          border: 2px solid #c99a3a;
+          box-shadow: 0 0 60px -10px rgba(201, 154, 58, 0.35);
+        }
+        .panel-label {
+          font-size: 30px;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+        .panel.before .panel-label {
+          color: rgba(244, 241, 233, 0.5);
+        }
+        .panel.after .panel-label {
+          color: #c99a3a;
+        }
+        .thumb-row {
+          display: flex;
+          gap: 18px;
+          flex: 1 1 auto;
+        }
+        .thumb {
+          flex: 1 1 0;
+          border-radius: 16px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 14px;
+        }
+        .panel.before .thumb {
+          background: rgba(244, 241, 233, 0.06);
+        }
+        .panel.after .thumb {
+          background: rgba(201, 154, 58, 0.12);
+        }
+        .thumb-play {
+          width: 46px;
+          height: 46px;
+          border-radius: 50%;
+          background: rgba(244, 241, 233, 0.14);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .panel.after .thumb-play {
+          background: rgba(201, 154, 58, 0.28);
+        }
+        .thumb-play svg {
+          width: 18px;
+          height: 18px;
+        }
+        .thumb-views {
+          font-size: 26px;
+          font-weight: 700;
+        }
+        .panel.before .thumb-views {
+          color: rgba(244, 241, 233, 0.55);
+        }
+        .panel.after .thumb-views {
+          color: #f4f1e9;
+        }
+        .arrow {
+          position: absolute;
+          top: 500px;
+          left: 50%;
+          transform: translateX(-50%) scale(0);
+          width: 64px;
+          height: 64px;
+          opacity: 0;
+        }
+        .stamp {
+          position: absolute;
+          left: 50%;
+          top: 900px;
+          transform: translate(-50%, 0) scale(0);
+          display: flex;
+          align-items: baseline;
+          gap: 20px;
+          opacity: 0;
+        }
+        .stamp-x {
+          font-size: 120px;
+          font-weight: 800;
+          color: #c99a3a;
+          text-shadow: 0 4px 40px rgba(201, 154, 58, 0.4);
+        }
+        .stamp-label {
+          font-size: 44px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #f4f1e9;
+        }
+      </style>
+
+      <div
+        id="root"
+        data-composition-id="case-cokkos"
+        data-width="1920"
+        data-height="1080"
+        data-duration="10.5"
+      >
+        <div class="kicker-row" id="ck-kicker">
+          <span class="kicker-dot"></span>
+          <span class="kicker-label">Кейс</span>
+          <span class="kicker-brand">· COKKOS, ДЕТСКИЕ ТОВАРЫ</span>
+        </div>
+
+        <div class="cards-row">
+          <div class="panel before" id="ck-before">
+            <div class="panel-label">До</div>
+            <div class="thumb-row">
+              <div class="thumb">
+                <div class="thumb-play"><svg viewBox="0 0 24 24" fill="#f4f1e9"><path d="M8 5v14l11-7z" /></svg></div>
+                <div class="thumb-views">~1,4 тыс.</div>
+              </div>
+              <div class="thumb">
+                <div class="thumb-play"><svg viewBox="0 0 24 24" fill="#f4f1e9"><path d="M8 5v14l11-7z" /></svg></div>
+                <div class="thumb-views">~2,1 тыс.</div>
+              </div>
+              <div class="thumb">
+                <div class="thumb-play"><svg viewBox="0 0 24 24" fill="#f4f1e9"><path d="M8 5v14l11-7z" /></svg></div>
+                <div class="thumb-views">~3,3 тыс.</div>
+              </div>
+            </div>
+          </div>
+          <div class="panel after" id="ck-after">
+            <div class="panel-label">После</div>
+            <div class="thumb-row">
+              <div class="thumb">
+                <div class="thumb-play"><svg viewBox="0 0 24 24" fill="#c99a3a"><path d="M8 5v14l11-7z" /></svg></div>
+                <div class="thumb-views">131 тыс.</div>
+              </div>
+              <div class="thumb">
+                <div class="thumb-play"><svg viewBox="0 0 24 24" fill="#c99a3a"><path d="M8 5v14l11-7z" /></svg></div>
+                <div class="thumb-views">107 тыс.</div>
+              </div>
+              <div class="thumb">
+                <div class="thumb-play"><svg viewBox="0 0 24 24" fill="#c99a3a"><path d="M8 5v14l11-7z" /></svg></div>
+                <div class="thumb-views">63,3 тыс.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <svg class="arrow" id="ck-arrow" viewBox="0 0 64 64" fill="none" stroke="#c99a3a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="8" y1="32" x2="52" y2="32" />
+          <polyline points="38,18 52,32 38,46" />
+        </svg>
+
+        <div class="stamp" id="ck-stamp">
+          <span class="stamp-x">×5</span>
+          <span class="stamp-label">охват</span>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power1.out" }, 0);
+        tl.fromTo("#ck-kicker", { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 0.15);
+
+        tl.fromTo(
+          "#ck-before",
+          { opacity: 0, x: -30 },
+          { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" },
+          0.4,
+        );
+        tl.fromTo(
+          "#ck-arrow",
+          { opacity: 0, scale: 0 },
+          { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(1.7)" },
+          0.95,
+        );
+        tl.fromTo(
+          "#ck-after",
+          { opacity: 0, x: 30 },
+          { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" },
+          1.15,
+        );
+
+        tl.fromTo(
+          "#ck-stamp",
+          { opacity: 0, scale: 0.5, y: 20 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(1.6)" },
+          2.15,
+        );
+
+        // Hold for reading, then soft dissolve out.
+        tl.to("#root", { opacity: 0, duration: 0.35, ease: "power1.in" }, 10.0);
+
+        window.__timelines["case-cokkos"] = tl;
+      </script>
+    </template>
+  </body>
+</html>
