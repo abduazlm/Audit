@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+      }
+      #stage {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      .video-wrapper {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+      }
+      .video-wrapper video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .cap {
+        position: absolute;
+        left: 72px;
+        right: 72px;
+        top: 1220px;
+        height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 5;
+        pointer-events: none;
+      }
+      .cap-inner {
+        display: block;
+        text-align: center;
+        font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+        font-weight: 800;
+        font-size: 88px;
+        line-height: 1.05;
+        letter-spacing: -0.01em;
+        text-transform: uppercase;
+        -webkit-text-stroke: 4px rgba(0, 0, 0, 0.7);
+        paint-order: stroke fill;
+        text-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
+        transform-origin: 50% 50%;
+      }
+      .badge {
+        position: absolute;
+        left: 50%;
+        top: 190px;
+        transform: translate(-50%, 0) scale(0);
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        padding: 22px 40px;
+        border-radius: 999px;
+        background: #ff4d4d;
+        box-shadow: 0 20px 60px -12px rgba(255, 77, 77, 0.55);
+        z-index: 6;
+        opacity: 0;
+      }
+      .badge-value {
+        font-size: 72px;
+        font-weight: 800;
+        color: #ffffff;
+      }
+      .badge-label {
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #ffffff;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      }
+      .cta-sticker {
+        position: absolute;
+        left: 50%;
+        top: 140px;
+        transform: translate(-50%, 0) scale(0);
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding: 24px 44px;
+        border-radius: 999px;
+        background: #4fa3ff;
+        box-shadow: 0 20px 60px -12px rgba(79, 163, 255, 0.55);
+        z-index: 6;
+        opacity: 0;
+      }
+      .cta-icon {
+        font-size: 46px;
+      }
+      .cta-text {
+        font-size: 40px;
+        font-weight: 800;
+        color: #ffffff;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="stage"
+      data-composition-id="osnova-fixed-price"
+      data-start="0"
+      data-duration="23.936"
+      data-fps="30"
+      data-width="1080"
+      data-height="1920"
+    >
+      <div class="video-wrapper" id="video-wrap">
+        <video
+          id="bg-video"
+          src="input-video.mp4"
+          muted
+          playsinline
+          data-start="0"
+          data-duration="23.936"
+          data-track-index="1"
+        ></video>
+      </div>
+      <audio
+        id="source-audio"
+        src="input-video.mp4"
+        data-start="0"
+        data-duration="23.936"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div class="cap clip" id="cap-00" data-start="0.100" data-duration="1.077" data-track-index="2">
+        <span class="cap-inner" id="cap-00-inner" style="opacity:0;color:#f7f7f5">Почему в</span>
+      </div>
+      <div class="cap clip" id="cap-01" data-start="1.177" data-duration="1.077" data-track-index="3">
+        <span class="cap-inner" id="cap-01-inner" style="opacity:0;color:#7cc0ff">Osnova Group</span>
+      </div>
+      <div class="cap clip" id="cap-02" data-start="2.254" data-duration="0.538" data-track-index="2">
+        <span class="cap-inner" id="cap-02-inner" style="opacity:0;color:#f7f7f5">нет</span>
+      </div>
+      <div class="cap clip" id="cap-03" data-start="2.792" data-duration="0.538" data-track-index="3">
+        <span class="cap-inner" id="cap-03-inner" style="opacity:0;color:#f7f7f5">фиксированных</span>
+      </div>
+      <div class="cap clip" id="cap-04" data-start="3.331" data-duration="0.538" data-track-index="2">
+        <span class="cap-inner" id="cap-04-inner" style="opacity:0;color:#ff4d4d">пакетов</span>
+      </div>
+      <div class="cap clip" id="cap-05" data-start="3.869" data-duration="1.077" data-track-index="3">
+        <span class="cap-inner" id="cap-05-inner" style="opacity:0;color:#f7f7f5">на ремонт</span>
+      </div>
+      <div class="cap clip" id="cap-06" data-start="4.946" data-duration="1.077" data-track-index="2">
+        <span class="cap-inner" id="cap-06-inner" style="opacity:0;color:#f7f7f5">а только</span>
+      </div>
+      <div class="cap clip" id="cap-07" data-start="6.023" data-duration="0.538" data-track-index="3">
+        <span class="cap-inner" id="cap-07-inner" style="opacity:0;color:#f7f7f5">индивидуальный</span>
+      </div>
+      <div class="cap clip" id="cap-08" data-start="6.562" data-duration="0.538" data-track-index="2">
+        <span class="cap-inner" id="cap-08-inner" style="opacity:0;color:#7cc0ff">расчёт?</span>
+      </div>
+      <div class="cap clip" id="cap-09" data-start="7.150" data-duration="0.603" data-track-index="3">
+        <span class="cap-inner" id="cap-09-inner" style="opacity:0;color:#f7f7f5">Пакетный ремонт</span>
+      </div>
+      <div class="cap clip" id="cap-10" data-start="7.753" data-duration="0.603" data-track-index="2">
+        <span class="cap-inner" id="cap-10-inner" style="opacity:0;color:#f7f7f5">это иллюзия</span>
+      </div>
+      <div class="cap clip" id="cap-11" data-start="8.356" data-duration="0.301" data-track-index="3">
+        <span class="cap-inner" id="cap-11-inner" style="opacity:0;color:#ff4d4d">дешевизны</span>
+      </div>
+      <div class="cap clip" id="cap-12" data-start="8.657" data-duration="0.603" data-track-index="2">
+        <span class="cap-inner" id="cap-12-inner" style="opacity:0;color:#f7f7f5">В цену</span>
+      </div>
+      <div class="cap clip" id="cap-13" data-start="9.260" data-duration="0.603" data-track-index="3">
+        <span class="cap-inner" id="cap-13-inner" style="opacity:0;color:#f7f7f5">за метр</span>
+      </div>
+      <div class="cap clip" id="cap-14" data-start="9.863" data-duration="0.301" data-track-index="2">
+        <span class="cap-inner" id="cap-14-inner" style="opacity:0;color:#f7f7f5">закладывают</span>
+      </div>
+      <div class="cap clip" id="cap-15" data-start="10.164" data-duration="0.603" data-track-index="3">
+        <span class="cap-inner" id="cap-15-inner" style="opacity:0;color:#ff4d4d">самые дешёвые</span>
+      </div>
+      <div class="cap clip" id="cap-16" data-start="10.767" data-duration="0.301" data-track-index="2">
+        <span class="cap-inner" id="cap-16-inner" style="opacity:0;color:#ff4d4d">материалы</span>
+      </div>
+      <div class="cap clip" id="cap-17" data-start="11.069" data-duration="0.603" data-track-index="3">
+        <span class="cap-inner" id="cap-17-inner" style="opacity:0;color:#f7f7f5">и минимум</span>
+      </div>
+      <div class="cap clip" id="cap-18" data-start="11.671" data-duration="0.301" data-track-index="2">
+        <span class="cap-inner" id="cap-18-inner" style="opacity:0;color:#f7f7f5">работ</span>
+      </div>
+      <div class="cap clip" id="cap-19" data-start="11.973" data-duration="0.904" data-track-index="3">
+        <span class="cap-inner" id="cap-19-inner" style="opacity:0;color:#f7f7f5">А за каждую</span>
+      </div>
+      <div class="cap clip" id="cap-20" data-start="12.877" data-duration="0.603" data-track-index="2">
+        <span class="cap-inner" id="cap-20-inner" style="opacity:0;color:#f7f7f5">доп. розетку</span>
+      </div>
+      <div class="cap clip" id="cap-21" data-start="13.480" data-duration="0.603" data-track-index="3">
+        <span class="cap-inner" id="cap-21-inner" style="opacity:0;color:#f7f7f5">перенос стены</span>
+      </div>
+      <div class="cap clip" id="cap-22" data-start="14.083" data-duration="0.603" data-track-index="2">
+        <span class="cap-inner" id="cap-22-inner" style="opacity:0;color:#f7f7f5">или подсветку</span>
+      </div>
+      <div class="cap clip" id="cap-23" data-start="14.686" data-duration="0.603" data-track-index="3">
+        <span class="cap-inner" id="cap-23-inner" style="opacity:0;color:#f7f7f5">с вас</span>
+      </div>
+      <div class="cap clip" id="cap-24" data-start="15.289" data-duration="0.301" data-track-index="2">
+        <span class="cap-inner" id="cap-24-inner" style="opacity:0;color:#f7f7f5">потребуют</span>
+      </div>
+      <div class="cap clip" id="cap-25" data-start="15.590" data-duration="0.301" data-track-index="3">
+        <span class="cap-inner" id="cap-25-inner" style="opacity:0;color:#ff4d4d">доплату</span>
+      </div>
+      <div class="cap clip" id="cap-26" data-start="15.891" data-duration="0.603" data-track-index="2">
+        <span class="cap-inner" id="cap-26-inner" style="opacity:0;color:#f7f7f5">В итоге</span>
+      </div>
+      <div class="cap clip" id="cap-27" data-start="16.494" data-duration="0.603" data-track-index="3">
+        <span class="cap-inner" id="cap-27-inner" style="opacity:0;color:#ff4d4d">цена вырастает</span>
+      </div>
+      <div class="cap clip" id="cap-28" data-start="17.097" data-duration="0.603" data-track-index="2">
+        <span class="cap-inner" id="cap-28-inner" style="opacity:0;color:#ff4d4d">на 30–50%</span>
+      </div>
+      <div class="cap clip" id="cap-29" data-start="17.750" data-duration="0.577" data-track-index="3">
+        <span class="cap-inner" id="cap-29-inner" style="opacity:0;color:#f7f7f5">Мы работаем</span>
+      </div>
+      <div class="cap clip" id="cap-30" data-start="18.327" data-duration="0.288" data-track-index="2">
+        <span class="cap-inner" id="cap-30-inner" style="opacity:0;color:#7cc0ff">по-другому:</span>
+      </div>
+      <div class="cap clip" id="cap-31" data-start="18.615" data-duration="0.288" data-track-index="3">
+        <span class="cap-inner" id="cap-31-inner" style="opacity:0;color:#f7f7f5">изучим</span>
+      </div>
+      <div class="cap clip" id="cap-32" data-start="18.904" data-duration="0.577" data-track-index="2">
+        <span class="cap-inner" id="cap-32-inner" style="opacity:0;color:#f7f7f5">ваш проект</span>
+      </div>
+      <div class="cap clip" id="cap-33" data-start="19.481" data-duration="0.577" data-track-index="3">
+        <span class="cap-inner" id="cap-33-inner" style="opacity:0;color:#f7f7f5">сделаем замеры</span>
+      </div>
+      <div class="cap clip" id="cap-34" data-start="20.058" data-duration="0.577" data-track-index="2">
+        <span class="cap-inner" id="cap-34-inner" style="opacity:0;color:#f7f7f5">и посчитаем</span>
+      </div>
+      <div class="cap clip" id="cap-35" data-start="20.635" data-duration="0.577" data-track-index="3">
+        <span class="cap-inner" id="cap-35-inner" style="opacity:0;color:#7cc0ff">точную детальную</span>
+      </div>
+      <div class="cap clip" id="cap-36" data-start="21.212" data-duration="0.288" data-track-index="2">
+        <span class="cap-inner" id="cap-36-inner" style="opacity:0;color:#7cc0ff">смету</span>
+      </div>
+      <div class="cap clip" id="cap-37" data-start="21.550" data-duration="0.571" data-track-index="3">
+        <span class="cap-inner" id="cap-37-inner" style="opacity:0;color:#7cc0ff">Нужен честный</span>
+      </div>
+      <div class="cap clip" id="cap-38" data-start="22.121" data-duration="0.571" data-track-index="2">
+        <span class="cap-inner" id="cap-38-inner" style="opacity:0;color:#f7f7f5">расчёт ремонта?</span>
+      </div>
+      <div class="cap clip" id="cap-39" data-start="22.693" data-duration="0.286" data-track-index="3">
+        <span class="cap-inner" id="cap-39-inner" style="opacity:0;color:#7cc0ff">Пишите</span>
+      </div>
+      <div class="cap clip" id="cap-40" data-start="22.979" data-duration="0.571" data-track-index="2">
+        <span class="cap-inner" id="cap-40-inner" style="opacity:0;color:#7cc0ff">в директ!</span>
+      </div>
+
+      <div class="badge" id="badge-price">
+        <span class="badge-value">+30–50%</span>
+        <span class="badge-label">к цене</span>
+      </div>
+
+      <div class="cta-sticker" id="cta-dm">
+        <span class="cta-icon">📩</span>
+        <span class="cta-text">Директ</span>
+      </div>
+
+      <script src="vendor/gsap.min.js"></script>
+      <script>
+        (function () {
+          const tl = window.gsap.timeline({ paused: true });
+
+          // ── Word-by-word kinetic captions ──
+
+        tl.fromTo(
+          "#cap-00-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          0.100,
+        );
+        tl.to("#cap-00-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 1.057);
+        tl.set("#cap-00-inner", { opacity: 0 }, 1.177);
+
+        tl.fromTo(
+          "#cap-01-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          1.177,
+        );
+        tl.to("#cap-01-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 2.134);
+        tl.set("#cap-01-inner", { opacity: 0 }, 2.254);
+
+        tl.fromTo(
+          "#cap-02-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          2.254,
+        );
+        tl.to("#cap-02-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 2.672);
+        tl.set("#cap-02-inner", { opacity: 0 }, 2.792);
+
+        tl.fromTo(
+          "#cap-03-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          2.792,
+        );
+        tl.to("#cap-03-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 3.210);
+        tl.set("#cap-03-inner", { opacity: 0 }, 3.330);
+
+        tl.fromTo(
+          "#cap-04-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          3.331,
+        );
+        tl.to("#cap-04-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 3.749);
+        tl.set("#cap-04-inner", { opacity: 0 }, 3.869);
+
+        tl.fromTo(
+          "#cap-05-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          3.869,
+        );
+        tl.to("#cap-05-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 4.826);
+        tl.set("#cap-05-inner", { opacity: 0 }, 4.946);
+
+        tl.fromTo(
+          "#cap-06-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          4.946,
+        );
+        tl.to("#cap-06-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 5.903);
+        tl.set("#cap-06-inner", { opacity: 0 }, 6.023);
+
+        tl.fromTo(
+          "#cap-07-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          6.023,
+        );
+        tl.to("#cap-07-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 6.441);
+        tl.set("#cap-07-inner", { opacity: 0 }, 6.561);
+
+        tl.fromTo(
+          "#cap-08-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          6.562,
+        );
+        tl.to("#cap-08-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 6.980);
+        tl.set("#cap-08-inner", { opacity: 0 }, 7.100);
+
+        tl.fromTo(
+          "#cap-09-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          7.150,
+        );
+        tl.to("#cap-09-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 7.633);
+        tl.set("#cap-09-inner", { opacity: 0 }, 7.753);
+
+        tl.fromTo(
+          "#cap-10-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          7.753,
+        );
+        tl.to("#cap-10-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 8.236);
+        tl.set("#cap-10-inner", { opacity: 0 }, 8.356);
+
+        tl.fromTo(
+          "#cap-11-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          8.356,
+        );
+        tl.to("#cap-11-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 8.537);
+        tl.set("#cap-11-inner", { opacity: 0 }, 8.657);
+
+        tl.fromTo(
+          "#cap-12-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          8.657,
+        );
+        tl.to("#cap-12-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 9.140);
+        tl.set("#cap-12-inner", { opacity: 0 }, 9.260);
+
+        tl.fromTo(
+          "#cap-13-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          9.260,
+        );
+        tl.to("#cap-13-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 9.743);
+        tl.set("#cap-13-inner", { opacity: 0 }, 9.863);
+
+        tl.fromTo(
+          "#cap-14-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          9.863,
+        );
+        tl.to("#cap-14-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 10.044);
+        tl.set("#cap-14-inner", { opacity: 0 }, 10.164);
+
+        tl.fromTo(
+          "#cap-15-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          10.164,
+        );
+        tl.to("#cap-15-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 10.647);
+        tl.set("#cap-15-inner", { opacity: 0 }, 10.767);
+
+        tl.fromTo(
+          "#cap-16-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          10.767,
+        );
+        tl.to("#cap-16-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 10.948);
+        tl.set("#cap-16-inner", { opacity: 0 }, 11.068);
+
+        tl.fromTo(
+          "#cap-17-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          11.069,
+        );
+        tl.to("#cap-17-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 11.552);
+        tl.set("#cap-17-inner", { opacity: 0 }, 11.672);
+
+        tl.fromTo(
+          "#cap-18-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          11.671,
+        );
+        tl.to("#cap-18-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 11.852);
+        tl.set("#cap-18-inner", { opacity: 0 }, 11.972);
+
+        tl.fromTo(
+          "#cap-19-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          11.973,
+        );
+        tl.to("#cap-19-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 12.757);
+        tl.set("#cap-19-inner", { opacity: 0 }, 12.877);
+
+        tl.fromTo(
+          "#cap-20-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          12.877,
+        );
+        tl.to("#cap-20-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 13.360);
+        tl.set("#cap-20-inner", { opacity: 0 }, 13.480);
+
+        tl.fromTo(
+          "#cap-21-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          13.480,
+        );
+        tl.to("#cap-21-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 13.963);
+        tl.set("#cap-21-inner", { opacity: 0 }, 14.083);
+
+        tl.fromTo(
+          "#cap-22-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          14.083,
+        );
+        tl.to("#cap-22-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 14.566);
+        tl.set("#cap-22-inner", { opacity: 0 }, 14.686);
+
+        tl.fromTo(
+          "#cap-23-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          14.686,
+        );
+        tl.to("#cap-23-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 15.169);
+        tl.set("#cap-23-inner", { opacity: 0 }, 15.289);
+
+        tl.fromTo(
+          "#cap-24-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          15.289,
+        );
+        tl.to("#cap-24-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 15.470);
+        tl.set("#cap-24-inner", { opacity: 0 }, 15.590);
+
+        tl.fromTo(
+          "#cap-25-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          15.590,
+        );
+        tl.to("#cap-25-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 15.771);
+        tl.set("#cap-25-inner", { opacity: 0 }, 15.891);
+
+        tl.fromTo(
+          "#cap-26-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          15.891,
+        );
+        tl.to("#cap-26-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 16.374);
+        tl.set("#cap-26-inner", { opacity: 0 }, 16.494);
+
+        tl.fromTo(
+          "#cap-27-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          16.494,
+        );
+        tl.to("#cap-27-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 16.977);
+        tl.set("#cap-27-inner", { opacity: 0 }, 17.097);
+
+        tl.fromTo(
+          "#cap-28-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          17.097,
+        );
+        tl.to("#cap-28-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 17.580);
+        tl.set("#cap-28-inner", { opacity: 0 }, 17.700);
+
+        tl.fromTo(
+          "#cap-29-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          17.750,
+        );
+        tl.to("#cap-29-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 18.207);
+        tl.set("#cap-29-inner", { opacity: 0 }, 18.327);
+
+        tl.fromTo(
+          "#cap-30-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          18.327,
+        );
+        tl.to("#cap-30-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 18.495);
+        tl.set("#cap-30-inner", { opacity: 0 }, 18.615);
+
+        tl.fromTo(
+          "#cap-31-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          18.615,
+        );
+        tl.to("#cap-31-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 18.783);
+        tl.set("#cap-31-inner", { opacity: 0 }, 18.903);
+
+        tl.fromTo(
+          "#cap-32-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          18.904,
+        );
+        tl.to("#cap-32-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 19.361);
+        tl.set("#cap-32-inner", { opacity: 0 }, 19.481);
+
+        tl.fromTo(
+          "#cap-33-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          19.481,
+        );
+        tl.to("#cap-33-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 19.938);
+        tl.set("#cap-33-inner", { opacity: 0 }, 20.058);
+
+        tl.fromTo(
+          "#cap-34-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          20.058,
+        );
+        tl.to("#cap-34-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 20.515);
+        tl.set("#cap-34-inner", { opacity: 0 }, 20.635);
+
+        tl.fromTo(
+          "#cap-35-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          20.635,
+        );
+        tl.to("#cap-35-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 21.092);
+        tl.set("#cap-35-inner", { opacity: 0 }, 21.212);
+
+        tl.fromTo(
+          "#cap-36-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          21.212,
+        );
+        tl.to("#cap-36-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 21.380);
+        tl.set("#cap-36-inner", { opacity: 0 }, 21.500);
+
+        tl.fromTo(
+          "#cap-37-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          21.550,
+        );
+        tl.to("#cap-37-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 22.001);
+        tl.set("#cap-37-inner", { opacity: 0 }, 22.121);
+
+        tl.fromTo(
+          "#cap-38-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          22.121,
+        );
+        tl.to("#cap-38-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 22.572);
+        tl.set("#cap-38-inner", { opacity: 0 }, 22.692);
+
+        tl.fromTo(
+          "#cap-39-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          22.693,
+        );
+        tl.to("#cap-39-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 22.859);
+        tl.set("#cap-39-inner", { opacity: 0 }, 22.979);
+
+        tl.fromTo(
+          "#cap-40-inner",
+          { opacity: 0, scale: 0.75, y: 14 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.16, ease: "back.out(2.2)" },
+          22.979,
+        );
+        tl.to("#cap-40-inner", { opacity: 0, duration: 0.1, ease: "power1.in" }, 23.430);
+        tl.set("#cap-40-inner", { opacity: 0 }, 23.550);
+
+          // ── "+30–50%" price-markup badge — lands with the "на 30–50%" beat ──
+          tl.fromTo(
+            "#badge-price",
+            { opacity: 0, scale: 0.5 },
+            { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(1.8)" },
+            16.9,
+          );
+          tl.to("#badge-price", { opacity: 0, duration: 0.25, ease: "power1.in" }, 18.9);
+          tl.set("#badge-price", { opacity: 0, scale: 0 }, 19.15);
+
+          // ── "Директ" CTA sticker — lands with the closing line ──
+          tl.fromTo(
+            "#cta-dm",
+            { opacity: 0, scale: 0.5 },
+            { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(1.8)" },
+            22.6,
+          );
+          tl.to("#cta-dm", { opacity: 0, duration: 0.3, ease: "power1.in" }, 23.6);
+          tl.set("#cta-dm", { opacity: 0, scale: 0 }, 23.9);
+
+          window.__timelines = window.__timelines || {};
+          window.__timelines["osnova-fixed-price"] = tl;
+        })();
+      </script>
+    </div>
+  </body>
+</html>
