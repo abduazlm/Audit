@@ -1,0 +1,218 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          background: #104434;
+          overflow: hidden;
+          font-family: "Montserrat", sans-serif;
+          opacity: 0;
+        }
+        .stack {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 56px;
+          padding: 0 80px;
+        }
+        .card {
+          width: 100%;
+          max-width: 900px;
+          background: #0d3a2c;
+          border: 1px solid rgba(163, 126, 45, 0.35);
+          border-radius: 28px;
+          padding: 44px 56px 40px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 80px;
+          transform: translateY(28px);
+          opacity: 0;
+        }
+        .card-row {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 36px;
+        }
+        .badge {
+          flex: 0 0 auto;
+          width: 108px;
+          height: 108px;
+          border-radius: 50%;
+          background: #a37e2d;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 56px;
+          font-weight: 800;
+          color: #0d3a2c;
+          transform-origin: 50% 50%;
+        }
+        .item-text {
+          font-size: 54px;
+          font-weight: 700;
+          line-height: 1.15;
+          color: #f4f1e9;
+          flex: 1 1 auto;
+        }
+        .item-icon {
+          flex: 0 0 auto;
+          width: 248px;
+          height: 248px;
+          transform-origin: 50% 50%;
+          overflow: visible;
+        }
+        #benefits-icon-2 {
+          margin-top: 56px;
+        }
+        .notebook-icon {
+          color: #f4f1e9;
+        }
+        .notebook-line {
+          stroke: #a37e2d;
+        }
+        .pen-nib {
+          fill: #c99a3a;
+        }
+        .people-icon .person {
+          fill: #a37e2d;
+        }
+        .people-icon .person.person-2 {
+          fill: #c99a3a;
+        }
+      </style>
+
+      <div
+        id="root"
+        data-composition-id="benefits"
+        data-width="1080"
+        data-height="1920"
+        data-duration="3.46"
+      >
+        <div class="stack">
+          <div class="card" id="benefits-card-1">
+            <div class="card-row">
+              <div class="badge" id="benefits-badge-1">2</div>
+              <div class="item-text">Сами напишем сценарий</div>
+            </div>
+            <svg class="item-icon notebook-icon" id="benefits-icon-1" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="22" y="8" width="58" height="84" rx="6" />
+              <circle cx="13" cy="24" r="3" fill="currentColor" stroke="none" />
+              <circle cx="13" cy="40" r="3" fill="currentColor" stroke="none" />
+              <circle cx="13" cy="56" r="3" fill="currentColor" stroke="none" />
+              <circle cx="13" cy="72" r="3" fill="currentColor" stroke="none" />
+              <line class="notebook-line" x1="34" y1="32" x2="68" y2="32" stroke-width="3" />
+              <line class="notebook-line" x1="34" y1="48" x2="68" y2="48" stroke-width="3" />
+              <line class="notebook-line" id="benefits-write-line" x1="34" y1="64" x2="68" y2="64" stroke-width="3" stroke-dasharray="34" stroke-dashoffset="34" />
+              <circle class="pen-nib" id="benefits-pen-nib" cx="34" cy="64" r="4" stroke="none" />
+            </svg>
+          </div>
+          <div class="card" id="benefits-card-2">
+            <div class="card-row">
+              <div class="badge" id="benefits-badge-2">3</div>
+              <div class="item-text">Подберём локацию и моделей</div>
+            </div>
+            <svg class="item-icon people-icon" id="benefits-icon-2" viewBox="0 0 100 100" fill="none">
+              <g class="person" id="benefits-person-1">
+                <circle cx="32" cy="28" r="14" />
+                <path d="M10 84 C10 56 54 56 54 84 Z" />
+              </g>
+              <g class="person person-2" id="benefits-person-2">
+                <circle cx="70" cy="34" r="12" />
+                <path d="M50 88 C50 64 90 64 90 88 Z" />
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        // Root dissolve-in from the hook's dissolve-out.
+        tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power1.out" }, 0);
+
+        // Card 1 settles into slot, then its badge spring-pops.
+        tl.fromTo(
+          "#benefits-card-1",
+          { opacity: 0, y: 28 },
+          { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" },
+          0.1,
+        );
+        tl.fromTo(
+          "#benefits-badge-1",
+          { scale: 0 },
+          { scale: 1, duration: 0.3, ease: "power3.out" },
+          0.2,
+        );
+
+        // Notebook icon pops in with the card, then the pen "writes" the third line.
+        tl.fromTo(
+          "#benefits-icon-1",
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.3, ease: "power3.out" },
+          0.28,
+        );
+        tl.to(
+          "#benefits-write-line",
+          { strokeDashoffset: 0, duration: 0.35, ease: "none" },
+          0.5,
+        );
+        tl.fromTo(
+          "#benefits-pen-nib",
+          { x: 0 },
+          { x: 34, duration: 0.35, ease: "none" },
+          0.5,
+        );
+        tl.to("#benefits-pen-nib", { opacity: 0, duration: 0.1, ease: "power1.in" }, 0.85);
+
+        // Card 2 lands exactly as the real VO starts "Подберём локацию и
+        // моделей" (5.222s global = local 1.728s in this scene).
+        tl.fromTo(
+          "#benefits-card-2",
+          { opacity: 0, y: 28 },
+          { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" },
+          1.7,
+        );
+        tl.fromTo(
+          "#benefits-badge-2",
+          { scale: 0 },
+          { scale: 1, duration: 0.3, ease: "power3.out" },
+          1.8,
+        );
+
+        // The two "model" figures pop in one after the other.
+        // svgOrigin pins the pivot in the icon's own viewBox space — CSS
+        // transform-box: fill-box is not reliably supported for this.
+        tl.fromTo(
+          "#benefits-person-1",
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.25, ease: "power3.out", svgOrigin: "32 55" },
+          1.87,
+        );
+        tl.fromTo(
+          "#benefits-person-2",
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.25, ease: "power3.out", svgOrigin: "70 60" },
+          1.97,
+        );
+
+        // Hold through the rest of the real VO clause, then soft dissolve out.
+        tl.to("#root", { opacity: 0, duration: 0.35, ease: "power1.in" }, 3.11);
+
+        window.__timelines["benefits"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

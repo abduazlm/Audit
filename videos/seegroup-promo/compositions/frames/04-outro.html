@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          background: #0d3a2c;
+          overflow: hidden;
+          font-family: "Montserrat", sans-serif;
+          opacity: 0;
+        }
+        .checker {
+          position: absolute;
+          bottom: 64px;
+          left: 64px;
+          width: 216px;
+          height: 216px;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          grid-template-rows: repeat(3, 1fr);
+          opacity: 0;
+        }
+        .checker div:nth-child(odd) {
+          background: #a37e2d;
+        }
+        .checker div:nth-child(even) {
+          background: #104434;
+        }
+        .lockup-wrap {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .lockup {
+          font-size: 128px;
+          font-weight: 700;
+          color: #f4f1e9;
+          transform-origin: 50% 50%;
+        }
+        .lockup .cap {
+          font-weight: 800;
+        }
+      </style>
+
+      <div
+        id="root"
+        data-composition-id="outro"
+        data-width="1080"
+        data-height="1920"
+        data-duration="2.0"
+      >
+        <div class="checker" id="outro-checker">
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+        </div>
+        <div class="lockup-wrap">
+          <div class="lockup" id="outro-lockup">see<span class="cap">Group</span></div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        // Root dissolve-in from the Guarantee scene.
+        tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power1.out" }, 0);
+
+        // Checker corner mirrors the Hook's top-right accent.
+        tl.fromTo("#outro-checker", { opacity: 0 }, { opacity: 0.12, duration: 0.3, ease: "power2.out" }, 0.2);
+
+        // The lockup spring-blooms from zero, dead center (calm settle — no overshoot).
+        tl.fromTo(
+          "#outro-lockup",
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.4, ease: "power3.out" },
+          0.3,
+        );
+
+        // Held static to the final frame — no exit; this is the sign-off.
+        window.__timelines["outro"] = tl;
+      </script>
+    </template>
+  </body>
+</html>
