@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 3,
+  "composition": {
+    "fps": 30,
+    "width": 1080,
+    "height": 1920,
+    "durationSeconds": 12.133,
+    "layout": "portrait",
+    "themeId": "noir",
+    "seed": 7
+  },
+  "videoTrack": {
+    "sourcePath": "input-video.mp4",
+    "startSec": 0,
+    "endSec": 12.133,
+    "bounds": { "x": 0, "y": 0, "width": 1080, "height": 1920 }
+  },
+  "subtitles": { "enabled": false },
+  "cards": [
+    {
+      "id": "card-01",
+      "intent": "Kicker tag pop — 'dua of the day' label sets the frame before the headline",
+      "startSec": 0.15,
+      "endSec": 1.35,
+      "accentIndex": 0,
+      "zone": "video-overlay",
+      "contentHints": { "kicker": "ДУА ДНЯ" }
+    },
+    {
+      "id": "card-02",
+      "intent": "Hook headline — what this dua does, matches spoken segment 1 (0.4-3.1s)",
+      "startSec": 1.35,
+      "endSec": 3.35,
+      "accentIndex": 0,
+      "zone": "video-overlay",
+      "contentHints": {
+        "title": "Дуа, которое поможет\nвыплатить долги"
+      }
+    },
+    {
+      "id": "card-03",
+      "intent": "Arabic recitation part 1 + Cyrillic transliteration, matches spoken segment 2 (3.7-6.4s)",
+      "startSec": 3.4,
+      "endSec": 6.55,
+      "accentIndex": 1,
+      "zone": "video-overlay",
+      "contentHints": {
+        "arabic": "اللَّهُمَّ اكْفِنِي بِحَلَالِكَ عَنْ حَرَامِكَ",
+        "translit": "Аллохумма кфини би халялика ан харомика"
+      }
+    },
+    {
+      "id": "card-04",
+      "intent": "Arabic recitation part 2 (continuation) + transliteration, matches spoken segment 3 (6.7-8.9s)",
+      "startSec": 6.6,
+      "endSec": 9.05,
+      "accentIndex": 1,
+      "zone": "video-overlay",
+      "contentHints": {
+        "arabic": "وَأَغْنِنِي بِفَضْلِكَ عَمَّنْ سِوَاكَ",
+        "translit": "уа агнини бифадлика амман сиуак"
+      }
+    },
+    {
+      "id": "card-05",
+      "intent": "Outro CTA — matches spoken segment 4 (9.6-12.1s), points to description for translation/transcript",
+      "startSec": 9.1,
+      "endSec": 12.133,
+      "accentIndex": 2,
+      "zone": "video-overlay",
+      "contentHints": {
+        "title": "Перевод и транскрипция —\nв описании"
+      }
+    }
+  ]
+}
