@@ -6,20 +6,31 @@
       position: relative;
       font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
     }
-    .card[data-card-id="card-01"] .chip {
+    .card[data-card-id="card-01"] .scrim {
       position: absolute;
-      left: 24px;
-      top: 1340px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      top: 1600px;
+      padding: 0 64px 140px;
+      box-sizing: border-box;
+      background: linear-gradient(
+        to top,
+        rgba(6, 7, 12, 0.82) 0%,
+        rgba(6, 7, 12, 0.5) 45%,
+        rgba(6, 7, 12, 0) 100%
+      );
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      -webkit-mask-image: linear-gradient(to top, black 0%, black 45%, transparent 100%);
+      mask-image: linear-gradient(to top, black 0%, black 45%, transparent 100%);
+      display: flex;
+      align-items: flex-end;
+    }
+    .card[data-card-id="card-01"] .chip {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 16px 28px;
-      border-radius: 999px;
-      background: rgba(15, 16, 22, 0.78);
-      border: 1px solid rgba(167, 139, 250, 0.35);
-      backdrop-filter: blur(22px) saturate(140%);
-      -webkit-backdrop-filter: blur(22px) saturate(140%);
-      box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.55);
     }
     .card[data-card-id="card-01"] .dot {
       width: 12px;
@@ -34,13 +45,16 @@
       letter-spacing: 0.16em;
       color: #f5f3ff;
       text-transform: uppercase;
+      text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
     }
   </style>
 
   <div class="root">
-    <div class="chip" id="card-01-chip">
-      <span class="dot" id="card-01-dot"></span>
-      <span class="label">🤲 Дуа дня</span>
+    <div class="scrim">
+      <div class="chip" id="card-01-chip">
+        <span class="dot" id="card-01-dot"></span>
+        <span class="label">🤲 Дуа дня</span>
+      </div>
     </div>
   </div>
 </div>

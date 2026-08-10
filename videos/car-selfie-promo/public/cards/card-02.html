@@ -6,24 +6,28 @@
       position: relative;
       font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
     }
-    .card[data-card-id="card-02"] .glass {
+    .card[data-card-id="card-02"] .scrim {
       position: absolute;
-      left: 24px;
-      top: 1220px;
-      width: 1032px;
-      height: 624px;
-      padding: 44px 48px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      top: 1300px;
+      padding: 0 64px 140px;
       box-sizing: border-box;
-      border-radius: 28px;
-      background: rgba(15, 16, 22, 0.78);
-      border: 1px solid rgba(167, 139, 250, 0.3);
-      backdrop-filter: blur(22px) saturate(140%);
-      -webkit-backdrop-filter: blur(22px) saturate(140%);
-      box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.55);
+      background: linear-gradient(
+        to top,
+        rgba(6, 7, 12, 0.85) 0%,
+        rgba(6, 7, 12, 0.55) 40%,
+        rgba(6, 7, 12, 0) 100%
+      );
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      -webkit-mask-image: linear-gradient(to top, black 0%, black 40%, transparent 100%);
+      mask-image: linear-gradient(to top, black 0%, black 40%, transparent 100%);
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      gap: 24px;
+      justify-content: flex-end;
+      gap: 20px;
     }
     .card[data-card-id="card-02"] .kicker {
       display: flex;
@@ -33,6 +37,7 @@
       letter-spacing: 0.16em;
       color: #a78bfa;
       text-transform: uppercase;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
     }
     .card[data-card-id="card-02"] .kicker-dot {
       width: 10px;
@@ -46,12 +51,12 @@
       font: 800 76px/1.18 "Inter", sans-serif;
       color: #f5f3ff;
       white-space: pre-line;
-      text-shadow: 0 4px 40px rgba(167, 139, 250, 0.35);
+      text-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
     }
   </style>
 
   <div class="root">
-    <div class="glass" id="card-02-glass">
+    <div class="scrim">
       <div class="kicker" id="card-02-kicker"><span class="kicker-dot"></span>помогает выплатить</div>
       <h2 class="title" id="card-02-title">Дуа, которое поможет
 выплатить долги</h2>

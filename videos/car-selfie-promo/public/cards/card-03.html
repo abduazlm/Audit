@@ -6,24 +6,28 @@
       position: relative;
       font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
     }
-    .card[data-card-id="card-03"] .glass {
+    .card[data-card-id="card-03"] .scrim {
       position: absolute;
-      left: 24px;
-      top: 1180px;
-      width: 1032px;
-      height: 664px;
-      padding: 44px 48px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      top: 1260px;
+      padding: 0 64px 140px;
       box-sizing: border-box;
-      border-radius: 28px;
-      background: rgba(15, 16, 22, 0.8);
-      border: 1px solid rgba(232, 196, 104, 0.35);
-      backdrop-filter: blur(22px) saturate(140%);
-      -webkit-backdrop-filter: blur(22px) saturate(140%);
-      box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.55);
+      background: linear-gradient(
+        to top,
+        rgba(6, 7, 12, 0.85) 0%,
+        rgba(6, 7, 12, 0.55) 40%,
+        rgba(6, 7, 12, 0) 100%
+      );
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      -webkit-mask-image: linear-gradient(to top, black 0%, black 40%, transparent 100%);
+      mask-image: linear-gradient(to top, black 0%, black 40%, transparent 100%);
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      gap: 28px;
+      justify-content: flex-end;
+      gap: 24px;
     }
     .card[data-card-id="card-03"] .kicker {
       display: flex;
@@ -33,6 +37,7 @@
       letter-spacing: 0.16em;
       color: #e8c468;
       text-transform: uppercase;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
     }
     .card[data-card-id="card-03"] .kicker-dot {
       width: 10px;
@@ -47,18 +52,19 @@
       font: 700 62px/1.5 "DejaVu Sans", "FreeSerif", sans-serif;
       color: #f5f3ff;
       text-align: right;
-      text-shadow: 0 4px 30px rgba(232, 196, 104, 0.35);
+      text-shadow: 0 4px 24px rgba(0, 0, 0, 0.65);
     }
     .card[data-card-id="card-03"] .translit {
       margin: 0;
       font: 500 34px/1.4 "Inter", sans-serif;
       color: #cbc8e6;
       font-style: italic;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
     }
   </style>
 
   <div class="root">
-    <div class="glass" id="card-03-glass">
+    <div class="scrim">
       <div class="kicker" id="card-03-kicker"><span class="kicker-dot"></span>1 / 2</div>
       <p class="arabic" id="card-03-arabic">اللَّهُمَّ اكْفِنِي بِحَلَالِكَ عَنْ حَرَامِكَ</p>
       <p class="translit" id="card-03-translit">Аллохумма кфини би халялика ан харомика</p>
