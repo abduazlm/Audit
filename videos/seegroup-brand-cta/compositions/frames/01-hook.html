@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          background: #0d3a2c;
+          overflow: hidden;
+          font-family: "Montserrat", sans-serif;
+        }
+        .fade-wrap {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 0 84px;
+        }
+        .checker {
+          position: absolute;
+          top: 64px;
+          right: 64px;
+          width: 180px;
+          height: 180px;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          grid-template-rows: repeat(3, 1fr);
+          opacity: 0;
+        }
+        .checker div:nth-child(odd) {
+          background: #a37e2d;
+        }
+        .checker div:nth-child(even) {
+          background: #104434;
+        }
+        .kicker {
+          position: absolute;
+          top: 84px;
+          left: 72px;
+          font-size: 28px;
+          font-weight: 600;
+          letter-spacing: 0.14em;
+          color: #f4f1e9;
+          opacity: 0;
+        }
+        .headline {
+          font-size: 84px;
+          font-weight: 800;
+          line-height: 1.14;
+          color: #f4f1e9;
+          text-align: center;
+          max-width: 900px;
+          opacity: 0;
+        }
+        .hl {
+          color: #c99a3a;
+        }
+      </style>
+
+      <div
+        id="root"
+        data-composition-id="hook"
+        data-width="1080"
+        data-height="1920"
+        data-duration="2.8"
+      >
+        <div class="checker" id="hook-checker">
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+        </div>
+        <div class="kicker" id="hook-kicker">SEE GROUP</div>
+        <div class="fade-wrap">
+          <div class="headline" id="hook-headline">
+            Хотите понять, в чём сила<br />вашего <span class="hl">личного бренда</span>?
+          </div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo("#hook-checker", { opacity: 0 }, { opacity: 0.12, duration: 0.35, ease: "power2.out" }, 0);
+        tl.fromTo("#hook-kicker", { opacity: 0 }, { opacity: 0.72, duration: 0.3, ease: "power2.out" }, 0.05);
+
+        tl.fromTo(
+          "#hook-headline",
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+          0.15,
+        );
+
+        // Hold, then cut (no dissolve — keeps the 6s total tight).
+        tl.to("#root", { opacity: 0, duration: 0.25, ease: "power1.in" }, 2.5);
+
+        window.__timelines["hook"] = tl;
+      </script>
+    </template>
+  </body>
+</html>
