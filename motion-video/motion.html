@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<title>seeGroup — БРЕНД motion</title>
+<style>
+  :root {
+    --green-deep: #0a3327;
+    --green-mid: #0e4a37;
+    --green-panel: #123f30;
+    --gold: #cda45e;
+    --gold-bright: #e8c078;
+    --red: #8f1d1d;
+    --cream: #f3ece0;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    width: 1080px; height: 1920px;
+    background: var(--green-deep);
+    overflow: hidden;
+    font-family: "Arial", "Helvetica Neue", sans-serif;
+  }
+  .stage {
+    position: relative;
+    width: 1080px; height: 1920px;
+    background: radial-gradient(120% 90% at 50% 0%, var(--green-mid) 0%, var(--green-deep) 60%);
+  }
+
+  /* decorative checker pattern, echoing the source ad */
+  .checker {
+    position: absolute;
+    width: 220px; height: 220px;
+    background-image:
+      linear-gradient(45deg, rgba(205,164,94,0.16) 25%, transparent 25%, transparent 75%, rgba(205,164,94,0.16) 75%),
+      linear-gradient(45deg, rgba(205,164,94,0.16) 25%, transparent 25%, transparent 75%, rgba(205,164,94,0.16) 75%);
+    background-size: 40px 40px;
+    background-position: 0 0, 20px 20px;
+    opacity: 0;
+    animation: fadeIn 1.2s ease forwards;
+  }
+  .checker.tl { top: 60px; left: -40px; animation-delay: 0.1s; }
+  .checker.br { bottom: 90px; right: -40px; animation-delay: 0.3s; }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  /* top wordmark */
+  .brandmark {
+    position: absolute;
+    top: 70px; left: 0; right: 0;
+    text-align: center;
+    color: var(--gold);
+    font-size: 30px;
+    letter-spacing: 8px;
+    font-weight: 700;
+    opacity: 0;
+    transform: translateY(-16px);
+    animation: brandIn 0.6s ease-out forwards;
+    animation-delay: 0.15s;
+  }
+  @keyframes brandIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 90px;
+    text-align: center;
+  }
+
+  /* Scene 1: question */
+  .scene1 {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 100px;
+    text-align: center;
+    opacity: 0;
+    animation: scene1Anim 6s ease forwards;
+  }
+  .scene1 p {
+    color: var(--cream);
+    font-size: 62px;
+    font-weight: 800;
+    line-height: 1.28;
+    margin: 0;
+  }
+  @keyframes scene1Anim {
+    0%   { opacity: 0; transform: translateY(40px); }
+    8%   { opacity: 1; transform: translateY(0); }
+    34%  { opacity: 1; transform: translateY(0); }
+    42%  { opacity: 0; transform: translateY(-40px); }
+    100% { opacity: 0; }
+  }
+
+  /* Scene 2: word reveal БРЕНД */
+  .scene2 {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    animation: scene2Anim 6s ease forwards;
+  }
+  .scene2 .lead {
+    color: var(--cream);
+    font-size: 38px;
+    font-weight: 600;
+    opacity: 0.9;
+    margin: 0 0 26px 0;
+  }
+  .scene2 .stamp {
+    position: relative;
+    font-size: 190px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: var(--gold-bright);
+    text-shadow: 0 0 60px rgba(232,192,120,0.45);
+    transform: scale(0.4) rotate(-6deg);
+  }
+  .scene2 .stamp::after {
+    content: "";
+    position: absolute;
+    left: 50%; bottom: -22px;
+    width: 0%;
+    height: 8px;
+    background: var(--red);
+    transform: translateX(-50%);
+  }
+  @keyframes scene2Anim {
+    0%   { opacity: 0; }
+    38%  { opacity: 0; }
+    46%  { opacity: 1; }
+    72%  { opacity: 1; }
+    82%  { opacity: 0; transform: translateY(-30px); }
+    100% { opacity: 0; }
+  }
+  .scene2.play .stamp {
+    animation: stampIn 0.55s cubic-bezier(.2,1.5,.4,1) forwards;
+    animation-delay: 2.35s;
+  }
+  .scene2.play .stamp::after {
+    animation: underline 0.5s ease-out forwards;
+    animation-delay: 2.85s;
+  }
+  @keyframes stampIn {
+    0%   { transform: scale(0.4) rotate(-6deg); }
+    60%  { transform: scale(1.08) rotate(2deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  @keyframes underline { to { width: 100%; } }
+
+  /* Scene 3: CTA */
+  .scene3 {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 100px;
+    text-align: center;
+    opacity: 0;
+    animation: scene3Anim 6s ease forwards;
+  }
+  .scene3 p {
+    color: var(--cream);
+    font-size: 50px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin: 0;
+  }
+  .scene3 .badge {
+    margin-top: 44px;
+    padding: 18px 44px;
+    border: 3px solid var(--gold);
+    border-radius: 60px;
+    color: var(--gold-bright);
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  .scene3.play .badge {
+    animation: badgeIn 0.5s ease-out forwards;
+    animation-delay: 4.35s;
+  }
+  @keyframes badgeIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes scene3Anim {
+    0%   { opacity: 0; transform: translateY(30px); }
+    68%  { opacity: 0; transform: translateY(30px); }
+    76%  { opacity: 1; transform: translateY(0); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  .footer {
+    position: absolute;
+    bottom: 70px; left: 0; right: 0;
+    text-align: center;
+    opacity: 0;
+    animation: footerIn 0.6s ease forwards;
+    animation-delay: 5.2s;
+  }
+  .footer .logo {
+    color: var(--cream);
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+  .footer .logo span { color: var(--gold); }
+  @keyframes footerIn { to { opacity: 1; } }
+
+  .goldline {
+    position: absolute;
+    left: 50%; top: 0;
+    width: 4px; height: 0;
+    background: linear-gradient(180deg, transparent, var(--gold), transparent);
+    transform: translateX(-50%);
+    animation: lineGrow 6s linear forwards;
+    opacity: 0.5;
+  }
+  @keyframes lineGrow {
+    0% { height: 0; top: 50%; }
+    100% { height: 1920px; top: 0; }
+  }
+</style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="checker tl"></div>
+    <div class="checker br"></div>
+    <div class="brandmark">SEE GROUP</div>
+
+    <div class="scene1"><p>Хотите понять,<br>в чём сила именно<br>вашего личного бренда?</p></div>
+
+    <div class="scene2" id="scene2">
+      <p class="lead">Напишите нам слово</p>
+      <div class="stamp">БРЕНД</div>
+    </div>
+
+    <div class="scene3" id="scene3">
+      <p>и мы проведём для вас<br>бесплатный мини-разбор</p>
+      <div class="badge">БЕСПЛАТНО</div>
+    </div>
+
+    <div class="footer"><div class="logo">see<span>Group</span></div></div>
+  </div>
+  <script>
+    // trigger the delayed sub-animations that must start exactly with the scene
+    document.getElementById('scene2').classList.add('play');
+    document.getElementById('scene3').classList.add('play');
+  </script>
+</body>
+</html>
