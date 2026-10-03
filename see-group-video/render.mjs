@@ -32,7 +32,9 @@ await page.evaluate(() => window.READY);
 const duration = await page.evaluate(() => window.DURATION);
 const frames = Math.round(duration * FPS);
 
-const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-i', '-',
+const audio = path.join(root, 'assets/soundtrack.wav');   // built by sound.py
+const audioArgs = fs.existsSync(audio) ? ['-i', audio, '-c:a', 'aac', '-b:a', '192k', '-shortest'] : [];
+const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-i', '-', ...audioArgs,
   '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', '-preset', 'medium', '-movflags', '+faststart', out],
   { stdio: ['pipe', 'inherit', 'inherit'] });
 
