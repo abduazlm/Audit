@@ -392,21 +392,29 @@ function ctaScene(t) {
   if (t > T.wipe + .45) {
     ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H);
     ctx.save(); ctx.textAlign = 'left';
-    const x0 = W * .08, cw = W * .84;
-    // title
-    const top = Math.max(H * .1, (H - 1430 * U) / 2);       // vertically centred block
+    // layout: one column in 9:16; in 16:9 title + CTA on the left, cards on the right
+    const Lx = VERTICAL ? (() => {
+      const top = Math.max(H * .1, (H - 1430 * U) / 2), ch = 240 * U, gap = 36 * U, y0 = top + 150 * U;
+      return { tx: W * .08, tw: W * .84, top, cx: W * .08, cw: W * .84, ch, gap, y0,
+               by: y0 + 3 * (ch + gap) + 50 * U, bh: 160 * U, bx: CX, bw: W * .84 };
+    })() : (() => {
+      const ch = 190 * U, gap = 30 * U, y0 = (H - (3 * ch + 2 * gap)) / 2 + 20 * U;
+      return { tx: W * .07, tw: W * .36, top: y0 + 30 * U, cx: W * .49, cw: W * .44, ch, gap, y0,
+               by: y0 + 230 * U, bh: 130 * U, bx: W * .07 + W * .18, bw: W * .36 };
+    })();
+    const top = Lx.top;
     const tk = eExpo(prog(t, T.title, T.title + .6));
     ctx.globalAlpha = tk;
     ctx.fillStyle = C.gold; ctx.font = font(700, 30 * U, TEXT);
-    ctx.fillText('SEE GROUP', x0, top + (1 - tk) * 30 * U);
-    ctx.fillStyle = C.green; ctx.font = font(800, fit('Что мы делаем', 800, 84 * U, DISPLAY, cw), DISPLAY);
-    ctx.fillText('Что мы делаем', x0, top + 95 * U + (1 - tk) * 40 * U);
+    ctx.fillText('SEE GROUP', Lx.tx, top + (1 - tk) * 30 * U);
+    ctx.fillStyle = C.green; ctx.font = font(800, fit('Что мы делаем', 800, 84 * U, DISPLAY, Lx.tw), DISPLAY);
+    ctx.fillText('Что мы делаем', Lx.tx, top + 95 * U + (1 - tk) * 40 * U);
     // direction cards
-    const ch = 240 * U, gap = 36 * U, y0 = top + 150 * U;
+    const { ch, gap, y0, cw } = Lx;
     CARDS.forEach(([title, sub], i) => {
       const k = eOut(prog(t, T.cards[i], T.cards[i] + .55));
       if (k <= 0) return;
-      const y = y0 + i * (ch + gap), x = x0 + (1 - k) * W * .6;
+      const y = y0 + i * (ch + gap), x = Lx.cx + (1 - k) * W * .6;
       ctx.globalAlpha = clamp(k * 1.4);
       ctx.fillStyle = C.green; roundRect(x, y, cw, ch, 28 * U); ctx.fill();
       // pattern strip on the card edge
@@ -414,49 +422,49 @@ function ctaScene(t) {
         ctx.fillStyle = j % 2 ? C.goldPattern : C.greenDeep;
         ctx.fillRect(x + cw - 34 * U, y + j * ch / 4, 34 * U, ch / 4);
       }
-      ctx.fillStyle = C.yellow; ctx.font = font(800, 64 * U, DISPLAY);
+      ctx.fillStyle = C.yellow; ctx.font = font(800, (VERTICAL ? 64 : 56) * U, DISPLAY);
       ctx.fillText(String(i + 1).padStart(2, '0'), x + 44 * U, y + ch / 2 + 24 * U);
-      ctx.fillStyle = C.white; ctx.font = font(800, fit(title, 800, 54 * U, DISPLAY, cw - 260 * U), DISPLAY);
-      ctx.fillText(title, x + 190 * U, y + ch * .47);
+      ctx.fillStyle = C.white; ctx.font = font(800, fit(title, 800, (VERTICAL ? 54 : 46) * U, DISPLAY, cw - 260 * U), DISPLAY);
+      ctx.fillText(title, x + (VERTICAL ? 190 : 170) * U, y + ch * .47);
       ctx.fillStyle = 'rgba(255,255,255,.8)';
-      ctx.font = font(500, fit(sub, 500, 34 * U, TEXT, cw - 260 * U), TEXT);
-      ctx.fillText(sub, x + 190 * U, y + ch * .74);
+      ctx.font = font(500, fit(sub, 500, (VERTICAL ? 34 : 28) * U, TEXT, cw - 260 * U), TEXT);
+      ctx.fillText(sub, x + (VERTICAL ? 190 : 170) * U, y + ch * .74);
     });
     // CTA button
-    const by = y0 + 3 * (ch + gap) + 50 * U, bh = 160 * U;
+    const { by, bh, bx, bw } = Lx;
     const ck = eBack(prog(t, T.cta, T.cta + .5));
     if (ck > 0) {
       const tap = Math.sin(Math.PI * prog(t, T.tap, T.tap + .25));
       const pulse = t > T.cta + .6 ? 1 + .025 * Math.sin((t - T.cta) * 7) : 1;
       const sc = ck * pulse * (1 - .05 * tap);
       ctx.globalAlpha = clamp(ck);
-      ctx.save(); ctx.translate(CX, by + bh / 2); ctx.scale(sc, sc);
+      ctx.save(); ctx.translate(bx, by + bh / 2); ctx.scale(sc, sc);
       ctx.shadowColor = 'rgba(162,4,4,.35)'; ctx.shadowBlur = 40 * U; ctx.shadowOffsetY = 14 * U;
-      ctx.fillStyle = tap > .3 ? '#7e0303' : C.red; roundRect(-cw / 2, -bh / 2, cw, bh, bh / 2); ctx.fill();
+      ctx.fillStyle = tap > .3 ? '#7e0303' : C.red; roundRect(-bw / 2, -bh / 2, bw, bh, bh / 2); ctx.fill();
       ctx.shadowColor = 'transparent';
       ctx.fillStyle = C.white; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.font = font(800, fit('Написать в Direct  →', 800, 52 * U, DISPLAY, cw * .86), DISPLAY);
+      ctx.font = font(800, fit('Написать в Direct  →', 800, (VERTICAL ? 52 : 44) * U, DISPLAY, bw * .86), DISPLAY);
       ctx.fillText('Написать в Direct  →', 0, 3 * U);
       ctx.restore();
       // tap ripple
       const rp = prog(t, T.tap, T.tap + .7);
       if (rp > 0 && rp < 1) {
         ctx.save(); ctx.globalAlpha = 1 - rp; ctx.strokeStyle = C.yellow; ctx.lineWidth = 6 * U;
-        ctx.beginPath(); ctx.arc(CX + cw * .3, by + bh / 2, 20 * U + rp * 120 * U, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(bx + bw * .3, by + bh / 2, 20 * U + rp * 120 * U, 0, Math.PI * 2); ctx.stroke();
         ctx.restore();
       }
       ctx.globalAlpha = clamp(ck); ctx.textAlign = 'center';
       ctx.fillStyle = C.gray; ctx.font = font(500, 36 * U, TEXT);
       ctx.globalAlpha = eOut(prog(t, T.tap + .4, T.tap + .9));
-      ctx.fillText('обсудим ваш проект', CX, by + bh + 70 * U);
+      ctx.fillText('обсудим ваш проект', bx, by + bh + 70 * U);
     }
     const hk = eBack(prog(t, T.handle, T.handle + .5));
     if (hk > 0) {
       ctx.globalAlpha = clamp(hk); ctx.textAlign = 'center';
       ctx.fillStyle = C.green; ctx.font = font(800, 50 * U * Math.max(hk, .01), DISPLAY);
-      ctx.fillText('@seegroup.kz', CX, by + bh + 190 * U);
+      ctx.fillText('@seegroup.kz', bx, by + bh + (VERTICAL ? 190 : 165) * U);
       ctx.fillStyle = C.gray; ctx.font = font(600, 32 * U, TEXT);
-      ctx.fillText('seegroup.studio', CX, by + bh + 245 * U);
+      ctx.fillText('seegroup.studio', bx, by + bh + (VERTICAL ? 245 : 215) * U);
     }
     ctx.restore();
     const fk = eInOut(prog(t, T.footer, T.footer + .8));
