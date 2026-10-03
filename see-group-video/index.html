@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEE Group — Intro</title>
+<style>
+  :root { --bg: #05070d; --fg: #e9eef7; --muted: #8592a8; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+    font-family: "Liberation Sans", Helvetica, Arial, sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+  canvas { width: min(100vw - 32px, 1280px); aspect-ratio: 16 / 9; height: auto; display: block;
+    border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+  .controls { display: flex; gap: 12px; align-items: center; color: var(--muted); font-size: 14px; }
+  button { background: #141a26; color: var(--fg); border: 1px solid #253048; border-radius: 6px;
+    padding: 6px 14px; font: inherit; cursor: pointer; }
+  input[type=range] { width: min(60vw, 520px); }
+  body.capture .controls { display: none; }
+  body.capture canvas { width: 1920px; border-radius: 0; box-shadow: none; }
+  body.capture { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div class="controls">
+  <button id="play">⏸</button>
+  <input id="seek" type="range" min="0" max="15" step="0.01" value="0">
+  <span id="time">0.0 s</span>
+</div>
+<script>
+const W = 1920, H = 1080, DURATION = 15;
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const FONT = '"Liberation Sans", Helvetica, Arial, sans-serif';
+
+// Palette
+const C = {
+  bg0: '#05070d', bg1: '#0b1326',
+  cyan: '#2de2e6', blue: '#3a7bff', violet: '#8b5cf6', white: '#e9eef7', muted: '#8592a8'
+};
+
+// ---------- helpers ----------
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const easeOutCubic = x => 1 - Math.pow(1 - x, 3);
+const easeInOutCubic = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const easeOutBack = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const easeOutExpo = x => x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const rnd = mulberry32(20261003);
+
+// Particles: start scattered, converge onto a ring (the "iris")
+const CX = W / 2, CY = H / 2;
+const particles = Array.from({ length: 420 }, (_, i) => {
+  const ang = rnd() * Math.PI * 2, dist = 700 + rnd() * 900;
+  const ringA = (i / 420) * Math.PI * 2;
+  const ringR = 170 + (rnd() - .5) * 26;
+  return {
+    sx: CX + Math.cos(ang) * dist, sy: CY + Math.sin(ang) * dist,
+    ringA, ringR, size: 1 + rnd() * 2.4, delay: rnd() * .9,
+    hue: rnd(), drift: rnd() * Math.PI * 2, speed: .2 + rnd() * .6
+  };
+});
+// Background stars
+const stars = Array.from({ length: 160 }, () => ({ x: rnd() * W, y: rnd() * H, r: rnd() * 1.4 + .2, p: rnd() * 6 }));
+
+function grad3(x0, y0, x1, y1) {
+  const g = ctx.createLinearGradient(x0, y0, x1, y1);
+  g.addColorStop(0, C.cyan); g.addColorStop(.5, C.blue); g.addColorStop(1, C.violet);
+  return g;
+}
+
+// ---------- scenes ----------
+function background(t) {
+  const g = ctx.createRadialGradient(CX, CY, 50, CX, CY, 1200);
+  g.addColorStop(0, C.bg1); g.addColorStop(1, C.bg0);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  // subtle perspective grid drifting
+  ctx.save();
+  ctx.globalAlpha = .10 * prog(t, 0, 2);
+  ctx.strokeStyle = C.blue; ctx.lineWidth = 1;
+  const off = (t * 40) % 80;
+  for (let x = -W; x < W * 2; x += 80) {
+    ctx.beginPath(); ctx.moveTo(CX + (x - CX) * .15, H * .62); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let i = 0; i < 12; i++) {
+    const y = H * .62 + Math.pow((i * 80 + off) / 960, 2) * (H * .38);
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  ctx.restore();
+
+  for (const s of stars) {
+    ctx.globalAlpha = .25 + .35 * (0.5 + 0.5 * Math.sin(t * 1.3 + s.p));
+    ctx.fillStyle = C.white;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Scene 1 (0–4s): particles converge into an iris; eye outline draws
+function iris(t) {
+  const conv = t;                     // convergence time
+  const fadeOut = 1 - prog(t, 10.4, 11.2) * .0; // iris persists into finale
+  const rot = t * .35;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const p of particles) {
+    const k = easeInOutCubic(prog(conv, .2 + p.delay, 2.6 + p.delay));
+    const a = p.ringA + rot + Math.sin(t * p.speed + p.drift) * .04;
+    const r = p.ringR * (1 + .04 * Math.sin(t * 2 + p.drift));
+    const tx = CX + Math.cos(a) * r, ty = CY + Math.sin(a) * r;
+    const x = lerp(p.sx, tx, k), y = lerp(p.sy, ty, k);
+    const col = p.hue < .33 ? C.cyan : p.hue < .66 ? C.blue : C.violet;
+    ctx.globalAlpha = .35 + .65 * k;
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(x, y, p.size * (1 + (1 - k) * 1.5), 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+
+  // pupil glow
+  const pk = easeOutBack(prog(t, 2.6, 3.6));
+  if (pk > 0) {
+    const pr = 70 * pk * (1 + .05 * Math.sin(t * 3));
+    const g = ctx.createRadialGradient(CX, CY, 0, CX, CY, pr * 2.2);
+    g.addColorStop(0, 'rgba(45,226,230,.95)');
+    g.addColorStop(.35, 'rgba(58,123,255,.55)');
+    g.addColorStop(1, 'rgba(139,92,246,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(CX, CY, pr * 2.2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = C.bg0;
+    ctx.beginPath(); ctx.arc(CX, CY, pr * .55, 0, Math.PI * 2); ctx.fill();
+    // highlight
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    ctx.beginPath(); ctx.arc(CX - pr * .22, CY - pr * .22, pr * .12, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // eye lids (almond outline) drawn progressively
+  const lk = easeInOutCubic(prog(t, 1.4, 3.2));
+  if (lk > 0) {
+    ctx.save();
+    ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.strokeStyle = grad3(CX - 420, CY, CX + 420, CY);
+    ctx.shadowColor = C.blue; ctx.shadowBlur = 25;
+    const open = 1 - .92 * blink(t);
+    const span = 420 * lk;
+    for (const dir of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(CX - span, CY);
+      ctx.quadraticCurveTo(CX, CY + dir * 330 * open * lk, CX + span, CY);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+// one blink at ~3.9s
+function blink(t) { const b = prog(t, 3.85, 4.25); return Math.sin(b * Math.PI); }
+
+// Scene 2 (4–7.5s): eye shifts left, "SEE" + "GROUP" reveal
+function logo(t, x, y, scale, alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y); ctx.scale(scale, scale);
+  ctx.textBaseline = 'alphabetic';
+  const letters = ['S', 'E', 'E'];
+  ctx.font = `900 260px ${FONT}`;
+  let cx = 0;
+  const widths = letters.map(l => ctx.measureText(l).width + 14);
+  const total = widths.reduce((a, b) => a + b, 0);
+  cx = -total / 2;
+  letters.forEach((l, i) => {
+    const k = easeOutBack(prog(t, 4.4 + i * .18, 5.2 + i * .18));
+    ctx.save();
+    ctx.translate(cx + widths[i] / 2, 40 + (1 - k) * 120);
+    ctx.globalAlpha = alpha * clamp(k);
+    ctx.fillStyle = grad3(-200, -200, 200, 50);
+    ctx.shadowColor = 'rgba(58,123,255,.6)'; ctx.shadowBlur = 40;
+    ctx.textAlign = 'center';
+    ctx.fillText(l, 0, 0);
+    ctx.restore();
+    cx += widths[i];
+  });
+  // GROUP with letter-spacing animation
+  const gk = easeOutExpo(prog(t, 5.3, 6.6));
+  ctx.font = `400 64px ${FONT}`;
+  ctx.fillStyle = C.white;
+  ctx.textAlign = 'center';
+  const word = 'GROUP', spacing = lerp(120, 62, gk);
+  ctx.globalAlpha = alpha * gk;
+  for (let i = 0; i < word.length; i++) {
+    ctx.fillText(word[i], (i - (word.length - 1) / 2) * spacing, 140);
+  }
+  // underline sweep
+  const uk = easeInOutCubic(prog(t, 5.8, 6.8));
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = grad3(-total / 2, 0, total / 2, 0);
+  ctx.fillRect(-total / 2, 180, total * uk, 4);
+  ctx.restore();
+}
+
+// Scene 3 (7.5–11.5s): three pillars
+const PILLARS = [
+  { t: 'Видеть', s: 'глубже, чем видно сразу' },
+  { t: 'Понимать', s: 'суть, цифры и риски' },
+  { t: 'Действовать', s: 'точно и вовремя' }
+];
+function pillars(t) {
+  const out = prog(t, 11.0, 11.6);
+  if (t < 7.4 || out >= 1) return;
+  const colW = 520, baseX = CX - colW;
+  PILLARS.forEach((p, i) => {
+    const s = 7.6 + i * .55;
+    const k = easeOutCubic(prog(t, s, s + .8));
+    const x = baseX + i * colW, y = CY + 20;
+    ctx.save();
+    ctx.globalAlpha = k * (1 - out);
+    ctx.translate(0, (1 - k) * 60 - out * 40);
+    // number circle
+    ctx.strokeStyle = [C.cyan, C.blue, C.violet][i]; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(x, y - 150, 44, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k); ctx.stroke();
+    ctx.fillStyle = C.white; ctx.font = `700 34px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(i + 1).padStart(2, '0'), x, y - 150);
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = `800 72px ${FONT}`; ctx.fillStyle = C.white;
+    ctx.fillText(p.t, x, y);
+    ctx.font = `400 34px ${FONT}`; ctx.fillStyle = C.muted;
+    ctx.fillText(p.s, x, y + 60);
+    ctx.restore();
+  });
+  // connecting line
+  const lk = easeInOutCubic(prog(t, 8.0, 9.6));
+  ctx.save();
+  ctx.globalAlpha = (1 - out) * .8;
+  ctx.strokeStyle = grad3(baseX, 0, baseX + 2 * colW, 0); ctx.lineWidth = 2;
+  ctx.setLineDash([10, 12]); ctx.lineDashOffset = -t * 40;
+  ctx.beginPath(); ctx.moveTo(baseX + 60, CY - 130); ctx.lineTo(baseX + 60 + (2 * colW - 120) * lk, CY - 130); ctx.stroke();
+  ctx.restore();
+}
+
+// Final (11.5–15s): lockup + tagline
+function finale(t) {
+  const k = easeOutCubic(prog(t, 11.6, 12.6));
+  if (k <= 0) return;
+  // light sweep
+  const sx = lerp(-400, W + 400, easeInOutCubic(prog(t, 12.2, 13.6)));
+  const g = ctx.createLinearGradient(sx - 200, 0, sx + 200, 0);
+  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(.5, 'rgba(120,180,255,.10)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  const tk = easeOutCubic(prog(t, 12.6, 13.6));
+  ctx.save();
+  ctx.globalAlpha = tk;
+  ctx.textAlign = 'center';
+  ctx.font = `300 54px ${FONT}`;
+  ctx.fillStyle = C.white;
+  ctx.fillText('Видим больше.', CX, CY + 330 + (1 - tk) * 30);
+  ctx.restore();
+}
+
+function vignetteAndFade(t) {
+  const v = ctx.createRadialGradient(CX, CY, H * .35, CX, CY, H * 1.05);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.65)');
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  const fin = prog(t, 0, .5), fout = prog(t, 14.3, 15);
+  const a = Math.max(1 - fin, fout);
+  if (a > 0) { ctx.fillStyle = `rgba(0,0,0,${a})`; ctx.fillRect(0, 0, W, H); }
+}
+
+// ---------- master timeline ----------
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  background(t);
+
+  // Eye moves from center to left (4.2–5.0), hides during pillars, returns above logo in finale
+  const move = easeInOutCubic(prog(t, 4.2, 5.0));
+  const hide = easeInOutCubic(prog(t, 7.0, 7.6));
+  const back = easeInOutCubic(prog(t, 11.4, 12.4));
+  const eyeScale = lerp(lerp(1, .55, move), .32, back) * (1 - hide * (1 - back));
+  const eyeX = lerp(lerp(CX, CX - 560, move), CX, back);
+  const eyeY = lerp(CY, CY - 300, back);
+  if (eyeScale > .01) {
+    ctx.save();
+    ctx.translate(eyeX, eyeY); ctx.scale(eyeScale, eyeScale); ctx.translate(-CX, -CY);
+    iris(t);
+    ctx.restore();
+  }
+
+  // Logo: right side during scene 2, hidden during pillars, centered in finale
+  const lHide = easeInOutCubic(prog(t, 7.0, 7.5));
+  const lx = lerp(CX + 220, CX, back), ly = lerp(CY - 20, CY + 30, back);
+  const la = back > 0 ? back : 1 - lHide;
+  logo(t < 11.4 ? t : 7.4, lx, ly, lerp(1, 1.05, back), la);
+
+  pillars(t);
+  finale(t);
+  vignetteAndFade(t);
+}
+window.renderFrame = renderFrame;
+window.DURATION = DURATION;
+
+// ---------- interactive player ----------
+if (!location.search.includes('capture')) {
+  const playBtn = document.getElementById('play'), seek = document.getElementById('seek'), time = document.getElementById('time');
+  let playing = true, start = performance.now(), cur = 0;
+  playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? '⏸' : '▶'; start = performance.now() - cur * 1000; };
+  seek.oninput = () => { cur = +seek.value; start = performance.now() - cur * 1000; renderFrame(cur); time.textContent = cur.toFixed(1) + ' s'; };
+  (function loop(now) {
+    if (playing) { cur = ((now - start) / 1000) % DURATION; seek.value = cur; time.textContent = cur.toFixed(1) + ' s'; renderFrame(cur); }
+    requestAnimationFrame(loop);
+  })(performance.now());
+} else {
+  document.body.classList.add('capture');
+}
+</script>
+</body>
+</html>
