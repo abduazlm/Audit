@@ -115,21 +115,19 @@ sfx = np.stack([L, R], 1)
 sfx /= max(1.0, np.max(np.abs(sfx)) / .9)
 sfx[-int(.6 * SR):] *= np.linspace(1, 0, int(.6 * SR))[:, None]
 
-# voiceover track(s)
-import os
-vo_files = [(f, at) for f, at in (('assets/voiceover.mp3', VO_AT),) if os.path.exists(f)]
-vo_inputs = [a for f, _ in vo_files for a in ('-i', f)]
-vo_chain = ''.join(f'[{i + 1}]aresample={SR},highpass=f=80,acompressor=threshold=-20dB:ratio=3:attack=5:release=120,'
-                   f'adelay={int(at * 1000)}|{int(at * 1000)},pan=stereo|c0=c0|c1=c0,volume=1.6[vo{i}];'
-                   for i, (f, at) in enumerate(vo_files))
-vo_labels = ''.join(f'[vo{i}]' for i in range(len(vo_files)))
 pcm = (sfx * 32767).astype('<i2').tobytes()
 open('/tmp/sfx.raw', 'wb').write(pcm)
-# mix: voiceover (cleaned, compressed, delayed) + SFX, loudness-normalised for Instagram
+# mix: voiceover (cleaned, compressed, delayed) + SFX + music ducked under the voice,
+# loudness-normalised for Instagram. Music comes from music.py.
+d = int(VO_AT * 1000)
 subprocess.run(['ffmpeg', '-y', '-loglevel', 'error',
     '-f', 's16le', '-ar', str(SR), '-ac', '2', '-i', '/tmp/sfx.raw',
-    *vo_inputs,
-    '-filter_complex', vo_chain +
-    f'[0]volume=0.9[fx];{vo_labels}[fx]amix=inputs={len(vo_files) + 1}:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11,'
+    '-i', 'assets/voiceover.mp3', '-i', 'assets/music.wav',
+    '-filter_complex',
+    f'[1]aresample={SR},highpass=f=80,acompressor=threshold=-20dB:ratio=3:attack=5:release=120,'
+    f'adelay={d}|{d},pan=stereo|c0=c0|c1=c0,volume=1.6,asplit[vo][key];'
+    '[2]volume=0.24[mus];'
+    '[mus][key]sidechaincompress=threshold=0.015:ratio=8:attack=15:release=400:makeup=1[duck];'
+    '[0]volume=0.9[fx];[vo][fx][duck]amix=inputs=3:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11,'
     f'atrim=0:{DUR}[out]', '-map', '[out]', '-ar', str(SR), 'assets/soundtrack.wav'], check=True)
 print('assets/soundtrack.wav')
