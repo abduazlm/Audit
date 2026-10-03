@@ -102,8 +102,10 @@ const T = {
   hookLines: [1.15, 1.4, 1.65, 1.9], glitch: [2.75, 3.15], hookOut: 3.25,
   letters: [3.6, 4.56, 5.47],
   merge: [6.15, 6.85], group: 6.95, shine: [7.35, 8.0], lift: [7.45, 8.15],
-  pills: [7.8, 8.5, 9.25, 10.05], mission: 10.9, handle: 12.3, footer: 12.7,
-  end: 15.5
+  pills: [7.8, 8.5, 9.25, 10.05], mission: 10.9,
+  wipe: 13.85, title: 14.45, cards: [14.75, 15.25, 15.75], cta: 16.5, tap: 17.35, handle: 17.0, footer: 17.2,
+  vo2: 14.2,                                   // optional assets/voiceover2.mp3 (directions + CTA)
+  end: 19.5
 };
 const DURATION = T.end;
 
@@ -373,20 +375,108 @@ function scene4(t) {
       ctx.font = font(500, fit(l, 500, ts, TEXT, W * .88), TEXT);
       ctx.fillText(l, CX, pillsBottom + 70 * U + i * ts * 1.3 + (1 - lk) * 20 * U);
     });
-    const ck = eBack(prog(t, T.handle, T.handle + .5));
-    ctx.globalAlpha = clamp(ck); ctx.fillStyle = C.yellow;
-    ctx.font = font(700, (VERTICAL ? 40 : 32) * U * Math.max(ck, .01), DISPLAY);
-    ctx.fillText('@seegroup.kz', CX, pillsBottom + 70 * U + lines.length * ts * 1.3 + 50 * U);
     ctx.restore();
   }
 
-  const fk = eInOut(prog(t, T.footer, T.footer + .8));
-  if (fk > 0) {
-    const bh = 34 * U;
-    ctx.fillStyle = C.gold; ctx.fillRect(0, H - bh - 18 * U, W * fk, 8 * U);
-    [C.red, C.goldPattern, C.green].forEach((c, i) => {
-      ctx.fillStyle = c; ctx.fillRect(W * i / 3, H - bh, W / 3 * eOut(prog(t, T.footer + .2 + i * .12, T.footer + .8 + i * .12)), bh);
+}
+
+// ---------- scene 5: directions + call to action (13.85 – 19.5 s) ----------
+const CARDS = [
+  ['Личный бренд', 'для экспертов и предпринимателей'],
+  ['Продакшн', 'реклама, Reels и имиджевые ролики'],
+  ['SMM', 'маркетинг и соцсети для компаний']
+];
+function ctaScene(t) {
+  if (t < T.wipe) return;
+  const n = VERTICAL ? 6 : 10, cell = W / n, rows = Math.ceil(H / cell) + 1;
+  if (t > T.wipe + .45) {
+    ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.textAlign = 'left';
+    const x0 = W * .08, cw = W * .84;
+    // title
+    const top = Math.max(H * .1, (H - 1430 * U) / 2);       // vertically centred block
+    const tk = eExpo(prog(t, T.title, T.title + .6));
+    ctx.globalAlpha = tk;
+    ctx.fillStyle = C.gold; ctx.font = font(700, 30 * U, TEXT);
+    ctx.fillText('SEE GROUP', x0, top + (1 - tk) * 30 * U);
+    ctx.fillStyle = C.green; ctx.font = font(800, fit('Что мы делаем', 800, 84 * U, DISPLAY, cw), DISPLAY);
+    ctx.fillText('Что мы делаем', x0, top + 95 * U + (1 - tk) * 40 * U);
+    // direction cards
+    const ch = 240 * U, gap = 36 * U, y0 = top + 150 * U;
+    CARDS.forEach(([title, sub], i) => {
+      const k = eOut(prog(t, T.cards[i], T.cards[i] + .55));
+      if (k <= 0) return;
+      const y = y0 + i * (ch + gap), x = x0 + (1 - k) * W * .6;
+      ctx.globalAlpha = clamp(k * 1.4);
+      ctx.fillStyle = C.green; roundRect(x, y, cw, ch, 28 * U); ctx.fill();
+      // pattern strip on the card edge
+      for (let j = 0; j < 4; j++) {
+        ctx.fillStyle = j % 2 ? C.goldPattern : C.greenDeep;
+        ctx.fillRect(x + cw - 34 * U, y + j * ch / 4, 34 * U, ch / 4);
+      }
+      ctx.fillStyle = C.yellow; ctx.font = font(800, 64 * U, DISPLAY);
+      ctx.fillText(String(i + 1).padStart(2, '0'), x + 44 * U, y + ch / 2 + 24 * U);
+      ctx.fillStyle = C.white; ctx.font = font(800, 54 * U, DISPLAY);
+      ctx.fillText(title, x + 190 * U, y + ch * .47);
+      ctx.fillStyle = 'rgba(255,255,255,.8)';
+      ctx.font = font(500, fit(sub, 500, 34 * U, TEXT, cw - 260 * U), TEXT);
+      ctx.fillText(sub, x + 190 * U, y + ch * .74);
     });
+    // CTA button
+    const by = y0 + 3 * (ch + gap) + 50 * U, bh = 160 * U;
+    const ck = eBack(prog(t, T.cta, T.cta + .5));
+    if (ck > 0) {
+      const tap = Math.sin(Math.PI * prog(t, T.tap, T.tap + .25));
+      const pulse = t > T.cta + .6 ? 1 + .025 * Math.sin((t - T.cta) * 7) : 1;
+      const sc = ck * pulse * (1 - .05 * tap);
+      ctx.globalAlpha = clamp(ck);
+      ctx.save(); ctx.translate(CX, by + bh / 2); ctx.scale(sc, sc);
+      ctx.shadowColor = 'rgba(162,4,4,.35)'; ctx.shadowBlur = 40 * U; ctx.shadowOffsetY = 14 * U;
+      ctx.fillStyle = tap > .3 ? '#7e0303' : C.red; roundRect(-cw / 2, -bh / 2, cw, bh, bh / 2); ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = C.white; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = font(800, fit('Написать в Direct  →', 800, 52 * U, DISPLAY, cw * .86), DISPLAY);
+      ctx.fillText('Написать в Direct  →', 0, 3 * U);
+      ctx.restore();
+      // tap ripple
+      const rp = prog(t, T.tap, T.tap + .7);
+      if (rp > 0 && rp < 1) {
+        ctx.save(); ctx.globalAlpha = 1 - rp; ctx.strokeStyle = C.yellow; ctx.lineWidth = 6 * U;
+        ctx.beginPath(); ctx.arc(CX + cw * .3, by + bh / 2, 20 * U + rp * 120 * U, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
+      ctx.globalAlpha = clamp(ck); ctx.textAlign = 'center';
+      ctx.fillStyle = C.gray; ctx.font = font(500, 36 * U, TEXT);
+      ctx.fillText('обсудим ваш проект', CX, by + bh + 70 * U);
+    }
+    const hk = eBack(prog(t, T.handle, T.handle + .5));
+    if (hk > 0) {
+      ctx.globalAlpha = clamp(hk); ctx.textAlign = 'center';
+      ctx.fillStyle = C.green; ctx.font = font(800, 50 * U * Math.max(hk, .01), DISPLAY);
+      ctx.fillText('@seegroup.kz', CX, by + bh + 190 * U);
+      ctx.fillStyle = C.gray; ctx.font = font(600, 32 * U, TEXT);
+      ctx.fillText('seegroup.studio', CX, by + bh + 245 * U);
+    }
+    ctx.restore();
+    const fk = eInOut(prog(t, T.footer, T.footer + .8));
+    if (fk > 0) {
+      const bh2 = 34 * U;
+      ctx.fillStyle = C.gold; ctx.fillRect(0, H - bh2 - 18 * U, W * fk, 8 * U);
+      [C.red, C.goldPattern, C.green].forEach((c, i) => {
+        ctx.fillStyle = c; ctx.fillRect(W * i / 3, H - bh2, W / 3 * eOut(prog(t, T.footer + .2 + i * .12, T.footer + .8 + i * .12)), bh2);
+      });
+    }
+  }
+  // brand-pattern wipe: tiles cover the logo scene, then flip away to reveal the CTA
+  for (let r = 0; r < rows; r++) for (let c = 0; c < n; c++) {
+    const d = (r + c) / (rows + n);
+    const kin = eOut(prog(t, T.wipe + d * .3, T.wipe + d * .3 + .2));
+    const kout = eInOut(prog(t, T.wipe + .5 + d * .35, T.wipe + .5 + d * .35 + .25));
+    const k = kin * (1 - kout);
+    if (k <= 0) continue;
+    const s2 = cell * k + 1;
+    ctx.fillStyle = (r + c) % 2 ? C.goldPattern : C.green;
+    ctx.fillRect(c * cell + (cell - s2) / 2, (H - rows * cell) / 2 + r * cell + (cell - s2) / 2, s2, s2);
   }
 }
 
@@ -405,6 +495,7 @@ function renderFrame(t) {
   greenBg(t);
   scene3(t);
   scene4(t);
+  ctaScene(t);
   fades(t);
 }
 

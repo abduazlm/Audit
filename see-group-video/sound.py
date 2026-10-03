@@ -2,7 +2,7 @@
 import subprocess, numpy as np
 
 SR = 48000
-DUR = 15.5
+DUR = 19.5
 VO_AT = 1.2
 rng = np.random.default_rng(7)
 L = np.zeros(int(SR * DUR)); R = np.zeros_like(L)
@@ -99,21 +99,37 @@ place(norm(shimmer(.9)), 7.3, .12, pan=.3)             # logo shine
 for i, tt in enumerate((7.8, 8.5, 9.25, 10.05)):       # services pills
     place(norm(pop(880 + 110 * i)), tt + .03, .14, pan=(-.4, .4, -.2, .2)[i])
 place(norm(whoosh(.6)), 10.85, .12)                    # mission
-place(norm(ding(1046)), 12.3, .22)                     # @seegroup.kz
-place(norm(whoosh(.7)), 12.7, .16)                     # footer bars
+for k in range(10):                                    # brand-pattern wipe
+    place(norm(tick(1500 + 180 * k)), 13.85 + k * .04, .07, pan=-.6 + k * .13)
+place(norm(whoosh(.7)), 13.8, .28)
+place(norm(whoosh(.6, rise=False)), 14.35, .2)
+for i, tt in enumerate((14.75, 15.25, 15.75)):         # direction cards
+    place(norm(whoosh(.35)), tt - .05, .12, pan=.5)
+    place(norm(thump()), tt + .2, .2)
+place(norm(pop(660)), 16.5, .3)                        # CTA button
+place(norm(ding(1046)), 17.0, .2)                      # @seegroup.kz
+place(norm(whoosh(.7)), 17.2, .14)                     # footer bars
+place(norm(tick(3000)), 17.35, .3)                     # tap
+place(norm(pop(1320)), 17.37, .15)
 sfx = np.stack([L, R], 1)
 sfx /= max(1.0, np.max(np.abs(sfx)) / .9)
 sfx[-int(.6 * SR):] *= np.linspace(1, 0, int(.6 * SR))[:, None]
 
+# voiceover parts: main read + optional second take for directions/CTA
+import os
+vo_files = [(f, at) for f, at in (('assets/voiceover.mp3', VO_AT), ('assets/voiceover2.mp3', 14.2)) if os.path.exists(f)]
+vo_inputs = [a for f, _ in vo_files for a in ('-i', f)]
+vo_chain = ''.join(f'[{i + 1}]aresample={SR},highpass=f=80,acompressor=threshold=-20dB:ratio=3:attack=5:release=120,'
+                   f'adelay={int(at * 1000)}|{int(at * 1000)},pan=stereo|c0=c0|c1=c0,volume=1.6[vo{i}];'
+                   for i, (f, at) in enumerate(vo_files))
+vo_labels = ''.join(f'[vo{i}]' for i in range(len(vo_files)))
 pcm = (sfx * 32767).astype('<i2').tobytes()
 open('/tmp/sfx.raw', 'wb').write(pcm)
 # mix: voiceover (cleaned, compressed, delayed) + SFX, loudness-normalised for Instagram
 subprocess.run(['ffmpeg', '-y', '-loglevel', 'error',
     '-f', 's16le', '-ar', str(SR), '-ac', '2', '-i', '/tmp/sfx.raw',
-    '-i', 'assets/voiceover.mp3',
-    '-filter_complex',
-    f'[1]aresample={SR},highpass=f=80,acompressor=threshold=-20dB:ratio=3:attack=5:release=120,'
-    f'adelay={int(VO_AT * 1000)}|{int(VO_AT * 1000)},pan=stereo|c0=c0|c1=c0,volume=1.6[vo];'
-    '[0]volume=0.9[fx];[vo][fx]amix=inputs=2:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11,'
+    *vo_inputs,
+    '-filter_complex', vo_chain +
+    f'[0]volume=0.9[fx];{vo_labels}[fx]amix=inputs={len(vo_files) + 1}:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11,'
     f'atrim=0:{DUR}[out]', '-map', '[out]', '-ar', str(SR), 'assets/soundtrack.wav'], check=True)
 print('assets/soundtrack.wav')
