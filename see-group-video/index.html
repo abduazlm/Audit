@@ -107,36 +107,54 @@ const T = {
 };
 const DURATION = T.end;
 
-// ---------- scene 1: checkerboard pattern (0 – 1.7 s) ----------
-function checker(t) {
-  if (t > 1.8) return;
-  const n = VERTICAL ? 6 : 10, cell = W / n, rows = Math.ceil(H / cell) + 1;
-  const oy = (H - rows * cell) / 2;
-  for (let r = 0; r < rows; r++) for (let c = 0; c < n; c++) {
-    const d = (r + c) / (rows + n);                 // diagonal wave
-    const kin = eBack(prog(t, d * .55, d * .55 + .35));
-    const kout = eInOut(prog(t, 1.0 + d * .5, 1.0 + d * .5 + .3));
-    const k = kin * (1 - kout);
-    if (k <= 0) continue;
-    const col = (r + c) % 2 ? C.goldPattern : C.green;
-    const s = cell * k, x = c * cell + (cell - s) / 2, y = oy + r * cell + (cell - s) / 2;
-    ctx.save();
-    ctx.translate(x + s / 2, y + s / 2); ctx.rotate((1 - kin) * .6 + kout * -.4);
-    ctx.fillStyle = col; ctx.fillRect(-s / 2, -s / 2, s, s);
-    ctx.restore();
+// ---------- scene 1: camera viewfinder opening (0 – 3.7 s) ----------
+// Recording frame: corner brackets, REC, timecode, rule-of-thirds grid, AF square locking focus.
+function viewfinder(t) {
+  const a = eOut(prog(t, .05, .6)), out = eInOut(prog(t, T.hookOut, T.hookOut + .45));
+  if (a <= 0 || out >= 1) return;
+  const inset = lerp(-80 * U, 64 * U, a) - out * 160 * U, len = 110 * U;
+  ctx.save();
+  ctx.globalAlpha = 1 - out;
+  // rule-of-thirds grid
+  ctx.strokeStyle = 'rgba(16,68,52,.10)'; ctx.lineWidth = 2 * U;
+  const gk = eInOut(prog(t, .25, .8));
+  for (const f of [1 / 3, 2 / 3]) {
+    ctx.beginPath(); ctx.moveTo(W * f, CY - H / 2 * gk); ctx.lineTo(W * f, CY + H / 2 * gk); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(CX - W / 2 * gk, H * f); ctx.lineTo(CX + W / 2 * gk, H * f); ctx.stroke();
   }
-  // brand plate
-  const mk = eBack(prog(t, .45, .85)) * (1 - eInOut(prog(t, .95, 1.25)));
-  if (mk > 0) {
-    const s = (VERTICAL ? .62 : .42) * W / LOGO.w;
-    const bw = LOGO.w * s + 120 * U, bh = LOGO.h * s + 90 * U;
-    ctx.save(); ctx.translate(CX, CY); ctx.scale(mk, mk);
-    ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 40 * U; ctx.shadowOffsetY = 12 * U;
-    ctx.fillStyle = C.paper; roundRect(-bw / 2, -bh / 2, bw, bh, 28 * U); ctx.fill();
-    ctx.shadowColor = 'transparent';
-    drawSlice(C.green, 0, LOGO.w, -LOGO.w * s / 2, -bh / 2 + 45 * U + LOGO.midY * s, s);
-    ctx.restore();
+  // corner brackets
+  ctx.strokeStyle = C.green; ctx.lineWidth = 7 * U; ctx.lineCap = 'square';
+  for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+    const x = sx > 0 ? inset : W - inset, y = sy > 0 ? inset : H - inset;
+    ctx.beginPath(); ctx.moveTo(x, y + sy * len); ctx.lineTo(x, y); ctx.lineTo(x + sx * len, y); ctx.stroke();
   }
+  // HUD text
+  const hk = eOut(prog(t, .35, .7));
+  ctx.globalAlpha = (1 - out) * hk;
+  const hy = inset + 70 * U, fs = 30 * U;
+  ctx.font = font(700, fs, TEXT); ctx.textBaseline = 'middle';
+  if (Math.floor(t * 2.2) % 2 === 0 || t < .7) {
+    ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(inset + 52 * U, hy, 13 * U, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = C.green; ctx.textAlign = 'left'; ctx.fillText('REC', inset + 78 * U, hy);
+  const fr = Math.floor(t * 25), tc = `00:00:${String(Math.floor(fr / 25)).padStart(2, '0')}:${String(fr % 25).padStart(2, '0')}`;
+  ctx.textAlign = 'right'; ctx.fillText(tc, W - inset - 40 * U, hy);
+  ctx.font = font(500, 26 * U, TEXT); ctx.fillStyle = C.gray;
+  ctx.textAlign = 'left'; ctx.fillText('4K · 25 FPS', inset + 40 * U, H - inset - 60 * U);
+  ctx.textAlign = 'right'; ctx.fillText('ISO 400   ƒ1.8   1/50', W - inset - 40 * U, H - inset - 60 * U);
+  // AF square: hunts, then locks (turns gold) and gives way to the hook
+  const ak = eBack(prog(t, .45, .8)), lock = t > .78, af = 1 - eOut(prog(t, 1.1, 1.4));
+  if (ak > 0 && af > 0) {
+    ctx.globalAlpha = (1 - out) * af;
+    const sz = 150 * U * lerp(1.6, 1, ak), c = 34 * U;
+    ctx.strokeStyle = lock ? C.gold : C.green; ctx.lineWidth = 5 * U;
+    for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+      const x = CX - sx * sz / 2, y = CY - sy * sz / 2;
+      ctx.beginPath(); ctx.moveTo(x, y + sy * c); ctx.lineTo(x, y); ctx.lineTo(x + sx * c, y); ctx.stroke();
+    }
+    if (lock) { ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(CX, CY, 6 * U, 0, Math.PI * 2); ctx.fill(); }
+  }
+  ctx.restore();
 }
 function roundRect(x, y, w, h, r) {
   r = Math.min(r, w / 2, h / 2);
@@ -163,6 +181,8 @@ function hook(t) {
     const gk = Math.sin(Math.PI * prog(t, T.glitch[0], T.glitch[1]));
     const dx = i === 3 ? Math.sin(t * 70) * 12 * U * gk : 0;
     ctx.font = font(800, size, DISPLAY);
+    const blur = 14 * U * (1 - eOut(prog(t, T.hookLines[i], T.hookLines[i] + .5)));
+    if (blur > .3) ctx.filter = `blur(${blur.toFixed(1)}px)`;
     const yy = y + (1 - k) * size * 1.3 - ko * size * 1.3;
     if (i === 3 && gk > 0) {                         // chromatic split on «не работает»
       ctx.globalAlpha = .45 * gk; ctx.fillStyle = C.yellow; ctx.fillText(s, CX + dx + 10 * U, yy);
@@ -380,8 +400,8 @@ function renderFrame(t) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.globalAlpha = 1;
   ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H);
+  viewfinder(t);
   hook(t);
-  checker(t);
   greenBg(t);
   scene3(t);
   scene4(t);

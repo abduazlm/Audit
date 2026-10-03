@@ -71,12 +71,21 @@ def ding(f):
     n = int(1.6 * SR); t = np.arange(n) / SR
     s = sum(a * np.sin(2 * np.pi * f * m * t) * env_exp(n, d) for m, a, d in ((1, 1, .5), (2.76, .5, .25), (5.4, .25, .12)))
     return reverb(s, 1.2, .3)
+def beep():
+    n = int(.07 * SR); t = np.arange(n) / SR
+    return np.sin(2 * np.pi * 2600 * t) * np.minimum(1, np.arange(n)[::-1] / (.01 * SR)) * np.minimum(1, np.arange(n) / 200)
+def shutter():
+    n = int(.25 * SR); t = np.arange(n) / SR
+    c1 = onepole(rng.standard_normal(n), 4000) * env_exp(n, .012)
+    c2 = np.roll(c1 * .7, int(.06 * SR)); c2[:int(.06 * SR)] = 0
+    return reverb(c1 + c2, .4, .15)
 def norm(x): return x / (np.max(np.abs(x)) + 1e-9)
 
 # ---- timeline (keep in sync with T in index.html) ----
-for k in range(9):                                     # checker tiles popping in
-    place(norm(tick(1800 + 260 * k)), k * .065, .10, pan=-.6 + k * .15)
-place(norm(whoosh(.7, rise=False)), .95, .30)          # tiles flip away
+place(norm(whoosh(.5)), .02, .18)                     # viewfinder frame slides in
+place(norm(shutter()), .5, .35)                        # REC starts
+place(norm(beep()), .78, .16)                          # AF lock: double beep
+place(norm(beep()), .9, .16)
 for i, tt in enumerate((1.15, 1.4, 1.65, 1.9)):        # hook lines landing
     place(norm(thump()), tt + .08, .22)
 place(norm(glitch(.4)), 2.75, .16)                     # «не работает?»
