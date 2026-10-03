@@ -3,317 +3,413 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SEE Group — Intro</title>
+<title>SEE Group Intro</title>
+<link rel="stylesheet" href="assets/fonts.css">
 <style>
-  :root { --bg: #05070d; --fg: #e9eef7; --muted: #8592a8; }
-  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
-    font-family: "Liberation Sans", Helvetica, Arial, sans-serif; }
-  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
-  canvas { width: min(100vw - 32px, 1280px); aspect-ratio: 16 / 9; height: auto; display: block;
-    border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
-  .controls { display: flex; gap: 12px; align-items: center; color: var(--muted); font-size: 14px; }
-  button { background: #141a26; color: var(--fg); border: 1px solid #253048; border-radius: 6px;
-    padding: 6px 14px; font: inherit; cursor: pointer; }
-  input[type=range] { width: min(60vw, 520px); }
+  :root { --bg: #0c1f19; --fg: #f4f1ea; --muted: #9fb3aa; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--fg);
+    font-family: Montserrat, Arial, sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    min-height: 100vh; padding: 16px; box-sizing: border-box; }
+  canvas { max-width: 100%; max-height: calc(100vh - 90px); height: auto; display: block;
+    border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; color: var(--muted); font-size: 14px; }
+  button, a.btn { background: #163a2e; color: var(--fg); border: 1px solid #2b5a49; border-radius: 6px;
+    padding: 6px 14px; font: inherit; cursor: pointer; text-decoration: none; }
+  input[type=range] { width: min(60vw, 480px); accent-color: #A37E2D; }
+  body.capture { display: block; padding: 0; }
   body.capture .controls { display: none; }
-  body.capture canvas { width: 1920px; border-radius: 0; box-shadow: none; }
-  body.capture { display: block; }
+  body.capture canvas { max-width: none; max-height: none; border-radius: 0; box-shadow: none; }
 </style>
 </head>
 <body>
-<canvas id="c" width="1920" height="1080"></canvas>
+<canvas id="c"></canvas>
 <div class="controls">
   <button id="play">⏸</button>
-  <input id="seek" type="range" min="0" max="15" step="0.01" value="0">
+  <input id="seek" type="range" min="0" max="18" step="0.01" value="0">
   <span id="time">0.0 s</span>
+  <a class="btn" id="fmt" href="?format=vertical">9:16</a>
 </div>
 <script>
-const W = 1920, H = 1080, DURATION = 15;
+// ------------------------------------------------------------------
+// SEE Group — brand intro. Deterministic: renderFrame(t) draws frame t.
+// ?format=vertical → 1080x1920 (Reels), default → 1920x1080.
+// ------------------------------------------------------------------
+const params = new URLSearchParams(location.search);
+const VERTICAL = params.get('format') === 'vertical';
+const W = VERTICAL ? 1080 : 1920, H = VERTICAL ? 1920 : 1080, DURATION = 18;
+const U = Math.min(W, H) / 1080;          // base unit
+const CX = W / 2, CY = H / 2;
 const cv = document.getElementById('c');
+cv.width = W; cv.height = H;
+cv.style.width = params.has('capture') ? W + 'px' : (VERTICAL ? 'auto' : '1280px');
+cv.style.aspectRatio = `${W} / ${H}`;
 const ctx = cv.getContext('2d');
-const FONT = '"Liberation Sans", Helvetica, Arial, sans-serif';
 
-// Palette
+// Brand palette (brandbook p.16) + pattern tones (p.17)
 const C = {
-  bg0: '#05070d', bg1: '#0b1326',
-  cyan: '#2de2e6', blue: '#3a7bff', violet: '#8b5cf6', white: '#e9eef7', muted: '#8592a8'
+  green: '#104434', greenDeep: '#062a20', greenMid: '#0b6b4a', glow: '#22c08a',
+  red: '#A20404', redBright: '#E30A0A',
+  gold: '#A37E2D', goldPattern: '#C2902F', yellow: '#FDC854',
+  gray: '#545454', white: '#FFFFFF', paper: '#F7F5F0'
 };
+const DISPLAY = 'Unbounded, Montserrat, Arial, sans-serif';   // stand-in for Helios Extended
+const TEXT = 'Montserrat, Arial, sans-serif';
 
 // ---------- helpers ----------
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const lerp = (a, b, t) => a + (b - a) * t;
 const prog = (t, a, b) => clamp((t - a) / (b - a));
-const easeOutCubic = x => 1 - Math.pow(1 - x, 3);
-const easeInOutCubic = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-const easeOutBack = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
-const easeOutExpo = x => x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+const eOut = x => 1 - Math.pow(1 - x, 3);
+const eInOut = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const eBack = x => { const c1 = 1.70158, c3 = c1 + 1; return x <= 0 ? 0 : 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const eExpo = x => x >= 1 ? 1 : 1 - Math.pow(2, -10 * x);
 
-function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
-  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-const rnd = mulberry32(20261003);
-
-// Particles: start scattered, converge onto a ring (the "iris")
-const CX = W / 2, CY = H / 2;
-const particles = Array.from({ length: 420 }, (_, i) => {
-  const ang = rnd() * Math.PI * 2, dist = 700 + rnd() * 900;
-  const ringA = (i / 420) * Math.PI * 2;
-  const ringR = 170 + (rnd() - .5) * 26;
-  return {
-    sx: CX + Math.cos(ang) * dist, sy: CY + Math.sin(ang) * dist,
-    ringA, ringR, size: 1 + rnd() * 2.4, delay: rnd() * .9,
-    hue: rnd(), drift: rnd() * Math.PI * 2, speed: .2 + rnd() * .6
-  };
-});
-// Background stars
-const stars = Array.from({ length: 160 }, () => ({ x: rnd() * W, y: rnd() * H, r: rnd() * 1.4 + .2, p: rnd() * 6 }));
-
-function grad3(x0, y0, x1, y1) {
-  const g = ctx.createLinearGradient(x0, y0, x1, y1);
-  g.addColorStop(0, C.cyan); g.addColorStop(.5, C.blue); g.addColorStop(1, C.violet);
-  return g;
+function font(weight, size, family) { return `${weight} ${Math.round(size)}px ${family}`; }
+// largest size ≤ max at which text fits maxW
+function fit(text, weight, max, family, maxW) {
+  ctx.font = font(weight, max, family);
+  const w = ctx.measureText(text).width;
+  return w > maxW ? max * maxW / w : max;
 }
 
-// ---------- scenes ----------
-function background(t) {
-  const g = ctx.createRadialGradient(CX, CY, 50, CX, CY, 1200);
-  g.addColorStop(0, C.bg1); g.addColorStop(1, C.bg0);
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-
-  // subtle perspective grid drifting
-  ctx.save();
-  ctx.globalAlpha = .10 * prog(t, 0, 2);
-  ctx.strokeStyle = C.blue; ctx.lineWidth = 1;
-  const off = (t * 40) % 80;
-  for (let x = -W; x < W * 2; x += 80) {
-    ctx.beginPath(); ctx.moveTo(CX + (x - CX) * .15, H * .62); ctx.lineTo(x, H); ctx.stroke();
-  }
-  for (let i = 0; i < 12; i++) {
-    const y = H * .62 + Math.pow((i * 80 + off) / 960, 2) * (H * .38);
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-  }
+// ---------- logo (extracted from brandbook, white on transparent) ----------
+const LOGO = { w: 1950, h: 441, see: [[0, 291], [303, 527], [536, 761]], group: [780, 1950], midY: 212 };
+const logoImg = new Image();
+const tintCache = {};
+function tinted(color) {
+  if (tintCache[color]) return tintCache[color];
+  const c = document.createElement('canvas'); c.width = LOGO.w; c.height = LOGO.h;
+  const x = c.getContext('2d');
+  x.drawImage(logoImg, 0, 0); x.globalCompositeOperation = 'source-in';
+  x.fillStyle = color; x.fillRect(0, 0, LOGO.w, LOGO.h);
+  return (tintCache[color] = c);
+}
+// draw slice [sx0,sx1] of the logo so that logo-point (sx0, midY) lands at (x, y) with scale s
+function drawSlice(color, sx0, sx1, x, y, s, alpha = 1) {
+  if (alpha <= 0 || s <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha;
+  ctx.drawImage(tinted(color), sx0, 0, sx1 - sx0, LOGO.h, x, y - LOGO.midY * s, (sx1 - sx0) * s, LOGO.h * s);
   ctx.restore();
-
-  for (const s of stars) {
-    ctx.globalAlpha = .25 + .35 * (0.5 + 0.5 * Math.sin(t * 1.3 + s.p));
-    ctx.fillStyle = C.white;
-    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
-  }
-  ctx.globalAlpha = 1;
 }
 
-// Scene 1 (0–4s): particles converge into an iris; eye outline draws
-function iris(t) {
-  const conv = t;                     // convergence time
-  const fadeOut = 1 - prog(t, 10.4, 11.2) * .0; // iris persists into finale
-  const rot = t * .35;
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-  for (const p of particles) {
-    const k = easeInOutCubic(prog(conv, .2 + p.delay, 2.6 + p.delay));
-    const a = p.ringA + rot + Math.sin(t * p.speed + p.drift) * .04;
-    const r = p.ringR * (1 + .04 * Math.sin(t * 2 + p.drift));
-    const tx = CX + Math.cos(a) * r, ty = CY + Math.sin(a) * r;
-    const x = lerp(p.sx, tx, k), y = lerp(p.sy, ty, k);
-    const col = p.hue < .33 ? C.cyan : p.hue < .66 ? C.blue : C.violet;
-    ctx.globalAlpha = .35 + .65 * k;
-    ctx.fillStyle = col;
-    ctx.beginPath(); ctx.arc(x, y, p.size * (1 + (1 - k) * 1.5), 0, Math.PI * 2); ctx.fill();
-  }
-  ctx.restore();
-
-  // pupil glow
-  const pk = easeOutBack(prog(t, 2.6, 3.6));
-  if (pk > 0) {
-    const pr = 70 * pk * (1 + .05 * Math.sin(t * 3));
-    const g = ctx.createRadialGradient(CX, CY, 0, CX, CY, pr * 2.2);
-    g.addColorStop(0, 'rgba(45,226,230,.95)');
-    g.addColorStop(.35, 'rgba(58,123,255,.55)');
-    g.addColorStop(1, 'rgba(139,92,246,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(CX, CY, pr * 2.2, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = C.bg0;
-    ctx.beginPath(); ctx.arc(CX, CY, pr * .55, 0, Math.PI * 2); ctx.fill();
-    // highlight
-    ctx.fillStyle = 'rgba(255,255,255,.85)';
-    ctx.beginPath(); ctx.arc(CX - pr * .22, CY - pr * .22, pr * .12, 0, Math.PI * 2); ctx.fill();
-  }
-
-  // eye lids (almond outline) drawn progressively
-  const lk = easeInOutCubic(prog(t, 1.4, 3.2));
-  if (lk > 0) {
+// ---------- scene 1: checkerboard pattern (0 – 3.2 s) ----------
+function checker(t) {
+  if (t > 3.3) return;
+  const n = VERTICAL ? 6 : 10, cell = W / n, rows = Math.ceil(H / cell) + 1;
+  const oy = (H - rows * cell) / 2;
+  ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H);
+  for (let r = 0; r < rows; r++) for (let c = 0; c < n; c++) {
+    const d = (r + c) / (rows + n);                 // diagonal wave
+    const kin = eBack(prog(t, d * 1.0, d * 1.0 + .45));
+    const kout = eInOut(prog(t, 2.0 + d * .9, 2.0 + d * .9 + .4));
+    const k = kin * (1 - kout);
+    if (k <= 0) continue;
+    const col = (r + c) % 2 ? C.goldPattern : C.green;
+    const s = cell * k, x = c * cell + (cell - s) / 2, y = oy + r * cell + (cell - s) / 2;
     ctx.save();
-    ctx.lineWidth = 5; ctx.lineCap = 'round';
-    ctx.strokeStyle = grad3(CX - 420, CY, CX + 420, CY);
-    ctx.shadowColor = C.blue; ctx.shadowBlur = 25;
-    const open = 1 - .92 * blink(t);
-    const span = 420 * lk;
-    for (const dir of [-1, 1]) {
-      ctx.beginPath();
-      ctx.moveTo(CX - span, CY);
-      ctx.quadraticCurveTo(CX, CY + dir * 330 * open * lk, CX + span, CY);
-      ctx.stroke();
+    ctx.translate(x + s / 2, y + s / 2); ctx.rotate((1 - kin) * .6 + kout * -.4);
+    ctx.fillStyle = col; ctx.fillRect(-s / 2, -s / 2, s, s);
+    ctx.restore();
+  }
+  // brand mark peeks through the pattern
+  const mk = eOut(prog(t, .9, 1.5)) * (1 - prog(t, 2.0, 2.4));
+  if (mk > 0) {
+    const s = (VERTICAL ? .62 : .42) * W / LOGO.w;
+    const bw = LOGO.w * s + 120 * U, bh = LOGO.h * s + 90 * U;
+    ctx.save(); ctx.globalAlpha = mk;
+    ctx.fillStyle = C.red; roundRect(CX - bw / 2, CY - bh / 2, bw, bh * mk, 28 * U); ctx.fill();
+    ctx.restore();
+    drawSlice(C.white, 0, LOGO.w, CX - LOGO.w * s / 2, CY - bh / 2 + 45 * U + LOGO.midY * s, s, mk);
+  }
+}
+function roundRect(x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath(); ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+// ---------- scene 2: the hook (3.0 – 6.6 s) ----------
+function hook(t) {
+  if (t < 2.4 || t > 6.8) return;
+  // paper background appears under the outgoing checker
+  const lines = [
+    [{ s: 'УСТАЛ ОТ', c: C.green }],
+    [{ s: 'ВИЗУАЛА,', c: C.green }],
+    [{ s: 'КОТОРЫЙ', c: C.green }],
+    [{ s: 'НЕ РАБОТАЕТ?', c: C.red }]
+  ];
+  const maxW = W * (VERTICAL ? .86 : .7);
+  const size = Math.min(...lines.map(l => fit(l[0].s, 800, (VERTICAL ? 110 : 120) * U, DISPLAY, maxW)));
+  const lh = size * 1.18, top = CY - lh * lines.length / 2 + size * .85;
+  ctx.save();
+  ctx.textAlign = 'center';
+  lines.forEach((l, i) => {
+    const st = 3.0 + i * .32;
+    const k = eExpo(prog(t, st, st + .6));
+    const y = top + i * lh;
+    // mask each line → text slides up from behind its own baseline
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, y - size * 1.05, W, size * 1.35); ctx.clip();
+    let dx = 0;
+    if (i === 3) dx = Math.sin(t * 70) * 10 * U * Math.sin(Math.PI * prog(t, 5.0, 5.5));  // "doesn't work" glitch
+    ctx.font = font(800, size, DISPLAY);
+    ctx.fillStyle = l[0].c;
+    ctx.fillText(l[0].s, CX + dx, y + (1 - k) * size * 1.3);
+    if (i === 3 && t > 5.0 && t < 5.5) {          // chromatic split
+      ctx.globalAlpha = .35; ctx.fillStyle = C.goldPattern;
+      ctx.fillText(l[0].s, CX + dx + 8 * U, y);
     }
     ctx.restore();
-  }
-}
-// one blink at ~3.9s
-function blink(t) { const b = prog(t, 3.85, 4.25); return Math.sin(b * Math.PI); }
-
-// Scene 2 (4–7.5s): eye shifts left, "SEE" + "GROUP" reveal
-function logo(t, x, y, scale, alpha) {
-  if (alpha <= 0) return;
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.translate(x, y); ctx.scale(scale, scale);
-  ctx.textBaseline = 'alphabetic';
-  const letters = ['S', 'E', 'E'];
-  ctx.font = `900 260px ${FONT}`;
-  let cx = 0;
-  const widths = letters.map(l => ctx.measureText(l).width + 14);
-  const total = widths.reduce((a, b) => a + b, 0);
-  cx = -total / 2;
-  letters.forEach((l, i) => {
-    const k = easeOutBack(prog(t, 4.4 + i * .18, 5.2 + i * .18));
-    ctx.save();
-    ctx.translate(cx + widths[i] / 2, 40 + (1 - k) * 120);
-    ctx.globalAlpha = alpha * clamp(k);
-    ctx.fillStyle = grad3(-200, -200, 200, 50);
-    ctx.shadowColor = 'rgba(58,123,255,.6)'; ctx.shadowBlur = 40;
-    ctx.textAlign = 'center';
-    ctx.fillText(l, 0, 0);
-    ctx.restore();
-    cx += widths[i];
   });
-  // GROUP with letter-spacing animation
-  const gk = easeOutExpo(prog(t, 5.3, 6.6));
-  ctx.font = `400 64px ${FONT}`;
-  ctx.fillStyle = C.white;
-  ctx.textAlign = 'center';
-  const word = 'GROUP', spacing = lerp(120, 62, gk);
-  ctx.globalAlpha = alpha * gk;
-  for (let i = 0; i < word.length; i++) {
-    ctx.fillText(word[i], (i - (word.length - 1) / 2) * spacing, 140);
-  }
-  // underline sweep
-  const uk = easeInOutCubic(prog(t, 5.8, 6.8));
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = grad3(-total / 2, 0, total / 2, 0);
-  ctx.fillRect(-total / 2, 180, total * uk, 4);
+  // small URL under the hook, as on the brand poster
+  const uk = eOut(prog(t, 4.4, 5.0));
+  ctx.globalAlpha = uk;
+  ctx.font = font(600, 30 * U, TEXT); ctx.fillStyle = C.gray;
+  ctx.fillText('seegroup.studio', CX, top + lh * 4 + 10 * U);
   ctx.restore();
+
+  // red wipe → next scene
+  const wk = eInOut(prog(t, 5.9, 6.6));
+  if (wk > 0) {
+    ctx.save(); ctx.fillStyle = C.red;
+    ctx.beginPath();
+    const skew = H * .35;
+    const x = lerp(-skew - 40, W + 40, wk);
+    ctx.moveTo(-skew - 40, 0); ctx.lineTo(x + skew, 0); ctx.lineTo(x, H); ctx.lineTo(-skew - 40, H);
+    ctx.fill(); ctx.restore();
+  }
 }
 
-// Scene 3 (7.5–11.5s): three pillars
-const PILLARS = [
-  { t: 'Видеть', s: 'глубже, чем видно сразу' },
-  { t: 'Понимать', s: 'суть, цифры и риски' },
-  { t: 'Действовать', s: 'точно и вовремя' }
+// ---------- scene 3: s + e + e = strategy, emotion, effect (6.5 – 11.6 s) ----------
+const META = [
+  { en: 'STRATEGY', ru: 'стратегия продвижения' },
+  { en: 'EMOTION', ru: 'эмоция как основа контента' },
+  { en: 'EFFECT', ru: 'эффект, результат, влияние' }
 ];
-function pillars(t) {
-  const out = prog(t, 11.0, 11.6);
-  if (t < 7.4 || out >= 1) return;
-  const colW = 520, baseX = CX - colW;
-  PILLARS.forEach((p, i) => {
-    const s = 7.6 + i * .55;
-    const k = easeOutCubic(prog(t, s, s + .8));
-    const x = baseX + i * colW, y = CY + 20;
-    ctx.save();
-    ctx.globalAlpha = k * (1 - out);
-    ctx.translate(0, (1 - k) * 60 - out * 40);
-    // number circle
-    ctx.strokeStyle = [C.cyan, C.blue, C.violet][i]; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(x, y - 150, 44, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k); ctx.stroke();
-    ctx.fillStyle = C.white; ctx.font = `700 34px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(String(i + 1).padStart(2, '0'), x, y - 150);
-    ctx.textBaseline = 'alphabetic';
-    ctx.font = `800 72px ${FONT}`; ctx.fillStyle = C.white;
-    ctx.fillText(p.t, x, y);
-    ctx.font = `400 34px ${FONT}`; ctx.fillStyle = C.muted;
-    ctx.fillText(p.s, x, y + 60);
-    ctx.restore();
+// final logo placement (used by scenes 3 → 4)
+function finalLogo(t) {
+  const lift = eInOut(prog(t, 12.9, 13.7));
+  const s0 = (VERTICAL ? .8 : .56) * W / LOGO.w;
+  const s = lerp(s0, s0 * (VERTICAL ? .82 : .72), lift);
+  const x = CX - LOGO.w * s / 2;
+  const y = lerp(CY, VERTICAL ? H * .36 : H * .3, lift);
+  return { x, y, s };
+}
+function metaPos(i) {
+  const s = (VERTICAL ? 230 : 260) * U / 210;          // x-height ≈ 210 logo px
+  const [a, b] = LOGO.see[i];
+  const gw = (b - a) * s;
+  if (VERTICAL) return { x: CX - gw / 2, y: H * (.15 + i * .29), s, labelX: CX, labelAlign: 'center' };
+  const colX = W * (.2 + i * .3);
+  return { x: colX - gw / 2, y: CY - 70 * U, s, labelX: colX, labelAlign: 'center' };
+}
+function scene3(t) {
+  if (t < 6.4 || t > 12.6) return;
+
+  const merge = eInOut(prog(t, 10.5, 11.5));
+  const fl = finalLogo(t);
+  META.forEach((m, i) => {
+    const st = 6.7 + i * .55;
+    const k = eBack(prog(t, st, st + .6));
+    const p = metaPos(i);
+    const [a, b] = LOGO.see[i];
+    // letter: from meta position → its place in the final logo
+    const fx = fl.x + a * fl.s;
+    const x = lerp(p.x, fx, merge), y = lerp(p.y, fl.y, merge), s = lerp(p.s * k, fl.s, merge);
+    const pop = 1 + .06 * Math.sin(Math.PI * prog(t, st + .9, st + 1.3));
+    const sp = s * pop;
+    const gx = x - ((b - a) * (sp - s)) / 2;
+    drawSlice(C.white, a, b, gx, y, sp, Math.min(1, k * 1.5));
+
+    // labels
+    const lk = eOut(prog(t, st + .25, st + .8)) * (1 - prog(t, 10.2, 10.6));
+    if (lk > 0) {
+      ctx.save(); ctx.globalAlpha = lk; ctx.textAlign = p.labelAlign;
+      const ly = p.y + (VERTICAL ? 200 : 210) * U;
+      const dy = (1 - lk) * 30 * U;
+      ctx.fillStyle = C.white; ctx.font = font(800, (VERTICAL ? 54 : 50) * U, DISPLAY);
+      ctx.fillText(m.en, p.labelX, ly + dy);
+      ctx.fillStyle = 'rgba(255,255,255,.78)'; ctx.font = font(500, (VERTICAL ? 32 : 30) * U, TEXT);
+      ctx.fillText(m.ru, p.labelX, ly + 52 * U + dy);
+      ctx.restore();
+    }
+    // plus signs
+    if (i < 2) {
+      const pk = eOut(prog(t, st + .5, st + .9)) * (1 - prog(t, 10.2, 10.5));
+      if (pk > 0) {
+        const q = metaPos(i + 1);
+        const px = VERTICAL ? CX : (W * (.2 + i * .3) + W * (.2 + (i + 1) * .3)) / 2;
+        const py = VERTICAL ? p.y + 330 * U : p.y;
+        ctx.save(); ctx.globalAlpha = pk; ctx.fillStyle = C.yellow;
+        const L = 26 * U * pk, Th = 7 * U;
+        ctx.fillRect(px - L, py - Th / 2, L * 2, Th); ctx.fillRect(px - Th / 2, py - L, Th, L * 2);
+        ctx.restore();
+      }
+    }
   });
-  // connecting line
-  const lk = easeInOutCubic(prog(t, 8.0, 9.6));
-  ctx.save();
-  ctx.globalAlpha = (1 - out) * .8;
-  ctx.strokeStyle = grad3(baseX, 0, baseX + 2 * colW, 0); ctx.lineWidth = 2;
-  ctx.setLineDash([10, 12]); ctx.lineDashOffset = -t * 40;
-  ctx.beginPath(); ctx.moveTo(baseX + 60, CY - 130); ctx.lineTo(baseX + 60 + (2 * colW - 120) * lk, CY - 130); ctx.stroke();
-  ctx.restore();
 }
 
-// Final (11.5–15s): lockup + tagline
-function finale(t) {
-  const k = easeOutCubic(prog(t, 11.6, 12.6));
-  if (k <= 0) return;
-  // light sweep
-  const sx = lerp(-400, W + 400, easeInOutCubic(prog(t, 12.2, 13.6)));
-  const g = ctx.createLinearGradient(sx - 200, 0, sx + 200, 0);
-  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(.5, 'rgba(120,180,255,.10)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+// ---------- scene 4: green world, full logo, services (11 – 18 s) ----------
+function greenBg(t) {
+  // circular reveal of institutional green from the centre of the forming logo
+  const r = eInOut(prog(t, 10.9, 11.8)) * Math.hypot(W, H);
+  if (r <= 0) return;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(CX, CY, r, 0, Math.PI * 2); ctx.clip();
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, C.green); g.addColorStop(1, C.greenDeep);
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-
-  const tk = easeOutCubic(prog(t, 12.6, 13.6));
-  ctx.save();
-  ctx.globalAlpha = tk;
-  ctx.textAlign = 'center';
-  ctx.font = `300 54px ${FONT}`;
-  ctx.fillStyle = C.white;
-  ctx.fillText('Видим больше.', CX, CY + 330 + (1 - tk) * 30);
+  // glowing diagonal strokes (business-card motif)
+  const lines = VERTICAL ? 5 : 6;
+  for (let i = 0; i < lines; i++) {
+    const base = (i / lines) * (W + H * .6) - H * .3;
+    const x0 = base + Math.sin(i * 1.7) * 60 * U, y0 = -40, x1 = x0 + H * .55, y1 = H + 40;
+    ctx.strokeStyle = 'rgba(34,192,138,.10)'; ctx.lineWidth = 2 * U;
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    // travelling highlight
+    const ph = ((t * .35 + i * .37) % 1.6) - .3;
+    const hx = lerp(x0, x1, ph), hy = lerp(y0, y1, ph);
+    const gl = ctx.createRadialGradient(hx, hy, 0, hx, hy, 160 * U);
+    gl.addColorStop(0, 'rgba(60,240,170,.55)'); gl.addColorStop(1, 'rgba(60,240,170,0)');
+    ctx.strokeStyle = gl; ctx.lineWidth = 3 * U;
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+  }
   ctx.restore();
 }
+function scene4(t) {
+  if (t < 11.3) return;
+  const fl = finalLogo(t);
+  if (t >= 12.6) LOGO.see.forEach(([a, b]) => drawSlice(C.white, a, b, fl.x + a * fl.s, fl.y, fl.s));
+  // "Group" wipes in from behind the "see"
+  const gk = eOut(prog(t, 11.6, 12.5));
+  if (gk > 0) {
+    const [a, b] = LOGO.group;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(fl.x + a * fl.s, 0, (b - a) * fl.s * gk + 2, H); ctx.clip();
+    drawSlice(C.white, a, b, fl.x + a * fl.s - (1 - gk) * 120 * U, fl.y, fl.s);
+    ctx.restore();
+  }
+  // shine across the logo
+  const sh = prog(t, 12.4, 13.1);
+  if (sh > 0 && sh < 1) {
+    const w = LOGO.w * fl.s, sx = fl.x + lerp(-200 * U, w + 200 * U, sh);
+    ctx.save();
+    const g = ctx.createLinearGradient(sx - 120 * U, 0, sx + 120 * U, 0);
+    g.addColorStop(0, 'rgba(253,200,84,0)'); g.addColorStop(.5, 'rgba(253,200,84,.35)'); g.addColorStop(1, 'rgba(253,200,84,0)');
+    ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g;
+    ctx.fillRect(fl.x - 50, fl.y - LOGO.midY * fl.s - 20, w + 100, LOGO.h * fl.s + 40);
+    ctx.restore();
+  }
 
-function vignetteAndFade(t) {
-  const v = ctx.createRadialGradient(CX, CY, H * .35, CX, CY, H * 1.05);
-  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.65)');
-  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
-  const fin = prog(t, 0, .5), fout = prog(t, 14.3, 15);
-  const a = Math.max(1 - fin, fout);
+  // services pills
+  const items = ['Стратегия', 'Упаковка', 'Контент', 'Продвижение'];
+  const fs = (VERTICAL ? 40 : 34) * U, ph = fs * 2.1, gap = 22 * U;
+  ctx.font = font(600, fs, TEXT);
+  const widths = items.map(s => ctx.measureText(s).width + fs * 1.8);
+  const rowsDef = VERTICAL ? [[0, 1], [2, 3]] : [[0, 1, 2, 3]];
+  const top = fl.y + LOGO.h * fl.s * .75 + 40 * U;
+  rowsDef.forEach((row, ri) => {
+    const rw = row.reduce((s, i) => s + widths[i], 0) + gap * (row.length - 1);
+    let x = CX - rw / 2;
+    row.forEach(i => {
+      const st = 13.4 + i * .22, k = eBack(prog(t, st, st + .5));
+      const y = top + ri * (ph + gap);
+      if (k > 0) {
+        ctx.save();
+        ctx.globalAlpha = clamp(k);
+        ctx.translate(x + widths[i] / 2, y + ph / 2); ctx.scale(k, k);
+        roundRect(-widths[i] / 2, -ph / 2, widths[i], ph, ph / 2);
+        ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fill();
+        ctx.lineWidth = 2.5 * U; ctx.strokeStyle = C.yellow; ctx.stroke();
+        ctx.fillStyle = C.white; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = font(600, fs, TEXT); ctx.fillText(items[i], 0, 2 * U);
+        ctx.restore();
+      }
+      x += widths[i] + gap;
+    });
+  });
+
+  // mission line + contacts
+  const pillsBottom = top + rowsDef.length * (ph + gap);
+  const mk = eOut(prog(t, 14.9, 15.6));
+  if (mk > 0) {
+    ctx.save(); ctx.globalAlpha = mk; ctx.textAlign = 'center'; ctx.fillStyle = C.white;
+    const lines = VERTICAL ? ['Развиваем личные бренды', 'экспертов и предпринимателей'] : ['Развиваем личные бренды экспертов и предпринимателей'];
+    const ts = (VERTICAL ? 46 : 40) * U;
+    lines.forEach((l, i) => {
+      ctx.font = font(500, fit(l, 500, ts, TEXT, W * .88), TEXT);
+      ctx.fillText(l, CX, pillsBottom + 70 * U + i * ts * 1.3 + (1 - mk) * 20 * U);
+    });
+    const ck = eOut(prog(t, 15.5, 16.1));
+    ctx.globalAlpha = ck; ctx.fillStyle = C.yellow;
+    ctx.font = font(700, (VERTICAL ? 38 : 32) * U, DISPLAY);
+    ctx.fillText('@seegroup.kz', CX, pillsBottom + 70 * U + lines.length * ts * 1.3 + 50 * U);
+    ctx.restore();
+  }
+
+  // letterhead footer: gold rule + red/green/gold bars sliding in
+  const fk = eInOut(prog(t, 15.6, 16.4));
+  if (fk > 0) {
+    const bh = 34 * U;
+    ctx.fillStyle = C.gold; ctx.fillRect(0, H - bh - 18 * U, W * fk, 8 * U);
+    const cols = [C.red, C.goldPattern, C.green];
+    cols.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(W * i / 3, H - bh, W / 3 * eOut(prog(t, 15.8 + i * .12, 16.4 + i * .12)), bh); });
+  }
+}
+
+function fades(t) {
+  const a = Math.max(1 - prog(t, 0, .35), prog(t, 17.3, 18));
   if (a > 0) { ctx.fillStyle = `rgba(0,0,0,${a})`; ctx.fillRect(0, 0, W, H); }
 }
 
-// ---------- master timeline ----------
+// ---------- master ----------
 function renderFrame(t) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  background(t);
-
-  // Eye moves from center to left (4.2–5.0), hides during pillars, returns above logo in finale
-  const move = easeInOutCubic(prog(t, 4.2, 5.0));
-  const hide = easeInOutCubic(prog(t, 7.0, 7.6));
-  const back = easeInOutCubic(prog(t, 11.4, 12.4));
-  const eyeScale = lerp(lerp(1, .55, move), .32, back) * (1 - hide * (1 - back));
-  const eyeX = lerp(lerp(CX, CX - 560, move), CX, back);
-  const eyeY = lerp(CY, CY - 300, back);
-  if (eyeScale > .01) {
-    ctx.save();
-    ctx.translate(eyeX, eyeY); ctx.scale(eyeScale, eyeScale); ctx.translate(-CX, -CY);
-    iris(t);
-    ctx.restore();
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.globalAlpha = 1;
+  ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H);
+  hook(t);
+  checker(t);
+  if (t >= 6.4) {
+    if (t < 11.8) { ctx.fillStyle = C.red; ctx.fillRect(0, 0, W, H); }
+    greenBg(t);
   }
-
-  // Logo: right side during scene 2, hidden during pillars, centered in finale
-  const lHide = easeInOutCubic(prog(t, 7.0, 7.5));
-  const lx = lerp(CX + 220, CX, back), ly = lerp(CY - 20, CY + 30, back);
-  const la = back > 0 ? back : 1 - lHide;
-  logo(t < 11.4 ? t : 7.4, lx, ly, lerp(1, 1.05, back), la);
-
-  pillars(t);
-  finale(t);
-  vignetteAndFade(t);
+  scene3(t);
+  scene4(t);
+  fades(t);
 }
-window.renderFrame = renderFrame;
-window.DURATION = DURATION;
 
-// ---------- interactive player ----------
-if (!location.search.includes('capture')) {
+window.DURATION = DURATION;
+window.renderFrame = renderFrame;
+window.READY = (async () => {
+  logoImg.src = 'assets/logo.png';
+  await logoImg.decode();
+  await Promise.all([
+    document.fonts.load(font(800, 40, 'Unbounded'), 'АБВ ABC'),
+    document.fonts.load(font(500, 40, 'Montserrat'), 'АБВ ABC'),
+    document.fonts.load(font(600, 40, 'Montserrat'), 'АБВ ABC'),
+    document.fonts.load(font(700, 40, 'Unbounded'), '@seegroup')
+  ]);
+  return true;
+})();
+
+if (params.has('capture')) {
+  document.body.classList.add('capture');
+} else {
+  const fmt = document.getElementById('fmt');
+  if (VERTICAL) { fmt.textContent = '16:9'; fmt.href = '?'; }
   const playBtn = document.getElementById('play'), seek = document.getElementById('seek'), time = document.getElementById('time');
-  let playing = true, start = performance.now(), cur = 0;
+  let playing = true, start = 0, cur = 0;
   playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? '⏸' : '▶'; start = performance.now() - cur * 1000; };
   seek.oninput = () => { cur = +seek.value; start = performance.now() - cur * 1000; renderFrame(cur); time.textContent = cur.toFixed(1) + ' s'; };
-  (function loop(now) {
-    if (playing) { cur = ((now - start) / 1000) % DURATION; seek.value = cur; time.textContent = cur.toFixed(1) + ' s'; renderFrame(cur); }
-    requestAnimationFrame(loop);
-  })(performance.now());
-} else {
-  document.body.classList.add('capture');
+  window.READY.then(() => {
+    start = performance.now();
+    (function loop(now) {
+      if (playing) { cur = ((now - start) / 1000) % DURATION; seek.value = cur; time.textContent = cur.toFixed(1) + ' s'; renderFrame(cur); }
+      requestAnimationFrame(loop);
+    })(performance.now());
+  });
 }
 </script>
 </body>
