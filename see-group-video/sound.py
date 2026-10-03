@@ -2,7 +2,7 @@
 import subprocess, numpy as np
 
 SR = 48000
-DUR = 19.5
+DUR = 22.0
 VO_AT = 1.2
 rng = np.random.default_rng(7)
 L = np.zeros(int(SR * DUR)); R = np.zeros_like(L)
@@ -96,28 +96,28 @@ place(norm(whoosh(.8)), 6.05, .28)                     # letters fly together
 place(norm(riser(.9)), 6.05, .18)
 place(norm(impact()), 6.93, .55)                       # «SEE Group»
 place(norm(shimmer(.9)), 7.3, .12, pan=.3)             # logo shine
-for i, tt in enumerate((7.8, 8.5, 9.25, 10.05)):       # services pills
+place(norm(whoosh(.6)), 7.75, .12)                     # positioning line
+for i, tt in enumerate((10.05, 10.65, 11.2, 11.75)):   # services pills
     place(norm(pop(880 + 110 * i)), tt + .03, .14, pan=(-.4, .4, -.2, .2)[i])
-place(norm(whoosh(.6)), 10.85, .12)                    # mission
 for k in range(10):                                    # brand-pattern wipe
-    place(norm(tick(1500 + 180 * k)), 13.85 + k * .04, .07, pan=-.6 + k * .13)
-place(norm(whoosh(.7)), 13.8, .28)
-place(norm(whoosh(.6, rise=False)), 14.35, .2)
-for i, tt in enumerate((14.75, 15.25, 15.75)):         # direction cards
+    place(norm(tick(1500 + 180 * k)), 12.15 + k * .04, .07, pan=-.6 + k * .13)
+place(norm(whoosh(.7)), 12.1, .28)
+place(norm(whoosh(.6, rise=False)), 12.65, .2)
+for i, tt in enumerate((12.8, 14.0, 15.7)):            # direction cards
     place(norm(whoosh(.35)), tt - .05, .12, pan=.5)
     place(norm(thump()), tt + .2, .2)
-place(norm(pop(660)), 16.5, .3)                        # CTA button
-place(norm(ding(1046)), 17.0, .2)                      # @seegroup.kz
-place(norm(whoosh(.7)), 17.2, .14)                     # footer bars
-place(norm(tick(3000)), 17.35, .3)                     # tap
-place(norm(pop(1320)), 17.37, .15)
+place(norm(pop(660)), 17.85, .3)                       # CTA button
+place(norm(tick(3000)), 18.75, .3)                     # tap
+place(norm(pop(1320)), 18.77, .15)
+place(norm(ding(1046)), 19.3, .2)                      # @seegroup.kz
+place(norm(whoosh(.7)), 19.6, .14)                     # footer bars
 sfx = np.stack([L, R], 1)
 sfx /= max(1.0, np.max(np.abs(sfx)) / .9)
 sfx[-int(.6 * SR):] *= np.linspace(1, 0, int(.6 * SR))[:, None]
 
-# voiceover parts: main read + optional second take for directions/CTA
+# voiceover track(s)
 import os
-vo_files = [(f, at) for f, at in (('assets/voiceover.mp3', VO_AT), ('assets/voiceover2.mp3', 14.2)) if os.path.exists(f)]
+vo_files = [(f, at) for f, at in (('assets/voiceover.mp3', VO_AT),) if os.path.exists(f)]
 vo_inputs = [a for f, _ in vo_files for a in ('-i', f)]
 vo_chain = ''.join(f'[{i + 1}]aresample={SR},highpass=f=80,acompressor=threshold=-20dB:ratio=3:attack=5:release=120,'
                    f'adelay={int(at * 1000)}|{int(at * 1000)},pan=stereo|c0=c0|c1=c0,volume=1.6[vo{i}];'
