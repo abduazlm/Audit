@@ -1,70 +1,9 @@
 import numpy as np, subprocess, wave, sys
+from data import CUTS,DUR
 SRC="/root/.claude/uploads/4cd4152f-d446-5824-a2f4-47ddaef89bb1/c4c9c7e7-0929-04.mov"
-DUR=25.47; SR=44100
-CUTS=[0,4.37,6.87,8.9,10.0,11.37,11.93,12.47,14.43,15.5,16.93,19.0,22.43,DUR]
+SR=44100
 
-# ---------- subtitles (text read from user's burned-in version) ----------
-# chunk = (end, [(start, word), ...])
-CH=[
- (0.98,[(0.2,"СКОЛЬКО"),(0.6,"ВРЕМЕНИ")]),
- (2.5,[(1.0,"ВЫ"),(1.3,"ТЕРЯЕТЕ"),(1.6,"НА"),(1.9,"МОЙКЕ?")]),
- (4.2,[(3.2,"ОБЫЧНО"),(3.5,"ЭТО"),(3.8,"ВЫГЛЯДИТ")]),
- (5.5,[(4.2,"ТАК:"),(4.6,"СИДИШЬ"),(5.1,"ЖДЁШЬ")]),
- (6.8,[(5.6,"ЛИСТАЕШЬ"),(6.2,"СВОЙ"),(6.4,"ТЕЛЕФОН")]),
- (8.0,[(7.2,"В"),(7.4,"OASIS"),(7.65,"МЫ")]),
- (8.95,[(8.0,"СДЕЛАЛИ"),(8.25,"ЭТО"),(8.45,"ПО-ДРУГОМУ")]),
- (9.75,[(9.0,"МЫ"),(9.3,"НАХОДИМСЯ")]),
- (11.05,[(9.8,"В ЦЕНТРЕ"),(10.2,"ГОРОДА"),(10.5,"АСТАНЫ")]),
- (11.55,[(11.15,"МОЖЕТЕ"),(11.4,"ОСТАВИТЬ")]),
- (12.4,[(11.6,"У НАС"),(11.95,"МАШИНУ")]),
- (13.55,[(12.5,"ПРОГУЛЯТЬСЯ"),(12.8,"ПО"),(13.0,"БУЛЬВАРУ")]),
- (14.4,[(13.6,"СХОДИТЬ"),(14.0,"В"),(14.15,"КЕРУЕН")]),
- (15.2,[(14.5,"ЛИБО"),(14.7,"ВЫПИТЬ"),(15.0,"КОФЕ")]),
- (16.0,[(15.2,"А ТАКЖЕ"),(15.65,"РЯДОМ")]),
- (16.9,[(16.0,"НАХОДИТСЯ"),(16.35,"БАЙТЕРЕК")]),
- (17.5,[(17.0,"ВЕРНУЛИСЬ,")]),
- (18.95,[(17.6,"А"),(17.8,"МАШИНА"),(18.2,"УЖЕ"),(18.5,"ЧИСТАЯ")]),
-]
-def t(s):
-    h=int(s//3600); m=int(s%3600//60); return "%d:%02d:%05.2f"%(h,m,s%60)
-ORANGE="&H0080FF&"; WHITE="&HFFFFFF&"
-ev=[]
-for end,ws in CH:
-    for i,(st,w) in enumerate(ws):
-        e=ws[i+1][0] if i+1<len(ws) else end
-        parts=[]
-        for j in range(i+1):
-            word=ws[j][1]
-            cur=(j==i)
-            col=ORANGE if (cur or word=="OASIS") else WHITE
-            if cur: parts.append("{\\c%s\\fscx130\\fscy130\\t(0,130,\\fscx100\\fscy100)}%s{\\fscx100\\fscy100}"%(col,word))
-            else: parts.append("{\\c%s}%s"%(col,word))
-        line=" ".join(parts)
-        ev.append("Dialogue: 1,%s,%s,Sub,,0,0,0,,{\\fad(0,80)}%s"%(t(st),t(e),line))
-# outro CTA
-ev.append("Dialogue: 2,%s,%s,Cta,,0,0,0,,{\\an5\\pos(540,1560)\\fscx20\\fscy20\\alpha&HFF&\\t(0,300,\\fscx115\\fscy115\\alpha&H00&)\\t(300,500,\\fscx100\\fscy100)\\t(1200,1500,\\fscx108\\fscy108)\\t(1500,1800,\\fscx100\\fscy100)\\t(2600,2900,\\fscx108\\fscy108)\\t(2900,3200,\\fscx100\\fscy100)}ЗАЕЗЖАЙ!"%(t(20.2),t(25.47)))
-ev.append("Dialogue: 2,%s,%s,Small,,0,0,0,,{\\an5\\move(540,1760,540,1700,0,350)\\fad(350,0)}АВТОМОЙКА 24/7 · ЦЕНТР АСТАНЫ"%(t(20.7),t(25.47)))
-# progress bar
-ev.append("Dialogue: 3,%s,%s,Bar,,0,0,0,,{\\an7\\pos(0,0)\\fscx1\\t(0,%d,\\fscx100)\\p1\\c&H0080FF&\\bord0\\shad0}m 0 0 l 1080 0 1080 12 0 12"%(t(0),t(DUR),int(DUR*1000)))
-hdr="""[Script Info]
-ScriptType: v4.00+
-PlayResX: 1080
-PlayResY: 1920
-WrapStyle: 2
-ScaledBorderAndShadow: yes
-
-[V4+ Styles]
-Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding
-Style: Sub,Liberation Sans,88,&H00FFFFFF,&H00FFFFFF,&H00000000,&H90000000,-1,0,0,0,100,100,1,0,1,7,4,2,70,70,540,1
-Style: Cta,Liberation Sans,150,&H000080FF,&H000080FF,&H00000000,&H90000000,-1,0,0,0,100,100,2,0,1,9,5,5,40,40,0,1
-Style: Small,Liberation Sans,48,&H00FFFFFF,&H00FFFFFF,&H00000000,&H90000000,-1,0,0,0,100,100,3,0,1,4,3,5,40,40,0,1
-Style: Bar,Liberation Sans,20,&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1
-
-[Events]
-Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
-"""
-open("subs.ass","w").write(hdr+"\n".join(ev)+"\n")
-
+from data import CH
 # ---------- audio ----------
 rng=np.random.default_rng(1)
 N=int(DUR*SR); music=np.zeros((N,2)); sfx=np.zeros((N,2))
@@ -148,17 +87,21 @@ wr("music.wav",music); wr("sfx.wav",sfx)
 
 # ---------- video filter ----------
 segs=[(CUTS[i],CUTS[i+1]) for i in range(len(CUTS)-1)]
+NOFLASH={6.87,8.9}
 fc=[]; labs=[]
 for i,(a,bb) in enumerate(segs):
-    d=bb-a; z0,z1=(1.0,1.09) if i%2==0 else (1.09,1.0)
-    fc.append(f"[0:v]trim={a}:{bb},setpts=PTS-STARTPTS,scale=w='trunc(1080*({z0}+({z1}-{z0})*t/{d:.3f})/2)*2':h='trunc(1920*({z0}+({z1}-{z0})*t/{d:.3f})/2)*2':eval=frame,crop=1080:1920,setsar=1,fps=30[v{i}]")
+    d=bb-a
+    z="(1+0.07*t/%.3f+%.2f*exp(-9*t))"%(d,0.0 if i==0 else 0.17)
+    fl=",fade=t=in:st=0:d=0.14:color=white" if (i>0 and a not in NOFLASH) else ""
+    fc.append(f"[0:v]trim={a}:{bb},setpts=PTS-STARTPTS,scale=w='trunc(1080*{z}/2)*2':h='trunc(1920*{z}/2)*2':eval=frame,crop=1080:1920,setsar=1,fps=30{fl}[v{i}]")
     labs.append(f"[v{i}]")
-fc.append("".join(labs)+f"concat=n={len(segs)}:v=1:a=0,eq=contrast=1.06:saturation=1.15,vignette=PI/6,ass=subs.ass:fontsdir=/usr/share/fonts/truetype/liberation[vout]")
-# audio: voice + ducked music + sfx
+fc.append("".join(labs)+"concat=n=%d:v=1:a=0,eq=contrast=1.07:saturation=1.18,vignette=PI/6[vbase]"%len(segs))
+fc.append("[1:v]format=rgba[sub]")
+fc.append("[vbase][sub]overlay=0:1100:format=auto[vout]")
 fc.append("[0:a]highpass=f=80,acompressor=threshold=-20dB:ratio=3:attack=5:release=80,volume=1.3[voice0]")
 fc.append("[voice0]asplit=2[voice][vsc]")
-fc.append("[1:a]volume=0.55[m0]")
+fc.append("[2:a]volume=0.55[m0]")
 fc.append("[m0][vsc]sidechaincompress=threshold=0.02:ratio=8:attack=20:release=400[mduck]")
-fc.append("[2:a]volume=0.6[s]")
+fc.append("[3:a]volume=0.6[s]")
 fc.append("[voice][mduck][s]amix=inputs=3:normalize=0,alimiter=limit=0.95[aout]")
 open("filter.txt","w").write(";\n".join(fc))
