@@ -1,0 +1,67 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding
+Style: Sub,Liberation Sans,88,&H00FFFFFF,&H00FFFFFF,&H00000000,&H90000000,-1,0,0,0,100,100,1,0,1,7,4,2,70,70,540,1
+Style: Cta,Liberation Sans,150,&H000080FF,&H000080FF,&H00000000,&H90000000,-1,0,0,0,100,100,2,0,1,9,5,5,40,40,0,1
+Style: Small,Liberation Sans,48,&H00FFFFFF,&H00FFFFFF,&H00000000,&H90000000,-1,0,0,0,100,100,3,0,1,4,3,5,40,40,0,1
+Style: Bar,Liberation Sans,20,&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1
+
+[Events]
+Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
+Dialogue: 1,0:00:00.20,0:00:00.60,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}СКОЛЬКО{\fscx100\fscy100}
+Dialogue: 1,0:00:00.60,0:00:00.98,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}СКОЛЬКО {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ВРЕМЕНИ{\fscx100\fscy100}
+Dialogue: 1,0:00:01.00,0:00:01.30,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ВЫ{\fscx100\fscy100}
+Dialogue: 1,0:00:01.30,0:00:01.60,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}ВЫ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ТЕРЯЕТЕ{\fscx100\fscy100}
+Dialogue: 1,0:00:01.60,0:00:01.90,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}ВЫ {\c&HFFFFFF&}ТЕРЯЕТЕ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}НА{\fscx100\fscy100}
+Dialogue: 1,0:00:01.90,0:00:02.50,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}ВЫ {\c&HFFFFFF&}ТЕРЯЕТЕ {\c&HFFFFFF&}НА {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}МОЙКЕ?{\fscx100\fscy100}
+Dialogue: 1,0:00:03.20,0:00:03.50,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ОБЫЧНО{\fscx100\fscy100}
+Dialogue: 1,0:00:03.50,0:00:03.80,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}ОБЫЧНО {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ЭТО{\fscx100\fscy100}
+Dialogue: 1,0:00:03.80,0:00:04.20,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}ОБЫЧНО {\c&HFFFFFF&}ЭТО {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ВЫГЛЯДИТ{\fscx100\fscy100}
+Dialogue: 1,0:00:04.20,0:00:04.60,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ТАК:{\fscx100\fscy100}
+Dialogue: 1,0:00:04.60,0:00:05.10,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}ТАК: {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}СИДИШЬ{\fscx100\fscy100}
+Dialogue: 1,0:00:05.10,0:00:05.50,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}ТАК: {\c&HFFFFFF&}СИДИШЬ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ЖДЁШЬ{\fscx100\fscy100}
+Dialogue: 1,0:00:05.60,0:00:06.20,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ЛИСТАЕШЬ{\fscx100\fscy100}
+Dialogue: 1,0:00:06.20,0:00:06.40,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}ЛИСТАЕШЬ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}СВОЙ{\fscx100\fscy100}
+Dialogue: 1,0:00:06.40,0:00:06.80,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}ЛИСТАЕШЬ {\c&HFFFFFF&}СВОЙ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ТЕЛЕФОН{\fscx100\fscy100}
+Dialogue: 1,0:00:07.20,0:00:07.40,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}В{\fscx100\fscy100}
+Dialogue: 1,0:00:07.40,0:00:07.65,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}В {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}OASIS{\fscx100\fscy100}
+Dialogue: 1,0:00:07.65,0:00:08.00,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}В {\c&H0080FF&}OASIS {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}МЫ{\fscx100\fscy100}
+Dialogue: 1,0:00:08.00,0:00:08.25,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}СДЕЛАЛИ{\fscx100\fscy100}
+Dialogue: 1,0:00:08.25,0:00:08.45,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}СДЕЛАЛИ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ЭТО{\fscx100\fscy100}
+Dialogue: 1,0:00:08.45,0:00:08.95,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}СДЕЛАЛИ {\c&HFFFFFF&}ЭТО {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ПО-ДРУГОМУ{\fscx100\fscy100}
+Dialogue: 1,0:00:09.00,0:00:09.30,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}МЫ{\fscx100\fscy100}
+Dialogue: 1,0:00:09.30,0:00:09.75,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}МЫ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}НАХОДИМСЯ{\fscx100\fscy100}
+Dialogue: 1,0:00:09.80,0:00:10.20,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}В ЦЕНТРЕ{\fscx100\fscy100}
+Dialogue: 1,0:00:10.20,0:00:10.50,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}В ЦЕНТРЕ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ГОРОДА{\fscx100\fscy100}
+Dialogue: 1,0:00:10.50,0:00:11.05,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}В ЦЕНТРЕ {\c&HFFFFFF&}ГОРОДА {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}АСТАНЫ{\fscx100\fscy100}
+Dialogue: 1,0:00:11.15,0:00:11.40,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}МОЖЕТЕ{\fscx100\fscy100}
+Dialogue: 1,0:00:11.40,0:00:11.55,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}МОЖЕТЕ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ОСТАВИТЬ{\fscx100\fscy100}
+Dialogue: 1,0:00:11.60,0:00:11.95,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}У НАС{\fscx100\fscy100}
+Dialogue: 1,0:00:11.95,0:00:12.40,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}У НАС {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}МАШИНУ{\fscx100\fscy100}
+Dialogue: 1,0:00:12.50,0:00:12.80,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ПРОГУЛЯТЬСЯ{\fscx100\fscy100}
+Dialogue: 1,0:00:12.80,0:00:13.00,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}ПРОГУЛЯТЬСЯ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ПО{\fscx100\fscy100}
+Dialogue: 1,0:00:13.00,0:00:13.55,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}ПРОГУЛЯТЬСЯ {\c&HFFFFFF&}ПО {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}БУЛЬВАРУ{\fscx100\fscy100}
+Dialogue: 1,0:00:13.60,0:00:14.00,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}СХОДИТЬ{\fscx100\fscy100}
+Dialogue: 1,0:00:14.00,0:00:14.15,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}СХОДИТЬ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}В{\fscx100\fscy100}
+Dialogue: 1,0:00:14.15,0:00:14.40,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}СХОДИТЬ {\c&HFFFFFF&}В {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}КЕРУЕН{\fscx100\fscy100}
+Dialogue: 1,0:00:14.50,0:00:14.70,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ЛИБО{\fscx100\fscy100}
+Dialogue: 1,0:00:14.70,0:00:15.00,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}ЛИБО {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ВЫПИТЬ{\fscx100\fscy100}
+Dialogue: 1,0:00:15.00,0:00:15.20,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}ЛИБО {\c&HFFFFFF&}ВЫПИТЬ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}КОФЕ{\fscx100\fscy100}
+Dialogue: 1,0:00:15.20,0:00:15.65,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}А ТАКЖЕ{\fscx100\fscy100}
+Dialogue: 1,0:00:15.65,0:00:16.00,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}А ТАКЖЕ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}РЯДОМ{\fscx100\fscy100}
+Dialogue: 1,0:00:16.00,0:00:16.35,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}НАХОДИТСЯ{\fscx100\fscy100}
+Dialogue: 1,0:00:16.35,0:00:16.90,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}НАХОДИТСЯ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}БАЙТЕРЕК{\fscx100\fscy100}
+Dialogue: 1,0:00:17.00,0:00:17.50,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ВЕРНУЛИСЬ,{\fscx100\fscy100}
+Dialogue: 1,0:00:17.60,0:00:17.80,Sub,,0,0,0,,{\fad(0,80)}{\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}А{\fscx100\fscy100}
+Dialogue: 1,0:00:17.80,0:00:18.20,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}А {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}МАШИНА{\fscx100\fscy100}
+Dialogue: 1,0:00:18.20,0:00:18.50,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}А {\c&HFFFFFF&}МАШИНА {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}УЖЕ{\fscx100\fscy100}
+Dialogue: 1,0:00:18.50,0:00:18.95,Sub,,0,0,0,,{\fad(0,80)}{\c&HFFFFFF&}А {\c&HFFFFFF&}МАШИНА {\c&HFFFFFF&}УЖЕ {\c&H0080FF&\fscx130\fscy130\t(0,130,\fscx100\fscy100)}ЧИСТАЯ{\fscx100\fscy100}
+Dialogue: 2,0:00:20.20,0:00:25.47,Cta,,0,0,0,,{\an5\pos(540,1560)\fscx20\fscy20\alpha&HFF&\t(0,300,\fscx115\fscy115\alpha&H00&)\t(300,500,\fscx100\fscy100)\t(1200,1500,\fscx108\fscy108)\t(1500,1800,\fscx100\fscy100)\t(2600,2900,\fscx108\fscy108)\t(2900,3200,\fscx100\fscy100)}ЗАЕЗЖАЙ!
+Dialogue: 2,0:00:20.70,0:00:25.47,Small,,0,0,0,,{\an5\move(540,1760,540,1700,0,350)\fad(350,0)}АВТОМОЙКА 24/7 · ЦЕНТР АСТАНЫ
+Dialogue: 3,0:00:00.00,0:00:25.47,Bar,,0,0,0,,{\an7\pos(0,0)\fscx1\t(0,25470,\fscx100)\p1\c&H0080FF&\bord0\shad0}m 0 0 l 1080 0 1080 12 0 12
