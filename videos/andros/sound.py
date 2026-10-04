@@ -82,9 +82,10 @@ def shutter():
 def norm(x): return x / (np.max(np.abs(x)) + 1e-9)
 
 # ---- timeline (keep in sync with T in index.html) ----
-place(norm(whoosh(.5)), .02, .18)                     # viewfinder frame slides in
-place(norm(shutter()), .5, .35)                        # REC starts
-place(norm(beep()), .78, .16); place(norm(beep()), .9, .16)   # AF lock
+place(norm(whoosh(.55, rise=False)), .15, .16)        # drop falls
+place(norm(pop(300)), .7, .4)                          # splash into the centre
+for i in range(6):                                     # berries bounce in
+    place(norm(pop(500 + 90 * i)), .95 + i * .14 + .35, .13, pan=(-.5, -.3, -.6, .5, .3, .6)[i])
 for tt in (1.15, 1.5, 1.85):                           # hook lines landing
     place(norm(thump()), tt + .08, .22)
 place(norm(glitch(.4)), 2.5, .16)                      # «с фрукта.»

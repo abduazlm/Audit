@@ -99,48 +99,52 @@ const T = {
 };
 const DURATION = T.end;
 
-// ---------- сцена 1: видоискатель камеры (0 – 3.6 с) ----------
-function viewfinder(t) {
-  const a = eOut(prog(t, .05, .6)), out = eInOut(prog(t, T.hookOut, T.hookOut + .45));
-  if (a <= 0 || out >= 1) return;
-  const inset = lerp(-80 * U, 64 * U, a) - out * 160 * U, len = 110 * U;
+// ---------- сцена 1: капля пюре → круги по воде → ягоды (0 – 3.6 с) ----------
+const eBounce = x => { const n1 = 7.5625, d1 = 2.75; if (x < 1 / d1) return n1 * x * x; if (x < 2 / d1) return n1 * (x -= 1.5 / d1) * x + .75; if (x < 2.5 / d1) return n1 * (x -= 2.25 / d1) * x + .9375; return n1 * (x -= 2.625 / d1) * x + .984375; };
+function berry(x, y, r, col, rot = 0) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ctx.shadowColor = 'rgba(42,18,14,.22)'; ctx.shadowBlur = r * .5; ctx.shadowOffsetY = r * .25;
+  const g = ctx.createRadialGradient(-r * .35, -r * .35, r * .08, 0, 0, r);
+  g.addColorStop(0, '#ffffff'); g.addColorStop(.18, col); g.addColorStop(1, col);
+  ctx.fillStyle = g; circle(0, 0, r); ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(-r * .38, -r * .4, r * .2, r * .11, -.7, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = C.kiwi; ctx.beginPath(); ctx.ellipse(r * .1, -r * 1.02, r * .3, r * .13, -.4, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+const BERRIES = VERTICAL
+  ? [[.2, .16, 64, C.rasp], [.8, .2, 52, C.passion], [.12, .5, 44, C.apricot], [.88, .52, 58, C.kiwi], [.22, .84, 70, C.passion], [.78, .85, 60, C.rasp]]
+  : [[.09, .24, 72, C.rasp], [.19, .74, 58, C.passion], [.07, .52, 42, C.apricot], [.91, .3, 62, C.apricot], [.82, .76, 78, C.kiwi], [.94, .56, 44, C.rasp]];
+function opening(t) {
+  const out = eInOut(prog(t, T.hookOut, T.hookOut + .5));
+  if (out >= 1) return;
   ctx.save();
-  ctx.globalAlpha = 1 - out;
-  ctx.strokeStyle = 'rgba(42,18,14,.10)'; ctx.lineWidth = 2 * U;
-  const gk = eInOut(prog(t, .25, .8));
-  for (const f of [1 / 3, 2 / 3]) {
-    ctx.beginPath(); ctx.moveTo(W * f, CY - H / 2 * gk); ctx.lineTo(W * f, CY + H / 2 * gk); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(CX - W / 2 * gk, H * f); ctx.lineTo(CX + W / 2 * gk, H * f); ctx.stroke();
+  // капля падает в центр
+  const dk = prog(t, .15, .7), landY = CY;
+  if (dk > 0 && dk < 1) {
+    const y = lerp(-90 * U, landY, dk * dk), s = 30 * U;
+    ctx.fillStyle = C.rasp; ctx.beginPath();
+    ctx.moveTo(CX, y - s * 1.9); ctx.bezierCurveTo(CX + s * .2, y - s, CX + s, y - s * .5, CX + s, y);
+    ctx.arc(CX, y, s, 0, Math.PI); ctx.bezierCurveTo(CX - s, y - s * .5, CX - s * .2, y - s, CX, y - s * 1.9); ctx.fill();
   }
-  ctx.strokeStyle = C.ink; ctx.lineWidth = 7 * U; ctx.lineCap = 'square';
-  for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
-    const x = sx > 0 ? inset : W - inset, y = sy > 0 ? inset : H - inset;
-    ctx.beginPath(); ctx.moveTo(x, y + sy * len); ctx.lineTo(x, y); ctx.lineTo(x + sx * len, y); ctx.stroke();
+  // круги по воде
+  const rt = t - .7;
+  if (rt > 0) [C.rasp, C.passion, C.apricot].forEach((col, i) => {
+    const k = prog(rt, i * .13, i * .13 + 1.3); if (k <= 0 || k >= 1) return;
+    ctx.globalAlpha = (1 - k) * .5; ctx.strokeStyle = col; ctx.lineWidth = (3 + 14 * (1 - k)) * U;
+    circle(CX, CY, eOut(k) * Math.hypot(W, H) * .42); ctx.stroke();
+  });
+  // брызги
+  if (rt > 0 && rt < 1.2) for (let i = 0; i < 12; i++) {
+    const a = -Math.PI / 2 + (rnd(i) - .5) * 2.2, v = (420 + rnd(i + 9) * 520) * U, r = (7 + rnd(i + 3) * 11) * U;
+    const x = CX + Math.cos(a) * v * rt, y = CY + Math.sin(a) * v * rt + 1500 * U * rt * rt * .5;
+    ctx.globalAlpha = 1 - prog(rt, .5, 1.2); ctx.fillStyle = [C.rasp, C.passion, C.apricot][i % 3]; circle(x, y, r); ctx.fill();
   }
-  const hk = eOut(prog(t, .35, .7));
-  ctx.globalAlpha = (1 - out) * hk;
-  const hy = inset + 70 * U, fs = 30 * U;
-  ctx.font = font(700, fs, TEXT); ctx.textBaseline = 'middle';
-  if (Math.floor(t * 2.2) % 2 === 0 || t < .7) {
-    ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(inset + 52 * U, hy, 13 * U, 0, Math.PI * 2); ctx.fill();
-  }
-  ctx.fillStyle = C.ink; ctx.textAlign = 'left'; ctx.fillText('REC', inset + 78 * U, hy);
-  const fr = Math.floor(t * 25), tc = `00:00:${String(Math.floor(fr / 25)).padStart(2, '0')}:${String(fr % 25).padStart(2, '0')}`;
-  ctx.textAlign = 'right'; ctx.fillText(tc, W - inset - 40 * U, hy);
-  ctx.font = font(500, 26 * U, TEXT); ctx.fillStyle = C.gray;
-  ctx.textAlign = 'left'; ctx.fillText('4K · 25 FPS', inset + 40 * U, H - inset - 60 * U);
-  ctx.textAlign = 'right'; ctx.fillText('ISO 400   ƒ1.8   1/50', W - inset - 40 * U, H - inset - 60 * U);
-  const ak = eBack(prog(t, .45, .8)), lock = t > .78, af = 1 - eOut(prog(t, 1.1, 1.4));
-  if (ak > 0 && af > 0) {
-    ctx.globalAlpha = (1 - out) * af;
-    const sz = 150 * U * lerp(1.6, 1, ak), c = 34 * U;
-    ctx.strokeStyle = lock ? C.red : C.ink; ctx.lineWidth = 5 * U;
-    for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
-      const x = CX - sx * sz / 2, y = CY - sy * sz / 2;
-      ctx.beginPath(); ctx.moveTo(x, y + sy * c); ctx.lineTo(x, y); ctx.lineTo(x + sx * c, y); ctx.stroke();
-    }
-    if (lock) { ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(CX, CY, 6 * U, 0, Math.PI * 2); ctx.fill(); }
-  }
+  // ягоды запрыгивают по краям и уходят вниз
+  BERRIES.forEach(([fx, fy, r, col], i) => {
+    const st = .95 + i * .14, k = prog(t, st, st + .9); if (k <= 0) return;
+    const ty = H * fy, y = lerp(-r * 3, ty, eBounce(k)) + out * out * H * 1.2;
+    ctx.globalAlpha = 1; berry(W * fx, y, r * U / (VERTICAL ? 1 : 1), col, (1 - k) * 1.5 * (i % 2 ? 1 : -1));
+  });
   ctx.restore();
 }
 
@@ -338,7 +342,7 @@ function prodScene(t) {
   const tk = eExpo(prog(t, T.prodTitle, T.prodTitle + .6));
   const x0 = W * .07, cw = W * .86;
   ctx.save(); ctx.textAlign = 'left';
-  const top = VERTICAL ? 250 * U : 120 * U;
+  const top = VERTICAL ? 250 * U : 110 * U;
   ctx.globalAlpha = tk;
   ctx.fillStyle = C.passion; ctx.font = font(700, 30 * U, TEXT);
   ctx.fillText('ANDROS PROFESSIONAL', x0, top + (1 - tk) * 30 * U);
@@ -346,12 +350,12 @@ function prodScene(t) {
   ctx.fillText('Фруктовые решения', x0, top + 90 * U + (1 - tk) * 40 * U);
   ctx.globalAlpha = 1;
   // 2×2 плитки
-  const gap = 30 * U, tw = (cw - gap) / 2, th = (VERTICAL ? 470 : 330) * U;
-  const gy = top + 150 * U;
+  const gap = 30 * U, cols = VERTICAL ? 2 : 4, rowsN = 4 / cols, tw = (cw - gap * (cols - 1)) / cols, th = (VERTICAL ? 470 : 520) * U;
+  const gy = top + 140 * U;
   PRODUCTS.forEach((p, i) => {
     const k = eBack(prog(t, T.tiles[i], T.tiles[i] + .5));
     if (k <= 0) return;
-    const col = i % 2, row = (i / 2) | 0;
+    const col = i % cols, row = (i / cols) | 0;
     const x = x0 + col * (tw + gap), y = gy + row * (th + gap);
     const hl = 1 - prog(t, T.tiles[i], T.tiles[i] + .6);
     ctx.save();
@@ -373,7 +377,7 @@ function prodScene(t) {
   // «для кондитеров · кафе · ресторанов»
   const wk = eOut(prog(t, T.who, T.who + .6));
   if (wk > 0) {
-    const wy = gy + 2 * th + gap + 90 * U;
+    const wy = gy + rowsN * th + (rowsN - 1) * gap + 90 * U;
     ctx.globalAlpha = wk; ctx.textAlign = 'center'; ctx.fillStyle = C.cream;
     const s = 'для кондитеров · кафе · ресторанов';
     ctx.font = font(700, fit(s, 700, 36 * U, TEXT, cw), TEXT);
@@ -400,10 +404,10 @@ function arcText(str, cx, cy, radius, centerAngle, size, color, inside = false) 
 function halalScene(t) {
   if (!worldBg(t, T.halal, .5, 'cream')) return;
   const sk = eBack(prog(t, T.stamp, T.stamp + .45));
-  const R = (VERTICAL ? 400 : 270) * U, cy = VERTICAL ? CY - 90 * U : CY - 40 * U;
+  const R = (VERTICAL ? 400 : 330) * U, cy = VERTICAL ? CY - 90 * U : CY, bx = VERTICAL ? CX : W * .3;
   if (sk > 0) {
     ctx.save(); ctx.globalAlpha = clamp(sk * 2);
-    ctx.translate(CX, cy); const sc = lerp(2.2, 1, clamp(sk, 0, 1.15)); ctx.scale(sc, sc); ctx.rotate(lerp(-.5, -.07, clamp(sk, 0, 1.1)));
+    ctx.translate(bx, cy); const sc = lerp(2.2, 1, clamp(sk, 0, 1.15)); ctx.scale(sc, sc); ctx.rotate(lerp(-.5, -.07, clamp(sk, 0, 1.1)));
     ctx.shadowColor = 'rgba(30,107,58,.35)'; ctx.shadowBlur = 40 * U; ctx.shadowOffsetY = 18 * U;
     ctx.fillStyle = C.white; circle(0, 0, R); ctx.fill(); ctx.shadowColor = 'transparent';
     ctx.strokeStyle = C.halal; ctx.lineWidth = 16 * U; circle(0, 0, R - 8 * U); ctx.stroke();
@@ -416,16 +420,16 @@ function halalScene(t) {
     ctx.fillText('HALAL', 0, 6 * U);
     ctx.restore();
     const rp = prog(t, T.stamp + .25, T.stamp + .9);       // ударная волна штампа
-    if (rp > 0 && rp < 1) { ctx.save(); ctx.globalAlpha = .6 * (1 - rp); ctx.strokeStyle = C.halal; ctx.lineWidth = 8 * U; circle(CX, cy, R + rp * 160 * U); ctx.stroke(); ctx.restore(); }
+    if (rp > 0 && rp < 1) { ctx.save(); ctx.globalAlpha = .6 * (1 - rp); ctx.strokeStyle = C.halal; ctx.lineWidth = 8 * U; circle(bx, cy, R + rp * 160 * U); ctx.stroke(); ctx.restore(); }
   }
   const lk = eOut(prog(t, T.halalSub, T.halalSub + .6));
   if (lk > 0) {
-    ctx.save(); ctx.globalAlpha = lk; ctx.textAlign = 'center';
-    const ty = cy + R + 150 * U + (1 - lk) * 30 * U;
-    ctx.fillStyle = C.ink; ctx.font = font(800, fit('Сертификат Халал', 800, 66 * U, DISPLAY, W * .86), DISPLAY);
-    ctx.fillText('Сертификат Халал', CX, ty);
-    ctx.fillStyle = C.gray; ctx.font = font(600, 34 * U, TEXT);
-    ctx.fillText('подтверждён документально', CX, ty + 62 * U);
+    ctx.save(); ctx.globalAlpha = lk; ctx.textAlign = VERTICAL ? 'center' : 'left';
+    const tx = VERTICAL ? CX : W * .54, ty = (VERTICAL ? cy + R + 150 * U : cy - 20 * U) + (1 - lk) * 30 * U;
+    ctx.fillStyle = C.ink; ctx.font = font(800, fit('Сертификат Халал', 800, (VERTICAL ? 66 : 84) * U, DISPLAY, VERTICAL ? W * .86 : W * .42), DISPLAY);
+    ctx.fillText('Сертификат Халал', tx, ty);
+    ctx.fillStyle = C.gray; ctx.font = font(600, (VERTICAL ? 34 : 38) * U, TEXT);
+    ctx.fillText('подтверждён документально', tx, ty + 68 * U);
     ctx.restore();
   }
 }
@@ -441,16 +445,16 @@ function delivScene(t) {
   for (let y = gs; y < H; y += gs) for (let x = gs; x < W; x += gs) { circle(x, y, 2.2 * U); ctx.fill(); }
   // заголовок
   const lines = [['ДОСТАВКА', C.cream, 108], ['ПО ВСЕМУ', C.cream, 108], ['КАЗАХСТАНУ', C.passion, 108]];
-  const top = VERTICAL ? 300 * U : 150 * U;
-  ctx.textAlign = 'center';
+  const top = VERTICAL ? 300 * U : 330 * U, hx = VERTICAL ? CX : W * .07;
+  ctx.textAlign = VERTICAL ? 'center' : 'left';
   lines.forEach(([s, col, sz], i) => {
     const k = eExpo(prog(t, T.delivHead[0] + i * .18, T.delivHead[0] + i * .18 + .55));
-    const size = fit(s, 800, sz * U * (VERTICAL ? 1 : .8), DISPLAY, W * .86);
+    const size = fit(s, 800, sz * U * (VERTICAL ? 1 : .95), DISPLAY, VERTICAL ? W * .86 : W * .44);
     ctx.save(); ctx.globalAlpha = k; ctx.fillStyle = col; ctx.font = font(800, size, DISPLAY);
-    ctx.fillText(s, CX, top + i * size * 1.2 + (1 - k) * 60 * U); ctx.restore();
+    ctx.fillText(s, hx, top + i * size * 1.2 + (1 - k) * 60 * U); ctx.restore();
   });
   // маршрут
-  const p0 = [W * .18, H * (VERTICAL ? .78 : .72)], p2 = [W * .82, H * (VERTICAL ? .58 : .5)], p1 = [W * .42, H * (VERTICAL ? .44 : .3)];
+  const p0 = VERTICAL ? [W * .18, H * .78] : [W * .56, H * .72], p2 = VERTICAL ? [W * .82, H * .58] : [W * .9, H * .36], p1 = VERTICAL ? [W * .42, H * .44] : [W * .64, H * .2];
   const rk = eInOut(prog(t, ...T.route));
   const pts = 60;
   ctx.strokeStyle = 'rgba(251,244,234,.28)'; ctx.lineWidth = 4 * U; ctx.setLineDash([2 * U, 18 * U]); ctx.lineCap = 'round';
@@ -484,9 +488,9 @@ function delivScene(t) {
   // «прямо из Франции»
   const fk = eOut(prog(t, T.fromFr, T.fromFr + .6));
   if (fk > 0) {
-    ctx.globalAlpha = fk; ctx.fillStyle = C.cream; ctx.textAlign = 'center';
+    ctx.globalAlpha = fk; ctx.fillStyle = C.cream; ctx.textAlign = VERTICAL ? 'center' : 'left';
     ctx.font = font(700, fit('прямо из Франции', 700, 52 * U, TEXT, W * .86), TEXT);
-    ctx.fillText('прямо из Франции', CX, H * (VERTICAL ? .86 : .93) + (1 - fk) * 20 * U);
+    ctx.fillText('прямо из Франции', VERTICAL ? CX : hx, (VERTICAL ? H * .86 : top + 3 * 100 * U + 70 * U) + (1 - fk) * 20 * U);
   }
   ctx.restore();
 }
@@ -498,8 +502,8 @@ function ctaScene(t) {
   if (t > T.wipe + .45) {
     ctx.fillStyle = C.cream; ctx.fillRect(0, 0, W, H);
     ctx.save(); ctx.textAlign = 'left';
-    const x0 = W * .08, cw = W * .84;
-    const top = Math.max(H * .11, (H - 1380 * U) / 2) + (VERTICAL ? 70 * U : 0);
+    const x0 = W * .07, cw = VERTICAL ? W * .84 : W * .46;
+    const top = VERTICAL ? Math.max(H * .11, (H - 1380 * U) / 2) + 70 * U : 250 * U;
     const tk = eExpo(prog(t, T.title, T.title + .6));
     ctx.globalAlpha = tk;
     ctx.fillStyle = C.gold; ctx.font = font(700, 30 * U, TEXT);
@@ -515,37 +519,37 @@ function ctaScene(t) {
       ctx.fillText(s, x0, top + 330 * U + i * size * 1.18 + (1 - k) * 50 * U); ctx.restore();
     });
     // карточка CTA
-    const by = top + 760 * U, bh = 160 * U;
+    const bcx = VERTICAL ? CX : W * .75, bw = VERTICAL ? cw : W * .38, by = VERTICAL ? top + 760 * U : CY - 170 * U, bh = (VERTICAL ? 160 : 140) * U;
     const ck = eBack(prog(t, T.cta, T.cta + .5));
     if (ck > 0) {
       const tap = Math.sin(Math.PI * prog(t, T.tap, T.tap + .25));
       const pulse = t > T.cta + .6 ? 1 + .025 * Math.sin((t - T.cta) * 7) : 1;
       const sc = ck * pulse * (1 - .05 * tap);
       ctx.globalAlpha = clamp(ck);
-      ctx.save(); ctx.translate(CX, by + bh / 2); ctx.scale(sc, sc);
+      ctx.save(); ctx.translate(bcx, by + bh / 2); ctx.scale(sc, sc);
       ctx.shadowColor = 'rgba(214,33,43,.4)'; ctx.shadowBlur = 40 * U; ctx.shadowOffsetY = 14 * U;
-      ctx.fillStyle = tap > .3 ? C.redDark : C.red; roundRect(-cw / 2, -bh / 2, cw, bh, bh / 2); ctx.fill();
+      ctx.fillStyle = tap > .3 ? C.redDark : C.red; roundRect(-bw / 2, -bh / 2, bw, bh, bh / 2); ctx.fill();
       ctx.shadowColor = 'transparent';
       ctx.fillStyle = C.white; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.font = font(800, fit('Написать в WhatsApp  →', 800, 48 * U, DISPLAY, cw * .86), DISPLAY);
+      ctx.font = font(800, fit('Написать в WhatsApp  →', 800, 48 * U, DISPLAY, bw * .86), DISPLAY);
       ctx.fillText('Написать в WhatsApp  →', 0, 3 * U);
       ctx.restore();
       const rp = prog(t, T.tap, T.tap + .7);
       if (rp > 0 && rp < 1) {
         ctx.save(); ctx.globalAlpha = 1 - rp; ctx.strokeStyle = C.passion; ctx.lineWidth = 6 * U;
-        circle(CX + cw * .3, by + bh / 2, 20 * U + rp * 120 * U); ctx.stroke(); ctx.restore();
+        circle(bcx + bw * .3, by + bh / 2, 20 * U + rp * 120 * U); ctx.stroke(); ctx.restore();
       }
       ctx.globalAlpha = eOut(prog(t, T.tap + .4, T.tap + .9)); ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
       ctx.fillStyle = C.gray; ctx.font = font(600, 36 * U, TEXT);
-      ctx.fillText('пришлём каталог', CX, by + bh + 70 * U);
+      ctx.fillText('пришлём каталог', bcx, by + bh + 70 * U);
     }
     const hk = eBack(prog(t, T.handle, T.handle + .5));
     if (hk > 0) {
       ctx.globalAlpha = clamp(hk); ctx.textAlign = 'center';
       ctx.fillStyle = C.ink; ctx.font = font(800, 50 * U * Math.max(hk, .01), DISPLAY);
-      ctx.fillText('@andros.kaz', CX, by + bh + 190 * U);
+      ctx.fillText('@andros.kaz', bcx, by + bh + 190 * U);
       ctx.fillStyle = C.gray; ctx.font = font(700, 36 * U, TEXT);
-      ctx.fillText('+7 700 508 08 19', CX, by + bh + 250 * U);
+      ctx.fillText('+7 700 508 08 19', bcx, by + bh + 250 * U);
     }
     ctx.restore();
     const fk = eInOut(prog(t, T.footer, T.footer + .8));
@@ -580,7 +584,7 @@ function renderFrame(t) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.globalAlpha = 1; ctx.filter = 'none';
   ctx.fillStyle = C.cream; ctx.fillRect(0, 0, W, H);
-  viewfinder(t);
+  opening(t);
   hook(t);
   brandScene(t);
   prodScene(t);
