@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Andros Presentation</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<style>
+  :root { --bg: #0c1f19; --fg: #f4f1ea; --muted: #9fb3aa; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--fg);
+    font-family: Montserrat, Arial, sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    min-height: 100vh; padding: 16px; box-sizing: border-box; }
+  canvas { max-width: 100%; max-height: calc(100vh - 90px); height: auto; display: block;
+    border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; color: var(--muted); font-size: 14px; }
+  button, a.btn { background: #163a2e; color: var(--fg); border: 1px solid #2b5a49; border-radius: 6px;
+    padding: 6px 14px; font: inherit; cursor: pointer; text-decoration: none; }
+  input[type=range] { width: min(60vw, 480px); accent-color: #A37E2D; }
+  body.capture { display: block; padding: 0; }
+  body.capture .controls { display: none; }
+  body.capture canvas { max-width: none; max-height: none; border-radius: 0; box-shadow: none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<audio id="snd" src="assets/soundtrack.wav" preload="auto"></audio>
+<div class="controls">
+  <button id="play">⏸</button>
+  <input id="seek" type="range" min="0" max="28" step="0.01" value="0">
+  <span id="time">0.0 s</span>
+  <a class="btn" id="fmt" href="?format=vertical">9:16</a>
+</div>
+<script>
+// ------------------------------------------------------------------
+// Andros (представительство Астана / Северный Казахстан) — презентация компании.
+// Deterministic: renderFrame(t) draws frame t. ?format=vertical → 1080x1920 (Reels), default → 1920x1080.
+// Стиль и техника — как у роликов SEE Group (видоискатель → хук → бренд → тайлы → CTA).
+// ------------------------------------------------------------------
+const params = new URLSearchParams(location.search);
+const VERTICAL = params.get('format') === 'vertical';
+const W = VERTICAL ? 1080 : 1920, H = VERTICAL ? 1920 : 1080;
+const U = Math.min(W, H) / 1080;          // base unit
+const CX = W / 2, CY = H / 2;
+const cv = document.getElementById('c');
+cv.width = W; cv.height = H;
+cv.style.width = params.has('capture') ? W + 'px' : (VERTICAL ? 'auto' : '1280px');
+cv.style.aspectRatio = `${W} / ${H}`;
+const ctx = cv.getContext('2d');
+
+// Палитра: красный из логотипа Andros + тёплые «десертные» тона и цвета фруктов
+const C = {
+  red: '#D6212B', redDark: '#9E1219', ink: '#2A120E', burg: '#4B0F18', burgDeep: '#240509',
+  cream: '#FBF4EA', white: '#FFFFFF', gold: '#C9972B', gray: '#7A6760',
+  rasp: '#C2185B', passion: '#F5B31A', apricot: '#EE7B30', kiwi: '#7FA33A', blue: '#BFE3F5',
+  halal: '#1E6B3A', glow: 'rgba(245,179,26,'
+};
+const DISPLAY = 'Unbounded, Montserrat, Arial, sans-serif';
+const TEXT = 'Montserrat, Arial, sans-serif';
+
+// ---------- helpers ----------
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = x => 1 - Math.pow(1 - x, 3);
+const eInOut = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const eBack = x => { const c1 = 1.70158, c3 = c1 + 1; return x <= 0 ? 0 : 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const eExpo = x => x >= 1 ? 1 : 1 - Math.pow(2, -10 * x);
+const rnd = i => { const s = Math.sin(i * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+
+function font(weight, size, family) { return `${weight} ${Math.round(size)}px ${family}`; }
+function fit(text, weight, max, family, maxW) {
+  ctx.font = font(weight, max, family);
+  const w = ctx.measureText(text).width;
+  return w > maxW ? max * maxW / w : max;
+}
+function roundRect(x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath(); ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function circle(x, y, r) { ctx.beginPath(); ctx.arc(x, y, Math.max(0, r), 0, Math.PI * 2); }
+
+// ---------- timeline (seconds). Голос стартует на T.vo. Сейчас — ОРИЕНТИРОВОЧНЫЕ тайминги по сценарию,
+// после получения озвучки пересчитать по scripts/vo_cues.sh (метки в комментарии ниже заменить на реальные).
+// VO (оценка): хук 0–2.0 · «Это — Andros» 2.6 · «Французское фруктовое пюре» 4.4 · «джемы» 6.3 · «филлинги» 7.0 · «и чанки» 7.9
+//   «для кондитеров, кафе и ресторанов» 8.8 · «Сертификат Халал» 11.9 · «Доставка по всему Казахстану» 13.9 · «прямо из Франции» 16.0
+//   «Мы — официальный дистрибьютор» 18.2 · «в Астане и Северном Казахстане» 19.8 · «Напишите нам — пришлём каталог» 22.6
+const T = {
+  vo: 1.2,
+  hookLines: [1.15, 1.5, 1.85], glitch: [2.5, 2.9], hookOut: 3.1,
+  brand: 3.8, burst: 4.45, tag: 4.95,
+  prod: 5.45, prodTitle: 5.95, tiles: [6.2, 7.6, 8.3, 9.2], who: 10.3,
+  halal: 12.55, stamp: 13.0, halalSub: 13.7,
+  deliv: 14.75, delivHead: [15.1, 15.55], route: [15.6, 18.2], fromFr: 17.5,
+  wipe: 19.0, title: 19.5, loc: [20.3, 21.1], cta: 23.7, tap: 25.1, handle: 25.6, footer: 26.0,
+  end: 28.0
+};
+const DURATION = T.end;
+
+// ---------- сцена 1: видоискатель камеры (0 – 3.6 с) ----------
+function viewfinder(t) {
+  const a = eOut(prog(t, .05, .6)), out = eInOut(prog(t, T.hookOut, T.hookOut + .45));
+  if (a <= 0 || out >= 1) return;
+  const inset = lerp(-80 * U, 64 * U, a) - out * 160 * U, len = 110 * U;
+  ctx.save();
+  ctx.globalAlpha = 1 - out;
+  ctx.strokeStyle = 'rgba(42,18,14,.10)'; ctx.lineWidth = 2 * U;
+  const gk = eInOut(prog(t, .25, .8));
+  for (const f of [1 / 3, 2 / 3]) {
+    ctx.beginPath(); ctx.moveTo(W * f, CY - H / 2 * gk); ctx.lineTo(W * f, CY + H / 2 * gk); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(CX - W / 2 * gk, H * f); ctx.lineTo(CX + W / 2 * gk, H * f); ctx.stroke();
+  }
+  ctx.strokeStyle = C.ink; ctx.lineWidth = 7 * U; ctx.lineCap = 'square';
+  for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+    const x = sx > 0 ? inset : W - inset, y = sy > 0 ? inset : H - inset;
+    ctx.beginPath(); ctx.moveTo(x, y + sy * len); ctx.lineTo(x, y); ctx.lineTo(x + sx * len, y); ctx.stroke();
+  }
+  const hk = eOut(prog(t, .35, .7));
+  ctx.globalAlpha = (1 - out) * hk;
+  const hy = inset + 70 * U, fs = 30 * U;
+  ctx.font = font(700, fs, TEXT); ctx.textBaseline = 'middle';
+  if (Math.floor(t * 2.2) % 2 === 0 || t < .7) {
+    ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(inset + 52 * U, hy, 13 * U, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = C.ink; ctx.textAlign = 'left'; ctx.fillText('REC', inset + 78 * U, hy);
+  const fr = Math.floor(t * 25), tc = `00:00:${String(Math.floor(fr / 25)).padStart(2, '0')}:${String(fr % 25).padStart(2, '0')}`;
+  ctx.textAlign = 'right'; ctx.fillText(tc, W - inset - 40 * U, hy);
+  ctx.font = font(500, 26 * U, TEXT); ctx.fillStyle = C.gray;
+  ctx.textAlign = 'left'; ctx.fillText('4K · 25 FPS', inset + 40 * U, H - inset - 60 * U);
+  ctx.textAlign = 'right'; ctx.fillText('ISO 400   ƒ1.8   1/50', W - inset - 40 * U, H - inset - 60 * U);
+  const ak = eBack(prog(t, .45, .8)), lock = t > .78, af = 1 - eOut(prog(t, 1.1, 1.4));
+  if (ak > 0 && af > 0) {
+    ctx.globalAlpha = (1 - out) * af;
+    const sz = 150 * U * lerp(1.6, 1, ak), c = 34 * U;
+    ctx.strokeStyle = lock ? C.red : C.ink; ctx.lineWidth = 5 * U;
+    for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+      const x = CX - sx * sz / 2, y = CY - sy * sz / 2;
+      ctx.beginPath(); ctx.moveTo(x, y + sy * c); ctx.lineTo(x, y); ctx.lineTo(x + sx * c, y); ctx.stroke();
+    }
+    if (lock) { ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(CX, CY, 6 * U, 0, Math.PI * 2); ctx.fill(); }
+  }
+  ctx.restore();
+}
+
+// ---------- сцена 2: хук (1.1 – 3.6 с) ----------
+function hook(t) {
+  if (t < 1.0 || t > 3.9) return;
+  const lines = [['ВКУС ДЕСЕРТА', C.ink], ['НАЧИНАЕТСЯ', C.ink], ['С ФРУКТА.', C.red]];
+  const maxW = W * (VERTICAL ? .86 : .7);
+  const size = Math.min(...lines.map(l => fit(l[0], 800, (VERTICAL ? 120 : 130) * U, DISPLAY, maxW)));
+  const lh = size * 1.2, top = CY - lh * lines.length / 2 + size * .85;
+  ctx.save(); ctx.textAlign = 'center';
+  lines.forEach(([s, col], i) => {
+    const k = eExpo(prog(t, T.hookLines[i], T.hookLines[i] + .6));
+    const ko = eInOut(prog(t, T.hookOut + i * .06, T.hookOut + .35 + i * .06));
+    const y = top + i * lh;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, y - size * 1.05, W, size * 1.35); ctx.clip();
+    const gk = Math.sin(Math.PI * prog(t, T.glitch[0], T.glitch[1]));
+    const dx = i === 2 ? Math.sin(t * 70) * 12 * U * gk : 0;
+    ctx.font = font(800, size, DISPLAY);
+    const blur = 14 * U * (1 - eOut(prog(t, T.hookLines[i], T.hookLines[i] + .5)));
+    if (blur > .3) ctx.filter = `blur(${blur.toFixed(1)}px)`;
+    const yy = y + (1 - k) * size * 1.3 - ko * size * 1.3;
+    if (i === 2 && gk > 0) {
+      ctx.globalAlpha = .45 * gk; ctx.fillStyle = C.passion; ctx.fillText(s, CX + dx + 10 * U, yy);
+      ctx.fillStyle = C.ink; ctx.fillText(s, CX + dx - 10 * U, yy); ctx.globalAlpha = 1;
+    }
+    ctx.fillStyle = col; ctx.fillText(s, CX + dx, yy);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+// ---------- фоны «миров» (круговое раскрытие из центра) ----------
+function worldBg(t, start, dur, kind) {
+  const k = prog(t, start, start + dur);
+  if (k <= 0) return false;
+  const r = eInOut(k) * Math.hypot(W, H) * .6;
+  ctx.save();
+  circle(CX, CY, r); ctx.clip();
+  if (kind === 'dark') {
+    const g = ctx.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, C.burg); g.addColorStop(1, C.burgDeep);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // тёплые диагональные лучи с бегущим бликом
+    const n = VERTICAL ? 5 : 6;
+    for (let i = 0; i < n; i++) {
+      const base = (i / n) * (W + H * .6) - H * .3;
+      const x0 = base + Math.sin(i * 1.7) * 60 * U, y0 = -40, x1 = x0 + H * .55, y1 = H + 40;
+      ctx.strokeStyle = 'rgba(245,179,26,.07)'; ctx.lineWidth = 2 * U;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+      const ph = ((t * .3 + i * .37) % 1.6) - .3;
+      const hx = lerp(x0, x1, ph), hy = lerp(y0, y1, ph);
+      const gl = ctx.createRadialGradient(hx, hy, 0, hx, hy, 170 * U);
+      gl.addColorStop(0, 'rgba(255,120,90,.5)'); gl.addColorStop(1, 'rgba(255,120,90,0)');
+      ctx.strokeStyle = gl; ctx.lineWidth = 3 * U;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    }
+  } else {
+    ctx.fillStyle = C.cream; ctx.fillRect(0, 0, W, H);
+  }
+  if (k < 1) {   // золотое кольцо на краю раскрытия
+    ctx.strokeStyle = `rgba(245,179,26,${.85 * (1 - k)})`; ctx.lineWidth = 10 * U;
+    circle(CX, CY, r - 5 * U); ctx.stroke();
+  }
+  ctx.restore();
+  return true;
+}
+
+// ---------- логотип-слово ANDROS (Unbounded как заменитель; настоящий файл логотипа — подставить, когда пришлют) ----------
+function wordmark(t, t0, cx, cy, maxW, bigSize, step = .1, solid = false) {
+  const word = 'ANDROS', track = .06;
+  const size = fit(word, 800, bigSize, DISPLAY, maxW);
+  ctx.font = font(800, size, DISPLAY);
+  const ws = [...word].map(ch => ctx.measureText(ch).width + size * track);
+  const total = ws.reduce((a, b) => a + b, 0) - size * track;
+  let x = cx - total / 2;
+  ctx.save(); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  [...word].forEach((ch, i) => {
+    const st = t0 + i * step;
+    const k = solid ? 1 : eBack(prog(t, st, st + .5));
+    if (k > 0) {
+      const dy = (1 - clamp(k, 0, 1.2)) * -size * 1.6;
+      ctx.save();
+      ctx.globalAlpha = clamp(k * 2);
+      ctx.translate(x + ws[i] / 2, cy + dy); ctx.rotate((1 - clamp(k)) * (i % 2 ? .5 : -.5));
+      ctx.font = font(800, size, DISPLAY); ctx.textAlign = 'center';
+      ctx.lineJoin = 'round'; ctx.lineWidth = size * .12; ctx.strokeStyle = C.white;
+      ctx.shadowColor = 'rgba(158,18,25,.35)'; ctx.shadowBlur = 24 * U; ctx.shadowOffsetY = 12 * U;
+      ctx.strokeText(ch, 0, 0); ctx.shadowColor = 'transparent';
+      ctx.fillStyle = C.red; ctx.fillText(ch, 0, 0);
+      ctx.restore();
+    }
+    x += ws[i];
+  });
+  ctx.restore();
+  return { size, total };
+}
+function tricolor(x, y, w, h) {       // флаг Франции
+  ctx.fillStyle = '#1F3D99'; ctx.fillRect(x, y, w / 3, h);
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x + w / 3, y, w / 3, h);
+  ctx.fillStyle = '#E1232F'; ctx.fillRect(x + 2 * w / 3, y, w / 3 + 1, h);
+  ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.lineWidth = 1.5 * U; ctx.strokeRect(x, y, w, h);
+}
+
+// ---------- сцена 3: бренд (3.8 – 5.5 с) ----------
+const BURST = [C.rasp, C.passion, C.red, C.apricot, C.kiwi, C.rasp, C.passion, C.red];
+function brandScene(t) {
+  if (t < T.brand - .1) return;
+  const y = VERTICAL ? CY - 40 * U : CY;
+  const wm = wordmark(t, T.brand, CX, y, W * .76, (VERTICAL ? 200 : 210) * U);
+  // «PROFESSIONAL»
+  const pk = eOut(prog(t, T.tag - .3, T.tag + .3));
+  if (pk > 0) {
+    ctx.save(); ctx.globalAlpha = pk; ctx.textAlign = 'center'; ctx.fillStyle = C.ink;
+    const fs = fit('P R O F E S S I O N A L', 700, 44 * U, TEXT, W * .8);
+    ctx.font = font(700, fs, TEXT);
+    ctx.fillText('P R O F E S S I O N A L', CX, y + wm.size * .55 + (1 - pk) * 20 * U);
+    ctx.restore();
+  }
+  // флаг + «с 1920 года»
+  const fk = eBack(prog(t, T.tag + .25, T.tag + .75));
+  if (fk > 0) {
+    const fy = y + wm.size * .55 + 90 * U, fw = 78 * U, fh = 52 * U;
+    ctx.save(); ctx.globalAlpha = clamp(fk); ctx.translate(CX, fy); ctx.scale(fk, fk);
+    tricolor(-fw - 18 * U, -fh / 2, fw, fh);
+    ctx.fillStyle = C.gray; ctx.font = font(600, 36 * U, TEXT); ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('Франция · с 1920 года', 4 * U, 2 * U);
+    ctx.restore();
+  }
+  // фруктовый взрыв
+  const bt = t - T.burst;
+  if (bt > 0 && bt < 1.6) {
+    for (let i = 0; i < 18; i++) {
+      const a = rnd(i) * Math.PI * 2, sp = (520 + rnd(i + 40) * 700) * U, r = (16 + rnd(i + 80) * 30) * U;
+      const x = CX + Math.cos(a) * sp * eOut(clamp(bt / 1.2)) * .9;
+      const yy = y - 40 * U + Math.sin(a) * sp * eOut(clamp(bt / 1.2)) * .9 + 500 * U * bt * bt * .4;
+      const al = 1 - prog(bt, .7, 1.6);
+      ctx.save(); ctx.globalAlpha = al;
+      const col = BURST[i % BURST.length];
+      const g = ctx.createRadialGradient(x - r * .3, yy - r * .3, r * .1, x, yy, r);
+      g.addColorStop(0, '#ffffff'); g.addColorStop(.25, col); g.addColorStop(1, col);
+      ctx.fillStyle = g; circle(x, yy, r); ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+// ---------- иконки продуктов ----------
+function iconPuree(s, col) {         // ведёрко замороженного пюре со снежинкой
+  ctx.fillStyle = C.white;
+  ctx.beginPath(); ctx.moveTo(-s * .5, -s * .25); ctx.lineTo(s * .5, -s * .25); ctx.lineTo(s * .4, s * .5); ctx.lineTo(-s * .4, s * .5); ctx.closePath(); ctx.fill();
+  roundRect(-s * .56, -s * .42, s * 1.12, s * .22, s * .06); ctx.fill();
+  ctx.fillStyle = col; roundRect(-s * .38, -s * .02, s * .76, s * .32, s * .06); ctx.fill();
+  ctx.strokeStyle = C.blue; ctx.lineWidth = 5 * U; ctx.lineCap = 'round';
+  const sx = s * .46, sy = -s * .5;
+  for (let i = 0; i < 3; i++) { const a = i * Math.PI / 3; ctx.beginPath(); ctx.moveTo(sx - Math.cos(a) * s * .17, sy - Math.sin(a) * s * .17); ctx.lineTo(sx + Math.cos(a) * s * .17, sy + Math.sin(a) * s * .17); ctx.stroke(); }
+}
+function iconJam(s, col) {           // банка джема
+  ctx.fillStyle = 'rgba(255,255,255,.92)'; roundRect(-s * .38, -s * .3, s * .76, s * .8, s * .14); ctx.fill();
+  ctx.fillStyle = col; roundRect(-s * .32, -s * .12, s * .64, s * .56, s * .1); ctx.fill();
+  ctx.fillStyle = C.red; roundRect(-s * .42, -s * .48, s * .84, s * .2, s * .06); ctx.fill();
+  ctx.fillStyle = C.white; circle(0, s * .16, s * .15); ctx.fill();
+  ctx.fillStyle = col; circle(0, s * .16, s * .07); ctx.fill();
+}
+function iconFilling(s, col) {       // пирог / тарт с начинкой
+  ctx.fillStyle = '#E8B77A'; circle(0, 0, s * .52); ctx.fill();
+  ctx.fillStyle = col; circle(0, 0, s * .4); ctx.fill();
+  ctx.strokeStyle = '#E8B77A'; ctx.lineWidth = s * .06; ctx.lineCap = 'round';
+  for (const o of [-.18, .18]) {
+    ctx.beginPath(); ctx.moveTo(-s * .34, o * s * 1.2); ctx.lineTo(s * .34, o * s * 1.2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(o * s * 1.2, -s * .34); ctx.lineTo(o * s * 1.2, s * .34); ctx.stroke();
+  }
+}
+function iconChunks(s, col) {        // кусочки фруктов
+  const cols = [col, C.white, C.rasp, C.apricot, C.passion];
+  const pos = [[-.28, -.2, 12], [.25, -.28, -18], [.02, .02, 28], [-.3, .3, -8], [.3, .26, 20]];
+  pos.forEach(([x, y, rot], i) => {
+    ctx.save(); ctx.translate(x * s, y * s); ctx.rotate(rot * Math.PI / 180);
+    ctx.fillStyle = cols[i]; roundRect(-s * .17, -s * .17, s * .34, s * .34, s * .07); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; roundRect(-s * .13, -s * .13, s * .12, s * .12, s * .03); ctx.fill();
+    ctx.restore();
+  });
+}
+const PRODUCTS = [
+  { title: 'Пюре', sub: 'замороженное фруктовое', bg: C.rasp, fg: C.white, icon: iconPuree, ic: C.rasp },
+  { title: 'Джемы', sub: 'для десертов и выпечки', bg: C.passion, fg: C.ink, icon: iconJam, ic: C.apricot },
+  { title: 'Филлинги', sub: 'начинки для выпечки', bg: C.apricot, fg: C.white, icon: iconFilling, ic: C.rasp },
+  { title: 'Чанки', sub: 'кусочки фруктов', bg: C.kiwi, fg: C.white, icon: iconChunks, ic: C.kiwi }
+];
+
+// ---------- сцена 4: что поставляем (5.45 – 12.5 с) ----------
+function prodScene(t) {
+  if (!worldBg(t, T.prod, .55, 'dark')) return;
+  const tk = eExpo(prog(t, T.prodTitle, T.prodTitle + .6));
+  const x0 = W * .07, cw = W * .86;
+  ctx.save(); ctx.textAlign = 'left';
+  const top = VERTICAL ? 250 * U : 120 * U;
+  ctx.globalAlpha = tk;
+  ctx.fillStyle = C.passion; ctx.font = font(700, 30 * U, TEXT);
+  ctx.fillText('ANDROS PROFESSIONAL', x0, top + (1 - tk) * 30 * U);
+  ctx.fillStyle = C.cream; ctx.font = font(800, fit('Фруктовые решения', 800, 76 * U, DISPLAY, cw), DISPLAY);
+  ctx.fillText('Фруктовые решения', x0, top + 90 * U + (1 - tk) * 40 * U);
+  ctx.globalAlpha = 1;
+  // 2×2 плитки
+  const gap = 30 * U, tw = (cw - gap) / 2, th = (VERTICAL ? 470 : 330) * U;
+  const gy = top + 150 * U;
+  PRODUCTS.forEach((p, i) => {
+    const k = eBack(prog(t, T.tiles[i], T.tiles[i] + .5));
+    if (k <= 0) return;
+    const col = i % 2, row = (i / 2) | 0;
+    const x = x0 + col * (tw + gap), y = gy + row * (th + gap);
+    const hl = 1 - prog(t, T.tiles[i], T.tiles[i] + .6);
+    ctx.save();
+    ctx.globalAlpha = clamp(k * 1.4);
+    ctx.translate(x + tw / 2, y + th / 2); ctx.scale(k, k);
+    ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 40 * U; ctx.shadowOffsetY = 16 * U;
+    ctx.fillStyle = p.bg; roundRect(-tw / 2, -th / 2, tw, th, 36 * U); ctx.fill();
+    ctx.shadowColor = 'transparent';
+    if (hl > 0) { ctx.fillStyle = `rgba(255,255,255,${.35 * hl})`; roundRect(-tw / 2, -th / 2, tw, th, 36 * U); ctx.fill(); }
+    ctx.save(); ctx.translate(0, -th * .12); p.icon(Math.min(tw, th) * .5, p.ic); ctx.restore();
+    ctx.fillStyle = p.fg; ctx.textAlign = 'center';
+    ctx.font = font(800, fit(p.title, 800, 52 * U, DISPLAY, tw * .86), DISPLAY);
+    ctx.fillText(p.title, 0, th * .27);
+    ctx.globalAlpha *= .9;
+    ctx.font = font(600, fit(p.sub, 600, 28 * U, TEXT, tw * .86), TEXT);
+    ctx.fillText(p.sub, 0, th * .27 + 48 * U);
+    ctx.restore();
+  });
+  // «для кондитеров · кафе · ресторанов»
+  const wk = eOut(prog(t, T.who, T.who + .6));
+  if (wk > 0) {
+    const wy = gy + 2 * th + gap + 90 * U;
+    ctx.globalAlpha = wk; ctx.textAlign = 'center'; ctx.fillStyle = C.cream;
+    const s = 'для кондитеров · кафе · ресторанов';
+    ctx.font = font(700, fit(s, 700, 36 * U, TEXT, cw), TEXT);
+    ctx.fillText(s, CX, wy + (1 - wk) * 20 * U);
+    ctx.fillStyle = C.passion; ctx.fillRect(CX - 60 * U * wk, wy + 28 * U, 120 * U * wk, 5 * U);
+  }
+  ctx.restore();
+}
+
+// ---------- сцена 5: Halal (12.55 – 14.7 с) ----------
+function arcText(str, cx, cy, radius, centerAngle, size, color, inside = false) {
+  ctx.save(); ctx.fillStyle = color; ctx.font = font(800, size, DISPLAY); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const widths = [...str].map(ch => ctx.measureText(ch).width + size * .12);
+  const total = widths.reduce((a, b) => a + b, 0);
+  let a = centerAngle - (inside ? -1 : 1) * total / radius / 2;
+  [...str].forEach((ch, i) => {
+    const step = widths[i] / radius, mid = a + (inside ? -1 : 1) * step / 2;
+    ctx.save(); ctx.translate(cx + Math.cos(mid) * radius, cy + Math.sin(mid) * radius);
+    ctx.rotate(mid + (inside ? -Math.PI / 2 : Math.PI / 2)); ctx.fillText(ch, 0, 0); ctx.restore();
+    a += (inside ? -1 : 1) * step;
+  });
+  ctx.restore();
+}
+function halalScene(t) {
+  if (!worldBg(t, T.halal, .5, 'cream')) return;
+  const sk = eBack(prog(t, T.stamp, T.stamp + .45));
+  const R = (VERTICAL ? 400 : 270) * U, cy = VERTICAL ? CY - 90 * U : CY - 40 * U;
+  if (sk > 0) {
+    ctx.save(); ctx.globalAlpha = clamp(sk * 2);
+    ctx.translate(CX, cy); const sc = lerp(2.2, 1, clamp(sk, 0, 1.15)); ctx.scale(sc, sc); ctx.rotate(lerp(-.5, -.07, clamp(sk, 0, 1.1)));
+    ctx.shadowColor = 'rgba(30,107,58,.35)'; ctx.shadowBlur = 40 * U; ctx.shadowOffsetY = 18 * U;
+    ctx.fillStyle = C.white; circle(0, 0, R); ctx.fill(); ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = C.halal; ctx.lineWidth = 16 * U; circle(0, 0, R - 8 * U); ctx.stroke();
+    ctx.strokeStyle = C.gold; ctx.lineWidth = 5 * U; circle(0, 0, R - 40 * U); ctx.stroke();
+    ctx.strokeStyle = C.gold; ctx.lineWidth = 3 * U; circle(0, 0, R * .55); ctx.stroke();
+    arcText('СЕРТИФИЦИРОВАНО', 0, 0, R - 84 * U, -Math.PI / 2, 32 * U, C.halal);
+    arcText('★ ANDROS ★', 0, 0, R - 84 * U, Math.PI / 2, 30 * U, C.halal, true);
+    ctx.fillStyle = C.halal; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = font(800, fit('HALAL', 800, 112 * U, DISPLAY, R * 1.0), DISPLAY);
+    ctx.fillText('HALAL', 0, 6 * U);
+    ctx.restore();
+    const rp = prog(t, T.stamp + .25, T.stamp + .9);       // ударная волна штампа
+    if (rp > 0 && rp < 1) { ctx.save(); ctx.globalAlpha = .6 * (1 - rp); ctx.strokeStyle = C.halal; ctx.lineWidth = 8 * U; circle(CX, cy, R + rp * 160 * U); ctx.stroke(); ctx.restore(); }
+  }
+  const lk = eOut(prog(t, T.halalSub, T.halalSub + .6));
+  if (lk > 0) {
+    ctx.save(); ctx.globalAlpha = lk; ctx.textAlign = 'center';
+    const ty = cy + R + 150 * U + (1 - lk) * 30 * U;
+    ctx.fillStyle = C.ink; ctx.font = font(800, fit('Сертификат Халал', 800, 66 * U, DISPLAY, W * .86), DISPLAY);
+    ctx.fillText('Сертификат Халал', CX, ty);
+    ctx.fillStyle = C.gray; ctx.font = font(600, 34 * U, TEXT);
+    ctx.fillText('подтверждён документально', CX, ty + 62 * U);
+    ctx.restore();
+  }
+}
+
+// ---------- сцена 6: доставка Франция → весь Казахстан (14.75 – 19 с) ----------
+function bez(p0, p1, p2, k) { const a = 1 - k; return [a * a * p0[0] + 2 * a * k * p1[0] + k * k * p2[0], a * a * p0[1] + 2 * a * k * p1[1] + k * k * p2[1]]; }
+function delivScene(t) {
+  if (!worldBg(t, T.deliv, .55, 'dark')) return;
+  ctx.save();
+  // точечная сетка
+  ctx.fillStyle = 'rgba(251,244,234,.08)';
+  const gs = 54 * U;
+  for (let y = gs; y < H; y += gs) for (let x = gs; x < W; x += gs) { circle(x, y, 2.2 * U); ctx.fill(); }
+  // заголовок
+  const lines = [['ДОСТАВКА', C.cream, 108], ['ПО ВСЕМУ', C.cream, 108], ['КАЗАХСТАНУ', C.passion, 108]];
+  const top = VERTICAL ? 300 * U : 150 * U;
+  ctx.textAlign = 'center';
+  lines.forEach(([s, col, sz], i) => {
+    const k = eExpo(prog(t, T.delivHead[0] + i * .18, T.delivHead[0] + i * .18 + .55));
+    const size = fit(s, 800, sz * U * (VERTICAL ? 1 : .8), DISPLAY, W * .86);
+    ctx.save(); ctx.globalAlpha = k; ctx.fillStyle = col; ctx.font = font(800, size, DISPLAY);
+    ctx.fillText(s, CX, top + i * size * 1.2 + (1 - k) * 60 * U); ctx.restore();
+  });
+  // маршрут
+  const p0 = [W * .18, H * (VERTICAL ? .78 : .72)], p2 = [W * .82, H * (VERTICAL ? .58 : .5)], p1 = [W * .42, H * (VERTICAL ? .44 : .3)];
+  const rk = eInOut(prog(t, ...T.route));
+  const pts = 60;
+  ctx.strokeStyle = 'rgba(251,244,234,.28)'; ctx.lineWidth = 4 * U; ctx.setLineDash([2 * U, 18 * U]); ctx.lineCap = 'round';
+  ctx.beginPath(); for (let i = 0; i <= pts; i++) { const [x, y] = bez(p0, p1, p2, i / pts); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = C.passion; ctx.lineWidth = 7 * U;
+  ctx.beginPath(); const m = Math.floor(rk * pts);
+  for (let i = 0; i <= m; i++) { const [x, y] = bez(p0, p1, p2, i / pts); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+  // точки городов
+  const pin = (p, label, flag, k0) => {
+    const k = eBack(prog(t, k0, k0 + .5)); if (k <= 0) return;
+    ctx.save(); ctx.translate(p[0], p[1]); ctx.scale(k, k);
+    const pulse = (t * .9) % 1; ctx.globalAlpha = (1 - pulse) * .6; ctx.strokeStyle = C.passion; ctx.lineWidth = 5 * U; circle(0, 0, 24 * U + pulse * 60 * U); ctx.stroke();
+    ctx.globalAlpha = 1; ctx.fillStyle = C.red; circle(0, 0, 22 * U); ctx.fill(); ctx.fillStyle = C.white; circle(0, 0, 9 * U); ctx.fill();
+    ctx.fillStyle = C.cream; ctx.font = font(800, 40 * U, DISPLAY); ctx.textAlign = 'center';
+    ctx.fillText(label, 0, 90 * U);
+    if (flag) tricolor(-36 * U, 118 * U, 72 * U, 48 * U);
+    ctx.restore();
+  };
+  pin(p0, 'ФРАНЦИЯ', true, T.route[0] - .1);
+  pin(p2, 'АСТАНА', false, T.route[1] - .6);
+  // посылка в пути
+  if (rk > 0 && rk < 1) {
+    const [x, y] = bez(p0, p1, p2, rk), [x2, y2] = bez(p0, p1, p2, Math.min(1, rk + .01));
+    ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(y2 - y, x2 - x) * .4);
+    ctx.shadowColor = 'rgba(245,179,26,.7)'; ctx.shadowBlur = 40 * U;
+    ctx.fillStyle = C.passion; roundRect(-34 * U, -28 * U, 68 * U, 56 * U, 10 * U); ctx.fill(); ctx.shadowColor = 'transparent';
+    ctx.fillStyle = C.red; ctx.fillRect(-34 * U, -4 * U, 68 * U, 8 * U); ctx.fillRect(-4 * U, -28 * U, 8 * U, 56 * U);
+    ctx.restore();
+  }
+  // «прямо из Франции»
+  const fk = eOut(prog(t, T.fromFr, T.fromFr + .6));
+  if (fk > 0) {
+    ctx.globalAlpha = fk; ctx.fillStyle = C.cream; ctx.textAlign = 'center';
+    ctx.font = font(700, fit('прямо из Франции', 700, 52 * U, TEXT, W * .86), TEXT);
+    ctx.fillText('прямо из Франции', CX, H * (VERTICAL ? .86 : .93) + (1 - fk) * 20 * U);
+  }
+  ctx.restore();
+}
+
+// ---------- сцена 7: дистрибьютор + CTA (19 – 28 с) ----------
+function ctaScene(t) {
+  if (t < T.wipe) return;
+  const n = VERTICAL ? 6 : 10, cell = W / n, rows = Math.ceil(H / cell) + 1;
+  if (t > T.wipe + .45) {
+    ctx.fillStyle = C.cream; ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.textAlign = 'left';
+    const x0 = W * .08, cw = W * .84;
+    const top = Math.max(H * .11, (H - 1380 * U) / 2) + (VERTICAL ? 70 * U : 0);
+    const tk = eExpo(prog(t, T.title, T.title + .6));
+    ctx.globalAlpha = tk;
+    ctx.fillStyle = C.gold; ctx.font = font(700, 30 * U, TEXT);
+    ctx.fillText('ОФИЦИАЛЬНЫЙ ДИСТРИБЬЮТОР', x0, top + (1 - tk) * 30 * U);
+    ctx.globalAlpha = 1;
+    wordmark(t, 0, x0 + cw * .34, top + 150 * U, cw * .68, 120 * U, .1, true);
+    // регион
+    [['АСТАНА', C.ink], ['И СЕВЕРНЫЙ', C.ink], ['КАЗАХСТАН', C.red]].forEach(([s, col], i) => {
+      const st = i === 0 ? T.loc[0] : T.loc[1] + (i - 1) * .2;
+      const k = eExpo(prog(t, st, st + .55));
+      const size = fit(s, 800, 100 * U, DISPLAY, cw);
+      ctx.save(); ctx.globalAlpha = k; ctx.fillStyle = col; ctx.font = font(800, size, DISPLAY);
+      ctx.fillText(s, x0, top + 330 * U + i * size * 1.18 + (1 - k) * 50 * U); ctx.restore();
+    });
+    // карточка CTA
+    const by = top + 760 * U, bh = 160 * U;
+    const ck = eBack(prog(t, T.cta, T.cta + .5));
+    if (ck > 0) {
+      const tap = Math.sin(Math.PI * prog(t, T.tap, T.tap + .25));
+      const pulse = t > T.cta + .6 ? 1 + .025 * Math.sin((t - T.cta) * 7) : 1;
+      const sc = ck * pulse * (1 - .05 * tap);
+      ctx.globalAlpha = clamp(ck);
+      ctx.save(); ctx.translate(CX, by + bh / 2); ctx.scale(sc, sc);
+      ctx.shadowColor = 'rgba(214,33,43,.4)'; ctx.shadowBlur = 40 * U; ctx.shadowOffsetY = 14 * U;
+      ctx.fillStyle = tap > .3 ? C.redDark : C.red; roundRect(-cw / 2, -bh / 2, cw, bh, bh / 2); ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = C.white; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = font(800, fit('Написать в WhatsApp  →', 800, 48 * U, DISPLAY, cw * .86), DISPLAY);
+      ctx.fillText('Написать в WhatsApp  →', 0, 3 * U);
+      ctx.restore();
+      const rp = prog(t, T.tap, T.tap + .7);
+      if (rp > 0 && rp < 1) {
+        ctx.save(); ctx.globalAlpha = 1 - rp; ctx.strokeStyle = C.passion; ctx.lineWidth = 6 * U;
+        circle(CX + cw * .3, by + bh / 2, 20 * U + rp * 120 * U); ctx.stroke(); ctx.restore();
+      }
+      ctx.globalAlpha = eOut(prog(t, T.tap + .4, T.tap + .9)); ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = C.gray; ctx.font = font(600, 36 * U, TEXT);
+      ctx.fillText('пришлём каталог', CX, by + bh + 70 * U);
+    }
+    const hk = eBack(prog(t, T.handle, T.handle + .5));
+    if (hk > 0) {
+      ctx.globalAlpha = clamp(hk); ctx.textAlign = 'center';
+      ctx.fillStyle = C.ink; ctx.font = font(800, 50 * U * Math.max(hk, .01), DISPLAY);
+      ctx.fillText('@andros.kaz', CX, by + bh + 190 * U);
+      ctx.fillStyle = C.gray; ctx.font = font(700, 36 * U, TEXT);
+      ctx.fillText('+7 700 508 08 19', CX, by + bh + 250 * U);
+    }
+    ctx.restore();
+    const fk = eInOut(prog(t, T.footer, T.footer + .8));
+    if (fk > 0) {
+      const bh2 = 34 * U;
+      ctx.fillStyle = C.gold; ctx.fillRect(0, H - bh2 - 18 * U, W * fk, 8 * U);
+      [C.red, C.passion, C.burg].forEach((c, i) => {
+        ctx.fillStyle = c; ctx.fillRect(W * i / 3, H - bh2, W / 3 * eOut(prog(t, T.footer + .2 + i * .12, T.footer + .8 + i * .12)), bh2);
+      });
+    }
+  }
+  // плиточная шторка в цветах бренда
+  for (let r = 0; r < rows; r++) for (let c = 0; c < n; c++) {
+    const d = (r + c) / (rows + n);
+    const kin = eOut(prog(t, T.wipe + d * .3, T.wipe + d * .3 + .2));
+    const kout = eInOut(prog(t, T.wipe + .5 + d * .35, T.wipe + .5 + d * .35 + .25));
+    const k = kin * (1 - kout);
+    if (k <= 0) continue;
+    const s2 = cell * k + 1;
+    ctx.fillStyle = (r + c) % 2 ? C.passion : C.red;
+    ctx.fillRect(c * cell + (cell - s2) / 2, (H - rows * cell) / 2 + r * cell + (cell - s2) / 2, s2, s2);
+  }
+}
+
+function fades(t) {
+  const a = Math.max(1 - prog(t, 0, .25), prog(t, T.end - .6, T.end));
+  if (a > 0) { ctx.fillStyle = `rgba(0,0,0,${a})`; ctx.fillRect(0, 0, W, H); }
+}
+
+// ---------- master ----------
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.globalAlpha = 1; ctx.filter = 'none';
+  ctx.fillStyle = C.cream; ctx.fillRect(0, 0, W, H);
+  viewfinder(t);
+  hook(t);
+  brandScene(t);
+  prodScene(t);
+  halalScene(t);
+  delivScene(t);
+  ctaScene(t);
+  fades(t);
+}
+
+window.DURATION = DURATION;
+window.renderFrame = renderFrame;
+window.READY = (async () => {
+  await Promise.all([
+    document.fonts.load(font(800, 40, 'Unbounded'), 'АБВ ABC'),
+    document.fonts.load(font(500, 40, 'Montserrat'), 'АБВ ABC'),
+    document.fonts.load(font(600, 40, 'Montserrat'), 'АБВ ABC'),
+    document.fonts.load(font(700, 40, 'Montserrat'), 'АБВ ABC'),
+    document.fonts.load(font(700, 40, 'Unbounded'), '@andros')
+  ]);
+  return true;
+})();
+
+if (params.has('capture')) {
+  document.body.classList.add('capture');
+} else {
+  const fmt = document.getElementById('fmt');
+  if (VERTICAL) { fmt.textContent = '16:9'; fmt.href = '?'; }
+  const playBtn = document.getElementById('play'), seek = document.getElementById('seek'), time = document.getElementById('time');
+  let playing = true, start = 0, cur = 0;
+  const snd = document.getElementById('snd');
+  const syncAudio = () => { try { snd.currentTime = cur; if (playing) snd.play().catch(() => {}); else snd.pause(); } catch (e) {} };
+  playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? '⏸' : '▶'; start = performance.now() - cur * 1000; syncAudio(); };
+  seek.oninput = () => { cur = +seek.value; start = performance.now() - cur * 1000; renderFrame(cur); time.textContent = cur.toFixed(1) + ' s'; syncAudio(); };
+  window.READY.then(() => {
+    start = performance.now(); syncAudio();
+    (function loop(now) {
+      if (playing) { const prev = cur; cur = ((now - start) / 1000) % DURATION; if (cur < prev) syncAudio(); seek.value = cur; time.textContent = cur.toFixed(1) + ' s'; renderFrame(cur); }
+      requestAnimationFrame(loop);
+    })(performance.now());
+  });
+}
+</script>
+</body>
+</html>
