@@ -3,9 +3,9 @@ The bar grid is anchored so a downbeat lands on the logo impact (4.45 s)."""
 import numpy as np, wave
 
 SR = 48000
-DUR = 28.0
+DUR = 25.4
 BPM = 120; BEAT = 60 / BPM; BAR = 4 * BEAT
-DROP = 4.45
+DROP = 4.5
 T0 = DROP - 4 * BAR                       # first bar line (−1.07 s, i.e. before the video starts)
 N = int(SR * DUR)
 rng = np.random.default_rng(11)
@@ -69,7 +69,7 @@ PROG = [([57, 60, 64, 67, 71], 45), ([53, 57, 60, 64, 67], 41), ([48, 55, 60, 62
 ARP = [[69, 72, 76, 79], [65, 69, 72, 76], [67, 72, 74, 79], [67, 71, 74, 76]]
 
 bars = int((DUR - T0) / BAR) + 1
-END_GROOVE = T0 + 15 * BAR                # 20.93 s: last downbeat → final chord
+END_GROOVE = T0 + 14 * BAR                # 20.93 s: last downbeat → final chord
 pad_bus = np.zeros(N)
 for b in range(bars):
     bt = T0 + b * BAR
@@ -109,7 +109,7 @@ pump = np.where(t > 2.9, 1 - .55 * np.exp(-ph * 9), 1.0)
 L += pad_bus * pump * .5; R += pad_bus * pump * .5
 # snare-ish roll into the CTA wipe (12.15 s)
 for k in range(8):
-    add(clap(), 19.0 - .5 + k * .0625, .08 + k * .02)
+    add(clap(), 16.85 - .5 + k * .0625, .08 + k * .02)
 
 mix = np.stack([L, R], 1)
 mix[-at(1.0):] *= np.linspace(1, 0, at(1.0))[:, None]

@@ -2,7 +2,7 @@
 import subprocess, numpy as np
 
 SR = 48000
-DUR = 28.0
+DUR = 25.4
 VO_AT = 1.2
 rng = np.random.default_rng(7)
 L = np.zeros(int(SR * DUR)); R = np.zeros_like(L)
@@ -86,35 +86,35 @@ place(norm(whoosh(.55, rise=False)), .15, .16)        # drop falls
 place(norm(pop(300)), .7, .4)                          # splash into the centre
 for i in range(6):                                     # berries bounce in
     place(norm(pop(500 + 90 * i)), .95 + i * .14 + .35, .13, pan=(-.5, -.3, -.6, .5, .3, .6)[i])
-for tt in (1.15, 1.5, 1.85):                           # hook lines landing
+for tt in (1.15, 1.95, 2.65):                          # hook lines landing
     place(norm(thump()), tt + .08, .22)
-place(norm(glitch(.4)), 2.5, .16)                      # «с фрукта.»
-place(norm(whoosh(.5)), 3.1, .25)                      # hook exits
-place(norm(riser(.9)), 3.5, .18)
-for k in range(6):                                     # letters A N D R O S dropping in
-    place(norm(pop(440 + 70 * k)), 3.8 + k * .1 + .05, .22, pan=-.5 + k * .2)
-place(norm(impact()), 4.45, .5)                        # fruit burst
-place(norm(shimmer(.9)), 4.9, .12, pan=.3)
-place(norm(whoosh(.7)), 5.4, .26)                      # → dark world
-for tt, f in zip((6.2, 7.6, 8.3, 9.2), (660, 784, 880, 988)):   # product tiles
+place(norm(glitch(.4)), 2.7, .16)                      # «с фрукта.»
+place(norm(whoosh(.5)), 3.35, .25)                     # hook exits
+place(norm(riser(.55)), 3.4, .18)
+for k in range(6):                                     # letters A N D R O S
+    place(norm(pop(440 + 70 * k)), 3.9 + k * .1 + .05, .22, pan=-.5 + k * .2)
+place(norm(impact()), 4.5, .5)                         # fruit burst
+place(norm(shimmer(.9)), 4.85, .12, pan=.3)
+place(norm(whoosh(.7)), 5.3, .26)                      # → dark world
+for tt, f in zip((6.75, 7.35, 7.95, 8.75), (660, 784, 880, 988)):   # product tiles
     place(norm(pop(f)), tt + .05, .22); place(norm(thump()), tt + .1, .16)
-place(norm(tick(2400)), 10.3, .2)
-place(norm(whoosh(.6)), 12.5, .26)                     # → halal
-place(norm(impact()), 13.05, .45)                      # stamp
-place(norm(ding(1046)), 13.15, .14)
-place(norm(whoosh(.6)), 14.7, .26)                     # → delivery
-for tt in (15.1, 15.28, 15.46): place(norm(thump()), tt + .1, .16)
-place(norm(whoosh(2.3)), 15.6, .12, pan=.3)            # parcel flight
-place(norm(pop(1100)), 15.65, .2); place(norm(pop(1320)), 17.95, .2)
+place(norm(tick(2400)), 9.1, .2)
+place(norm(whoosh(.6)), 11.5, .26)                     # → halal
+place(norm(impact()), 12.3, .45)                       # stamp
+place(norm(ding(1046)), 12.4, .14)
+place(norm(whoosh(.6)), 13.1, .26)                     # → delivery
+for tt in (13.4, 13.9, 14.4): place(norm(thump()), tt + .1, .16)
+place(norm(whoosh(2.0)), 13.4, .12, pan=.3)            # parcel flight
+place(norm(pop(1100)), 13.45, .2); place(norm(pop(1320)), 15.5, .2)
 for k in range(10):                                    # tile wipe
-    place(norm(tick(1500 + 180 * k)), 19.0 + k * .04, .07, pan=-.6 + k * .13)
-place(norm(whoosh(.7)), 18.95, .28)
-place(norm(whoosh(.6, rise=False)), 19.5, .2)
-for tt in (20.3, 21.1): place(norm(thump()), tt + .12, .2)
-place(norm(pop(660)), 23.7, .3)                        # CTA button
-place(norm(tick(3000)), 25.1, .3); place(norm(pop(1320)), 25.12, .15)   # tap
-place(norm(ding(1046)), 25.6, .2)                      # handle
-place(norm(whoosh(.7)), 26.0, .14)                     # footer bars
+    place(norm(tick(1500 + 180 * k)), 16.85 + k * .04, .07, pan=-.6 + k * .13)
+place(norm(whoosh(.7)), 16.8, .28)
+place(norm(whoosh(.6, rise=False)), 17.35, .2)
+for tt in (18.95, 19.4, 20.0): place(norm(thump()), tt + .12, .2)
+place(norm(pop(660)), 20.8, .3)                        # CTA button
+place(norm(tick(3000)), 22.0, .3); place(norm(pop(1320)), 22.02, .15)   # tap
+place(norm(ding(1046)), 23.3, .2)                      # handle
+place(norm(whoosh(.7)), 23.7, .14)                     # footer bars
 sfx = np.stack([L, R], 1)
 sfx /= max(1.0, np.max(np.abs(sfx)) / .9)
 sfx[-int(.6 * SR):] *= np.linspace(1, 0, int(.6 * SR))[:, None]

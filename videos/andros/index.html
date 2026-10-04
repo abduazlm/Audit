@@ -27,7 +27,7 @@
 <audio id="snd" src="assets/soundtrack.wav" preload="auto"></audio>
 <div class="controls">
   <button id="play">⏸</button>
-  <input id="seek" type="range" min="0" max="28" step="0.01" value="0">
+  <input id="seek" type="range" min="0" max="26" step="0.01" value="0">
   <span id="time">0.0 s</span>
   <a class="btn" id="fmt" href="?format=vertical">9:16</a>
 </div>
@@ -84,18 +84,19 @@ function circle(x, y, r) { ctx.beginPath(); ctx.arc(x, y, Math.max(0, r), 0, Mat
 
 // ---------- timeline (seconds). Голос стартует на T.vo. Сейчас — ОРИЕНТИРОВОЧНЫЕ тайминги по сценарию,
 // после получения озвучки пересчитать по scripts/vo_cues.sh (метки в комментарии ниже заменить на реальные).
-// VO (оценка): хук 0–2.0 · «Это — Andros» 2.6 · «Французское фруктовое пюре» 4.4 · «джемы» 6.3 · «филлинги» 7.0 · «и чанки» 7.9
-//   «для кондитеров, кафе и ресторанов» 8.8 · «Сертификат Халал» 11.9 · «Доставка по всему Казахстану» 13.9 · «прямо из Франции» 16.0
-//   «Мы — официальный дистрибьютор» 18.2 · «в Астане и Северном Казахстане» 19.8 · «Напишите нам — пришлём каталог» 22.6
+// VO (реальная озвучка assets/voiceover.mp3; в оригинале добавлены паузы +0.7 с после «Это — Андрос», +0.5 с после «Халал», +0.4 с перед «Мы»)
+// хук 0–2.07 · «Андрос» 2.76 · «Французское фруктовое пюре» 4.28 · «джемы» 6.21 · «филлинги» 6.82 · «и чанки» 7.48
+//   «для кондитеров, кафе и ресторанов» 7.93 · «Сертификат Халал» 10.56 · «Доставка по всему Казахстану» 11.7 · «прямо из Франции» 13.71
+//   «Мы — официальный дистрибьютор» 15.0 · «в Астане и Северном Казахстане» 16.9 · «Напишите нам» 20.87 · «пришлём каталог» 22.07 → конец 23.2 (всё в времени ролика)
 const T = {
   vo: 1.2,
-  hookLines: [1.15, 1.5, 1.85], glitch: [2.5, 2.9], hookOut: 3.1,
-  brand: 3.8, burst: 4.45, tag: 4.95,
-  prod: 5.45, prodTitle: 5.95, tiles: [6.2, 7.6, 8.3, 9.2], who: 10.3,
-  halal: 12.55, stamp: 13.0, halalSub: 13.7,
-  deliv: 14.75, delivHead: [15.1, 15.55], route: [15.6, 18.2], fromFr: 17.5,
-  wipe: 19.0, title: 19.5, loc: [20.3, 21.1], cta: 23.7, tap: 25.1, handle: 25.6, footer: 26.0,
-  end: 28.0
+  hookLines: [1.15, 1.95, 2.65], glitch: [2.7, 3.1], hookOut: 3.35,
+  brand: 3.9, burst: 4.5, tag: 4.85,
+  prod: 5.35, prodTitle: 5.95, tiles: [6.75, 7.35, 7.95, 8.75], who: 9.1,
+  halal: 11.55, stamp: 12.25, halalSub: 12.9,
+  deliv: 13.15, delivHead: [13.4, 13.9, 14.4], route: [13.4, 15.5], fromFr: 15.4,
+  wipe: 16.85, title: 17.45, loc: [18.95, 19.4], cta: 20.8, tap: 22.0, handle: 23.3, footer: 23.7,
+  end: 25.4
 };
 const DURATION = T.end;
 
@@ -448,7 +449,7 @@ function delivScene(t) {
   const top = VERTICAL ? 300 * U : 330 * U, hx = VERTICAL ? CX : W * .07;
   ctx.textAlign = VERTICAL ? 'center' : 'left';
   lines.forEach(([s, col, sz], i) => {
-    const k = eExpo(prog(t, T.delivHead[0] + i * .18, T.delivHead[0] + i * .18 + .55));
+    const k = eExpo(prog(t, T.delivHead[i], T.delivHead[i] + .55));
     const size = fit(s, 800, sz * U * (VERTICAL ? 1 : .95), DISPLAY, VERTICAL ? W * .86 : W * .44);
     ctx.save(); ctx.globalAlpha = k; ctx.fillStyle = col; ctx.font = font(800, size, DISPLAY);
     ctx.fillText(s, hx, top + i * size * 1.2 + (1 - k) * 60 * U); ctx.restore();
@@ -512,7 +513,7 @@ function ctaScene(t) {
     wordmark(t, 0, x0 + cw * .34, top + 150 * U, cw * .68, 120 * U, .1, true);
     // регион
     [['АСТАНА', C.ink], ['И СЕВЕРНЫЙ', C.ink], ['КАЗАХСТАН', C.red]].forEach(([s, col], i) => {
-      const st = i === 0 ? T.loc[0] : T.loc[1] + (i - 1) * .2;
+      const st = i === 0 ? T.loc[0] : T.loc[1] + (i - 1) * .6;
       const k = eExpo(prog(t, st, st + .55));
       const size = fit(s, 800, 100 * U, DISPLAY, cw);
       ctx.save(); ctx.globalAlpha = k; ctx.fillStyle = col; ctx.font = font(800, size, DISPLAY);
