@@ -26,7 +26,7 @@
 <audio id="snd" src="assets/soundtrack.wav" preload="auto"></audio>
 <div class="controls">
   <button id="play">⏸</button>
-  <input id="seek" type="range" min="0" max="27" step="0.01" value="0">
+  <input id="seek" type="range" min="0" max="35" step="0.01" value="0">
   <span id="time">0.0 s</span>
   <a class="btn" id="fmt" href="?format=horizontal">16:9</a>
 </div>
@@ -75,16 +75,61 @@ function roundRect(x, y, w, h, r) {
 const typed = (s, t, t0, cps = 28) => s.slice(0, Math.max(0, Math.floor((t - t0) * cps)));
 
 // ---------- timeline ----------
+// Synced to assets/voiceover.mp3 placed at T.vo. VO cues (file time, pause detection + syllable split):
+//   «Как появились…» 0 · «Девяностые» ≈2.6 · «Подвал…» 3.85 · «локалка» ≈5.9 · «Мам…» 6.95
+//   «Двухтысячные» ≈8.4 · «ночные игры» ≈10.8 · «Десятые» 13.3 · «стримы» ≈16.2 · «А сегодня» 18.1
+//   «NS12 Cyber» 18.95 · «Киберспортивный клуб» 21.3 · «Топовое железо» 23.4 · «Premium-зал» 24.6
+//   «Открыто круглосуточно» 26.4 · «Приходи на Байтурсынова» 28.15 · «Бронь — в WhatsApp» 30.85 → end 32.11
 const T = {
-  crtOn: .15, dos: [.75, 1.25, 1.75], hook: 2.1, bootOut: 3.4,
-  e90: 3.5, l90: [4.1, 5.3, 6.5],
-  e00: 8.0, l00: [8.6, 10.0],
-  e10: 11.8, l10: [12.4, 13.9],
-  glitch: 15.6, logo: 16.3, tagline: 17.4,
-  specs: [18.9, 19.5, 20.1, 20.7, 21.3], cta: 22.6, addr: 23.1, wa: 23.7, handle: 24.4,
-  end: 27.0
+  vo: 1.0,
+  crtOn: .1, dos: [.3, .55, .8], hook: 1.0, bootOut: 3.3,
+  e90: 3.55, l90: [4.8, 6.85, 7.9],
+  e00: 9.35, l00: [10.3, 11.75],
+  e10: 14.25, l10: [15.05, 17.15],
+  glitch: 18.95, logo: 19.9, tagline: 22.25,
+  specs: [24.35, 24.65, 24.95, 25.55, 27.35], cta: 29.1, addr: 29.8, wa: 31.8, handle: 32.6,
+  end: 35.0
 };
 const DURATION = T.end;
+
+// ---------- real club footage for «сегодня» (assets/footage.mp4, cut list in footage.py) ----------
+// Capture mode draws pre-extracted JPEG frames (.frames/, made by render.mjs); preview uses a <video>.
+const FOOT = { start: T.glitch, fps: 30, cuts: [18.95, 19.9, 22.25, 24.35, 24.95, 25.55, 27.35, 29.1, 31.8, 34.65] };
+const footImg = new Image(); let footIdx = -1;
+const footVid = document.createElement('video');
+footVid.src = 'assets/footage.mp4'; footVid.muted = true; footVid.playsInline = true; footVid.preload = 'auto';
+window.prepare = async t => {                       // called by render.mjs before each captured frame
+  if (t < FOOT.start) return;
+  const idx = Math.floor((t - FOOT.start) * FOOT.fps + 1e-6) + 1;
+  if (idx === footIdx) return;
+  footIdx = idx; footImg.src = `.frames/f${String(idx).padStart(4, '0')}.jpg`;
+  try { await footImg.decode(); } catch (e) { footIdx = -1; }
+};
+function footageBg(t) {
+  const src = params.has('capture') ? (footIdx > 0 && footImg.complete && footImg.naturalWidth ? footImg : null)
+                                    : (footVid.readyState >= 2 ? footVid : null);
+  if (!src) return false;
+  if (!params.has('capture')) {                     // keep the preview video roughly in sync
+    const want = t - FOOT.start;
+    if (Math.abs(footVid.currentTime - want) > .25) footVid.currentTime = want;
+    if (footVid.paused) footVid.play().catch(() => {});
+  }
+  // punch-in on every cut
+  const last = FOOT.cuts.filter(c => c <= t).pop() ?? FOOT.start;
+  const z = 1 + .07 * (1 - eOut(prog(t, last, last + .35)));
+  const sw = src.naturalWidth || src.videoWidth, sh = src.naturalHeight || src.videoHeight;
+  const sc = Math.max(W / sw, H / sh) * z;
+  ctx.drawImage(src, CX - sw * sc / 2, CY - sh * sc / 2, sw * sc, sh * sc);
+  // brand grade: navy tint + darker where text sits
+  ctx.fillStyle = 'rgba(5,8,22,.35)'; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.globalCompositeOperation = 'soft-light'; ctx.fillStyle = 'rgba(47,107,255,.5)'; ctx.fillRect(0, 0, W, H); ctx.restore();
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  const heavy = t >= T.specs[0] - .3;               // specs + CTA need more contrast
+  g.addColorStop(0, `rgba(5,8,22,${heavy ? .75 : .55})`); g.addColorStop(.45, `rgba(5,8,22,${heavy ? .55 : .4})`);
+  g.addColorStop(.75, `rgba(5,8,22,${heavy ? .7 : .35})`); g.addColorStop(1, 'rgba(5,8,22,.85)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  return true;
+}
 const ERAS = [
   { at: T.e90, label: '90-е', end: T.e00 },
   { at: T.e00, label: '2000-е', end: T.e10 },
@@ -368,10 +413,10 @@ function logo(t, x, y, s, a) {
   // chrome sheen sweep
   const sh = prog(t, T.logo + .5, T.logo + 1.2);
   if (sh > 0 && sh < 1) {
-    ctx.save(); ctx.globalCompositeOperation = 'source-atop';
+    ctx.save();                                     // sheen confined to the letters (works over video)
     const sx = lerp(-300, 300, sh), gg = ctx.createLinearGradient(sx - 60, 0, sx + 60, 0);
     gg.addColorStop(0, 'rgba(255,255,255,0)'); gg.addColorStop(.5, 'rgba(255,255,255,.9)'); gg.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = gg; ctx.fillRect(-300, -220, 600, 240); ctx.restore();
+    ctx.fillStyle = gg; ctx.fillText('NS', 0, 0); ctx.restore();
   }
   ctx.font = font(400, 64, RUSSO); ctx.fillStyle = C.blue; ctx.shadowColor = C.blue; ctx.shadowBlur = 25;
   const word = 'CYBER', sp = 62;
@@ -386,7 +431,7 @@ const SPECS = [
 ];
 function modern(t) {
   if (t < T.glitch) return;
-  modernBg(t);
+  if (!footageBg(t)) modernBg(t);
   const lk = eBack(prog(t, T.logo, T.logo + .6));
   const move = eInOut(prog(t, T.specs[0] - .5, T.specs[0] + .1));
   const toCta = eInOut(prog(t, T.cta - .4, T.cta + .2));
@@ -398,8 +443,9 @@ function modern(t) {
   if (fl > 0) { ctx.fillStyle = `rgba(150,190,255,${.6 * fl})`; ctx.fillRect(0, 0, W, H); }
   const sk = eOut(prog(t, T.glitch + .2, T.glitch + .6)) * (1 - move);
   if (sk > 0) {
-    ctx.save(); ctx.textAlign = 'center'; ctx.globalAlpha = sk; ctx.fillStyle = C.cyan;
-    ctx.font = font(400, 46 * U, RUSSO); ctx.fillText('СЕГОДНЯ', CX, CY - 330 * U * (VERTICAL ? 1.3 : 1)); ctx.restore();
+    ctx.save(); ctx.textAlign = 'center'; ctx.globalAlpha = sk * (1 - prog(t, T.logo - .1, T.logo + .2));
+    ctx.font = font(400, 96 * U, RUSSO); ctx.fillStyle = C.white; ctx.shadowColor = C.blue; ctx.shadowBlur = 30 * U;
+    ctx.fillText('СЕГОДНЯ', CX, H * .8 + (1 - sk) * 40 * U); ctx.restore();
   }
   logo(t, lx, ly, ls, clamp(lk));
   // tagline
@@ -422,7 +468,7 @@ function modern(t) {
     const y = y0 + i * (rh + gap), x = x0 + (1 - sk2) * W * .5;
     ctx.save(); ctx.globalAlpha = clamp(sk2 * 1.3);
     const g = ctx.createLinearGradient(x, 0, x + rw, 0);
-    g.addColorStop(0, 'rgba(47,107,255,.35)'); g.addColorStop(1, 'rgba(47,107,255,.05)');
+    g.addColorStop(0, 'rgba(18,40,110,.85)'); g.addColorStop(1, 'rgba(8,14,40,.7)');
     ctx.fillStyle = g; roundRect(x, y, rw, rh, 16 * U); ctx.fill();
     ctx.strokeStyle = 'rgba(90,209,255,.6)'; ctx.lineWidth = 2 * U; ctx.stroke();
     ctx.fillStyle = C.cyan; ctx.fillRect(x, y + 14 * U, 6 * U, rh - 28 * U);

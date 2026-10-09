@@ -2,7 +2,7 @@
 import subprocess, numpy as np
 
 SR = 48000
-DUR = 27.0
+DUR = 35.0
 VO_AT = 1.2
 rng = np.random.default_rng(7)
 L = np.zeros(int(SR * DUR)); R = np.zeros_like(L)
@@ -105,34 +105,42 @@ def modem(dur):                                          # dial-up handshake: to
     return out * np.minimum(1, (dur - t) / .1)
 
 # ---- timeline (keep in sync with T in index.html) ----
-place(norm(crt_on()), .15, .35)                         # CRT powers on
-place(norm(keys(1.3)), .75, .12)                        # DOS lines typing
-place(norm(modem(1.4)), 1.9, .07)                       # dial-up under the hook
-place(norm(keys(1.1, 18)), 2.1, .10)
-place(norm(whoosh(.4, rise=False)), 3.3, .2)            # CRT power-off
-for at in (3.5, 8.0, 11.8):                             # era switches
+place(norm(crt_on()), .1, .35)                          # CRT powers on
+place(norm(keys(.9)), .3, .12)                          # DOS lines typing
+place(norm(modem(1.6)), 1.4, .05)                       # dial-up under the hook
+place(norm(keys(1.0, 18)), 1.0, .08)
+place(norm(whoosh(.4, rise=False)), 3.2, .2)            # CRT power-off
+for at in (3.55, 9.35, 14.25):                          # era switches
     place(norm(glitch(.3)), at - .12, .12)
     place(norm(whoosh(.5)), at - .2, .2)
-for tt in (4.1, 5.3, 6.5, 8.6, 10.0, 12.4, 13.9):        # captions
-    place(norm(tick(2200)), tt, .12)
-place(norm(riser(1.2)), 14.5, .2)                       # into the present
-place(norm(glitch(.6)), 15.5, .2)
-place(norm(impact()), 16.28, .6)                        # NS12 logo
-place(norm(shimmer(.8)), 16.8, .12, pan=.3)             # chrome sheen
-for i, tt in enumerate((18.9, 19.5, 20.1, 20.7, 21.3)): # spec rows
+for tt in (4.8, 6.85, 7.9, 10.3, 11.75, 15.05, 17.15):   # captions
+    place(norm(tick(2200)), tt, .1)
+place(norm(riser(1.3)), 17.7, .18)                      # into the present
+place(norm(glitch(.6)), 18.85, .18)
+place(norm(impact()), 19.88, .6)                        # NS12 logo
+place(norm(shimmer(.8)), 20.4, .12, pan=.3)             # chrome sheen
+for i, tt in enumerate((24.35, 24.65, 24.95, 25.55, 27.35)):  # spec rows
     place(norm(whoosh(.3)), tt - .05, .1, pan=.5)
-    place(norm(pop(700 + 90 * i)), tt + .1, .14)
-place(norm(whoosh(.6)), 22.2, .2)                       # CTA
-place(norm(pop(660)), 23.7, .3)                         # WhatsApp button
-place(norm(ding(1046)), 24.4, .2)                       # @nscyber12
+    place(norm(pop(700 + 90 * i)), tt + .1, .12)
+place(norm(whoosh(.6)), 28.7, .2)                       # CTA
+place(norm(pop(660)), 31.8, .3)                         # WhatsApp button
+place(norm(ding(1046)), 32.6, .2)                       # @nscyber12
 sfx = np.stack([L, R], 1)
 sfx /= max(1.0, np.max(np.abs(sfx)) / .9)
 sfx[-int(.6 * SR):] *= np.linspace(1, 0, int(.6 * SR))[:, None]
 
 pcm = (sfx * 32767).astype('<i2').tobytes()
 open('/tmp/sfx.raw', 'wb').write(pcm)
+# voiceover (cleaned, compressed, delayed) + SFX + music ducked under the voice → −14 LUFS
+d = 1000                                                # T.vo
 subprocess.run(['ffmpeg', '-y', '-loglevel', 'error',
-    '-f', 's16le', '-ar', str(SR), '-ac', '2', '-i', '/tmp/sfx.raw', '-i', 'assets/music.wav',
-    '-filter_complex', '[0]volume=1.0[fx];[1]volume=0.55[mus];[fx][mus]amix=inputs=2:normalize=0,'
-    f'loudnorm=I=-14:TP=-1.5:LRA=11,atrim=0:{DUR}[out]', '-map', '[out]', '-ar', str(SR), 'assets/soundtrack.wav'], check=True)
+    '-f', 's16le', '-ar', str(SR), '-ac', '2', '-i', '/tmp/sfx.raw',
+    '-i', 'assets/voiceover.mp3', '-i', 'assets/music.wav',
+    '-filter_complex',
+    f'[1]aresample={SR},highpass=f=80,acompressor=threshold=-20dB:ratio=3:attack=5:release=120,'
+    f'adelay={d}|{d},pan=stereo|c0=c0|c1=c0,volume=1.6,asplit[vo][key];'
+    '[2]volume=0.55[mus];'
+    '[mus][key]sidechaincompress=threshold=0.03:ratio=4:attack=20:release=400:makeup=1[duck];'
+    '[0]volume=0.8[fx];[vo][fx][duck]amix=inputs=3:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11,'
+    f'atrim=0:{DUR}[out]', '-map', '[out]', '-ar', str(SR), 'assets/soundtrack.wav'], check=True)
 print('assets/soundtrack.wav')

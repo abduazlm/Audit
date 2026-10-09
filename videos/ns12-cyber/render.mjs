@@ -25,6 +25,15 @@ const server = http.createServer((req, res) => {
 }).listen(0);
 const port = server.address().port;
 
+// real footage: extract JPEG frames once for frame-accurate drawing (served from .frames/)
+const footage = path.join(root, 'assets/footage.mp4'), framesDir = path.join(root, '.frames');
+if (fs.existsSync(footage) && !fs.existsSync(path.join(framesDir, 'f0001.jpg'))) {
+  fs.mkdirSync(framesDir, { recursive: true });
+  const { execFileSync } = await import('child_process');
+  execFileSync('ffmpeg', ['-loglevel', 'error', '-i', footage, '-q:v', '3', path.join(framesDir, 'f%04d.jpg')]);
+}
+const types2 = { '.jpg': 'image/jpeg', '.mp4': 'video/mp4' }; Object.assign(types, types2);
+
 const browser = await chromium.launch({ args: ['--no-proxy-server'] });
 const page = await browser.newPage({ viewport: { width: W, height: H } });
 await page.goto(`http://127.0.0.1:${port}/index.html?capture&format=${format}`);
@@ -42,13 +51,13 @@ const stills = process.env.STILLS ? process.env.STILLS.split(',').map(Number) : 
 const canvas = await page.$('canvas');
 if (stills) {
   for (const t of stills) {
-    await page.evaluate(t => window.renderFrame(t), t);
+    await page.evaluate(async t => { if (window.prepare) await window.prepare(t); window.renderFrame(t); }, t);
     await canvas.screenshot({ path: `${process.env.STILL_DIR || '.'}/${format}-${t}.png` });
   }
   ff.stdin.end();
 } else {
   for (let i = 0; i < frames; i++) {
-    await page.evaluate(t => window.renderFrame(t), i / FPS);
+    await page.evaluate(async t => { if (window.prepare) await window.prepare(t); window.renderFrame(t); }, i / FPS);
     const buf = await canvas.screenshot({ type: 'jpeg', quality: 95 });
     if (!ff.stdin.write(buf)) await new Promise(r => ff.stdin.once('drain', r));
     if (i % 90 === 0) console.log(`${format}: frame ${i}/${frames}`);
