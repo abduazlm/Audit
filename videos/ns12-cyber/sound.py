@@ -2,7 +2,7 @@
 import subprocess, numpy as np
 
 SR = 48000
-DUR = 35.0
+DUR = 32.7
 VO_AT = 1.2
 rng = np.random.default_rng(7)
 L = np.zeros(int(SR * DUR)); R = np.zeros_like(L)
@@ -106,25 +106,25 @@ def modem(dur):                                          # dial-up handshake: to
 
 # ---- timeline (keep in sync with T in index.html) ----
 place(norm(crt_on()), .1, .35)                          # CRT powers on
-place(norm(keys(.9)), .3, .12)                          # DOS lines typing
-place(norm(modem(1.6)), 1.4, .05)                       # dial-up under the hook
-place(norm(keys(1.0, 18)), 1.0, .08)
-place(norm(whoosh(.4, rise=False)), 3.2, .2)            # CRT power-off
-for at in (3.55, 9.35, 14.25):                          # era switches
+place(norm(keys(.7)), .3, .12)                          # DOS lines typing
+place(norm(modem(1.4)), 1.1, .05)                       # dial-up under the hook
+place(norm(keys(1.0, 18)), 1.1, .08)
+place(norm(whoosh(.4, rise=False)), 2.65, .2)           # CRT power-off
+for at in (3.0, 10.0, 14.3):                            # era switches
     place(norm(glitch(.3)), at - .12, .12)
     place(norm(whoosh(.5)), at - .2, .2)
-for tt in (4.8, 6.85, 7.9, 10.3, 11.75, 15.05, 17.15):   # captions
+for tt in (4.3, 6.15, 7.7, 11.35, 12.35, 15.55, 17.45):  # captions
     place(norm(tick(2200)), tt, .1)
-place(norm(riser(1.3)), 17.7, .18)                      # into the present
-place(norm(glitch(.6)), 18.85, .18)
-place(norm(impact()), 19.88, .6)                        # NS12 logo
-place(norm(shimmer(.8)), 20.4, .12, pan=.3)             # chrome sheen
-for i, tt in enumerate((24.35, 24.65, 24.95, 25.55, 27.35)):  # spec rows
+place(norm(riser(1.2)), 17.85, .18)                     # into the present
+place(norm(glitch(.6)), 18.9, .18)
+place(norm(impact()), 19.93, .6)                        # NS12 logo
+place(norm(shimmer(.8)), 20.45, .12, pan=.3)            # chrome sheen
+for i, tt in enumerate((22.9, 23.2, 23.5, 24.05, 25.55)):  # spec rows
     place(norm(whoosh(.3)), tt - .05, .1, pan=.5)
     place(norm(pop(700 + 90 * i)), tt + .1, .12)
-place(norm(whoosh(.6)), 28.7, .2)                       # CTA
-place(norm(pop(660)), 31.8, .3)                         # WhatsApp button
-place(norm(ding(1046)), 32.6, .2)                       # @nscyber12
+place(norm(whoosh(.6)), 26.7, .2)                       # CTA
+place(norm(pop(660)), 29.6, .3)                         # WhatsApp button
+place(norm(ding(1046)), 30.3, .2)                       # @nscyber12
 sfx = np.stack([L, R], 1)
 sfx /= max(1.0, np.max(np.abs(sfx)) / .9)
 sfx[-int(.6 * SR):] *= np.linspace(1, 0, int(.6 * SR))[:, None]
@@ -139,7 +139,7 @@ subprocess.run(['ffmpeg', '-y', '-loglevel', 'error',
     '-filter_complex',
     f'[1]aresample={SR},highpass=f=80,acompressor=threshold=-20dB:ratio=3:attack=5:release=120,'
     f'adelay={d}|{d},pan=stereo|c0=c0|c1=c0,volume=1.6,asplit[vo][key];'
-    '[2]volume=0.55[mus];'
+    '[2]volume=0.45[mus];'
     '[mus][key]sidechaincompress=threshold=0.03:ratio=4:attack=20:release=400:makeup=1[duck];'
     '[0]volume=0.8[fx];[vo][fx][duck]amix=inputs=3:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11,'
     f'atrim=0:{DUR}[out]', '-map', '[out]', '-ar', str(SR), 'assets/soundtrack.wav'], check=True)

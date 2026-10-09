@@ -26,7 +26,7 @@
 <audio id="snd" src="assets/soundtrack.wav" preload="auto"></audio>
 <div class="controls">
   <button id="play">⏸</button>
-  <input id="seek" type="range" min="0" max="35" step="0.01" value="0">
+  <input id="seek" type="range" min="0" max="32.7" step="0.01" value="0">
   <span id="time">0.0 s</span>
   <a class="btn" id="fmt" href="?format=horizontal">16:9</a>
 </div>
@@ -75,26 +75,27 @@ function roundRect(x, y, w, h, r) {
 const typed = (s, t, t0, cps = 28) => s.slice(0, Math.max(0, Math.floor((t - t0) * cps)));
 
 // ---------- timeline ----------
-// Synced to assets/voiceover.mp3 placed at T.vo. VO cues (file time, pause detection + syllable split):
-//   «Как появились…» 0 · «Девяностые» ≈2.6 · «Подвал…» 3.85 · «локалка» ≈5.9 · «Мам…» 6.95
-//   «Двухтысячные» ≈8.4 · «ночные игры» ≈10.8 · «Десятые» 13.3 · «стримы» ≈16.2 · «А сегодня» 18.1
-//   «NS12 Cyber» 18.95 · «Киберспортивный клуб» 21.3 · «Топовое железо» 23.4 · «Premium-зал» 24.6
-//   «Открыто круглосуточно» 26.4 · «Приходи на Байтурсынова» 28.15 · «Бронь — в WhatsApp» 30.85 → end 32.11
+// Synced to assets/voiceover.mp3 (extracted from the client's CapCut export) placed at T.vo.
+// VO cues (file time; pause detection + syllable split inside long phrases):
+//   «Как появились…» 0.15 · «Девяностые» 2.01 · «Подвал…» 3.36 · «локалка» ≈5.2 · «Мам…» 6.76
+//   «Двухтысячные» 9.05 · «ночные игры» ≈11.4 · «Десятые» 13.38 · «стримы» ≈16.5 · «А сегодня» 18.11
+//   «НС Кибер 12» 19.0 · «Киберспортивный клуб» 20.45 · «Топовое железо» ≈21.95 · «Premium-зал» ≈23.1
+//   «Открыто круглосуточно» 24.61 · «Приходи на Байтурсынова» 26.19 · «Бронь — в WhatsApp» 28.64 → end 29.70
 const T = {
   vo: 1.0,
-  crtOn: .1, dos: [.3, .55, .8], hook: 1.0, bootOut: 3.3,
-  e90: 3.55, l90: [4.8, 6.85, 7.9],
-  e00: 9.35, l00: [10.3, 11.75],
-  e10: 14.25, l10: [15.05, 17.15],
-  glitch: 18.95, logo: 19.9, tagline: 22.25,
-  specs: [24.35, 24.65, 24.95, 25.55, 27.35], cta: 29.1, addr: 29.8, wa: 31.8, handle: 32.6,
-  end: 35.0
+  crtOn: .1, dos: [.3, .5, .7], hook: 1.1, bootOut: 2.75,
+  e90: 3.0, l90: [4.3, 6.15, 7.7],
+  e00: 10.0, l00: [11.35, 12.35],
+  e10: 14.3, l10: [15.55, 17.45],
+  glitch: 19.0, logo: 19.95, tagline: 21.4,
+  specs: [22.9, 23.2, 23.5, 24.05, 25.55], cta: 27.1, addr: 27.7, wa: 29.6, handle: 30.3,
+  end: 32.7
 };
 const DURATION = T.end;
 
 // ---------- real club footage for «сегодня» (assets/footage.mp4, cut list in footage.py) ----------
 // Capture mode draws pre-extracted JPEG frames (.frames/, made by render.mjs); preview uses a <video>.
-const FOOT = { start: T.glitch, fps: 30, cuts: [18.95, 19.9, 22.25, 24.35, 24.95, 25.55, 27.35, 29.1, 31.8, 34.65] };
+const FOOT = { start: T.glitch, fps: 30, cuts: [19.0, 20.0, 21.45, 22.95, 23.55, 24.1, 25.6, 27.15, 29.6, 31.7] };
 const footImg = new Image(); let footIdx = -1;
 const footVid = document.createElement('video');
 footVid.src = 'assets/footage.mp4'; footVid.muted = true; footVid.playsInline = true; footVid.preload = 'auto';

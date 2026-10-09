@@ -1,11 +1,11 @@
 """Synthesizes assets/music.wav for the NS12 reel: 8-bit chiptune through the 90s/2000s/2010s,
-then a modern groove whose first downbeat lands on the NS12 logo (19.9 s)."""
+then a modern groove whose first downbeat lands on the NS12 logo (19.95 s)."""
 import numpy as np, wave
 
 SR = 48000
-DUR = 35.0
+DUR = 32.7
 BPM = 120; BEAT = 60 / BPM; BAR = 4 * BEAT
-DROP = 19.9
+DROP = 19.95
 T0 = DROP - np.ceil(DROP / BAR) * BAR     # first bar line at or before 0 s
 N = int(SR * DUR)
 rng = np.random.default_rng(11)
@@ -77,8 +77,8 @@ def chipnoise(dur):
     n = at(dur); return np.round(rng.standard_normal(n) * 2) / 2 * env(n, .001, .03)
 
 bars = int((DUR - T0) / BAR) + 1
-END_GROOVE = DROP + 6 * BAR                # 31.9 s: final chord under the CTA
-RETRO_END = 18.95                           # glitch into the present day
+END_GROOVE = DROP + 5 * BAR                # 29.95 s: final chord under the CTA
+RETRO_END = 19.0                           # glitch into the present day
 pad_bus = np.zeros(N)
 for b in range(bars):
     bt = T0 + b * BAR
@@ -89,11 +89,11 @@ for b in range(bars):
         for s16 in range(16):
             tt = bt + s16 * BEAT / 4
             if tt < .6 or tt >= RETRO_END - .05: continue
-            era = 0 if tt < 9.35 else 1 if tt < 14.25 else 2
+            era = 0 if tt < 10.0 else 1 if tt < 14.3 else 2
             note = ARP[b % 4][s16 % 4] + (12 if era == 2 and s16 % 8 >= 4 else 0)
             add(chip(note, BEAT / 4 * .8, .25 if era == 0 else .125), tt, .42 + .05 * era, (-.3, .3)[s16 % 2])
-            if s16 % 2 == 0 and tt > 3.55: add(chip(root - 12, BEAT / 2 * .7, .5), tt, .5)
-            if tt > 3.55 and s16 % 4 == 2: add(chipnoise(.05), tt, .18)
+            if s16 % 2 == 0 and tt > 3.0: add(chip(root - 12, BEAT / 2 * .7, .5), tt, .5)
+            if tt > 3.0 and s16 % 4 == 2: add(chipnoise(.05), tt, .18)
             if era >= 1 and s16 % 8 == 0: add(kick(), tt, .45 + .15 * era)
             if era == 2 and s16 % 8 == 4: add(clap(), tt, .18)
         continue
