@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NS12 Cyber History</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<style>
+  :root { --bg: #050816; --fg: #eef3ff; --muted: #8fa0c8; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--fg); font-family: Montserrat, Arial, sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    min-height: 100vh; padding: 16px; box-sizing: border-box; }
+  canvas { max-width: 100%; max-height: calc(100vh - 90px); height: auto; display: block;
+    border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; color: var(--muted); font-size: 14px; }
+  button, a.btn { background: #121a36; color: var(--fg); border: 1px solid #2a3a6e; border-radius: 6px;
+    padding: 6px 14px; font: inherit; cursor: pointer; text-decoration: none; }
+  input[type=range] { width: min(60vw, 480px); accent-color: #2f6bff; }
+  body.capture { display: block; padding: 0; }
+  body.capture .controls { display: none; }
+  body.capture canvas { max-width: none; max-height: none; border-radius: 0; box-shadow: none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<audio id="snd" src="assets/soundtrack.wav" preload="auto"></audio>
+<div class="controls">
+  <button id="play">⏸</button>
+  <input id="seek" type="range" min="0" max="27" step="0.01" value="0">
+  <span id="time">0.0 s</span>
+  <a class="btn" id="fmt" href="?format=horizontal">16:9</a>
+</div>
+<script>
+// ------------------------------------------------------------------
+// NS12 Cyber — «как появились компьютерные клубы». Deterministic: renderFrame(t).
+// Default 1080x1920 (Reels); ?format=horizontal → 1920x1080.
+// ------------------------------------------------------------------
+const params = new URLSearchParams(location.search);
+const VERTICAL = params.get('format') !== 'horizontal';
+const W = VERTICAL ? 1080 : 1920, H = VERTICAL ? 1920 : 1080;
+const U = Math.min(W, H) / 1080, CX = W / 2, CY = H / 2;
+const cv = document.getElementById('c');
+cv.width = W; cv.height = H;
+cv.style.width = params.has('capture') ? W + 'px' : (VERTICAL ? 'auto' : '1280px');
+cv.style.aspectRatio = `${W} / ${H}`;
+const ctx = cv.getContext('2d');
+
+const C = {
+  // 90s phosphor
+  phos: '#39ff6a', phosDim: '#1a7a34', phosBg: '#021208',
+  // 2000s
+  beige: '#cfc6ae', beigeDark: '#9d957f', steel: '#1a2233',
+  // modern NS12 (from the profile: navy + chrome + electric blue)
+  navy: '#050816', navy2: '#0b1430', blue: '#2f6bff', cyan: '#5ad1ff', violet: '#8b5cff', pink: '#ff3d9a',
+  white: '#ffffff', chrome1: '#ffffff', chrome2: '#9aa6bd', chrome3: '#3d475e'
+};
+const PIX = '"Press Start 2P", monospace', RUSSO = '"Russo One", Arial, sans-serif', TEXT = 'Montserrat, Arial, sans-serif';
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = x => 1 - Math.pow(1 - x, 3);
+const eInOut = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const eBack = x => { const c1 = 1.70158, c3 = c1 + 1; return x <= 0 ? 0 : 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const eExpo = x => x >= 1 ? 1 : 1 - Math.pow(2, -10 * x);
+const hash = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+function font(w, size, fam) { return `${w} ${Math.round(size)}px ${fam}`; }
+function fit(text, w, max, fam, maxW) { ctx.font = font(w, max, fam); const m = ctx.measureText(text).width; return m > maxW ? max * maxW / m : max; }
+function roundRect(x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+// typewriter: visible part of a string between t0 and t0+dur
+const typed = (s, t, t0, cps = 28) => s.slice(0, Math.max(0, Math.floor((t - t0) * cps)));
+
+// ---------- timeline ----------
+const T = {
+  crtOn: .15, dos: [.75, 1.25, 1.75], hook: 2.1, bootOut: 3.4,
+  e90: 3.5, l90: [4.1, 5.3, 6.5],
+  e00: 8.0, l00: [8.6, 10.0],
+  e10: 11.8, l10: [12.4, 13.9],
+  glitch: 15.6, logo: 16.3, tagline: 17.4,
+  specs: [18.9, 19.5, 20.1, 20.7, 21.3], cta: 22.6, addr: 23.1, wa: 23.7, handle: 24.4,
+  end: 27.0
+};
+const DURATION = T.end;
+const ERAS = [
+  { at: T.e90, label: '90-е', end: T.e00 },
+  { at: T.e00, label: '2000-е', end: T.e10 },
+  { at: T.e10, label: '2010-е', end: T.glitch }
+];
+
+// ---------- era illustrations: a row of three gaming stations ----------
+function crtMonitor(x, y, s, t, i) {           // beige CRT, green phosphor screen
+  const w = 250 * s, h = 210 * s;
+  ctx.fillStyle = C.beige; roundRect(x - w / 2, y - h, w, h, 16 * s); ctx.fill();
+  ctx.fillStyle = C.beigeDark; ctx.fillRect(x - w * .35, y, w * .7, 26 * s);          // neck
+  ctx.fillRect(x - w * .45, y + 26 * s, w * .9, 14 * s);                               // base
+  const sx = x - w * .4, sy = y - h * .88, sw = w * .8, sh = h * .68;
+  ctx.fillStyle = '#062a12'; roundRect(sx, sy, sw, sh, 18 * s); ctx.fill();
+  // flickering green game: little pixel "tanks" and text rows
+  ctx.save(); roundRect(sx, sy, sw, sh, 18 * s); ctx.clip();
+  ctx.fillStyle = C.phos; ctx.globalAlpha = .8 + .2 * Math.sin(t * 40 + i);
+  for (let r = 0; r < 5; r++) {
+    const len = (0.3 + .6 * hash(i * 9 + r)) * sw * .8;
+    ctx.fillRect(sx + 14 * s, sy + 18 * s + r * 22 * s, len, 8 * s);
+  }
+  const px = sx + ((t * 60 * s + i * 50 * s) % sw);
+  ctx.fillRect(px, sy + sh - 30 * s, 16 * s, 16 * s);
+  ctx.restore();
+  ctx.fillStyle = 'rgba(57,255,106,.12)'; ctx.beginPath(); ctx.ellipse(x, sy + sh / 2, sw * .7, sh * .7, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#7a735f'; ctx.fillRect(x + w * .3, y - h * .12, 18 * s, 8 * s);     // power LED housing
+  ctx.fillStyle = C.phos; ctx.fillRect(x + w * .3 + 4 * s, y - h * .12 + 2 * s, 8 * s, 4 * s);
+}
+function lcdMonitor(x, y, s, t, i) {           // 2000s thin LCD + headset
+  const w = 270 * s, h = 175 * s;
+  ctx.fillStyle = '#20242c'; roundRect(x - w / 2, y - h, w, h, 8 * s); ctx.fill();
+  ctx.fillStyle = '#2b303a'; ctx.fillRect(x - 10 * s, y, 20 * s, 34 * s); ctx.fillRect(x - 60 * s, y + 34 * s, 120 * s, 8 * s);
+  const sx = x - w / 2 + 10 * s, sy = y - h + 10 * s, sw = w - 20 * s, sh = h - 20 * s;
+  const g = ctx.createLinearGradient(sx, sy, sx, sy + sh);
+  g.addColorStop(0, '#3a6ea8'); g.addColorStop(.6, '#7aa0c0'); g.addColorStop(.61, '#6b5a3a'); g.addColorStop(1, '#3b3020');
+  ctx.fillStyle = g; ctx.fillRect(sx, sy, sw, sh);
+  // crosshair + HUD (generic shooter)
+  ctx.strokeStyle = '#d9ff6a'; ctx.lineWidth = 2 * s;
+  const cx = x + Math.sin(t * 2 + i) * 20 * s, cy = sy + sh * .5;
+  ctx.beginPath(); ctx.moveTo(cx - 12 * s, cy); ctx.lineTo(cx + 12 * s, cy); ctx.moveTo(cx, cy - 12 * s); ctx.lineTo(cx, cy + 12 * s); ctx.stroke();
+  ctx.fillStyle = '#ffd34d'; ctx.fillRect(sx + 8 * s, sy + sh - 16 * s, 40 * s, 8 * s); ctx.fillRect(sx + sw - 48 * s, sy + sh - 16 * s, 40 * s, 8 * s);
+  // headset hanging
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 7 * s;
+  ctx.beginPath(); ctx.arc(x + w / 2 + 6 * s, y - h * .45, 26 * s, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+  ctx.fillStyle = '#111'; roundRect(x + w / 2 - 22 * s, y - h * .45, 18 * s, 30 * s, 6 * s); ctx.fill();
+}
+function rgbMonitor(x, y, s, t, i) {           // 2010s wide monitor with RGB underglow
+  const w = 290 * s, h = 170 * s;
+  const hue = (t * 80 + i * 60) % 360;
+  ctx.save();
+  ctx.shadowColor = `hsl(${hue},100%,60%)`; ctx.shadowBlur = 40 * s;
+  ctx.fillStyle = '#0d0d14'; roundRect(x - w / 2, y - h, w, h, 6 * s); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = '#16161f'; ctx.fillRect(x - 8 * s, y, 16 * s, 30 * s); ctx.fillRect(x - 70 * s, y + 30 * s, 140 * s, 7 * s);
+  const sx = x - w / 2 + 6 * s, sy = y - h + 6 * s, sw = w - 12 * s, sh = h - 12 * s;
+  const g = ctx.createLinearGradient(sx, sy, sx + sw, sy + sh);
+  g.addColorStop(0, '#2a0f55'); g.addColorStop(1, '#0b3a6b');
+  ctx.fillStyle = g; ctx.fillRect(sx, sy, sw, sh);
+  // MOBA-ish minimap + health bars
+  ctx.fillStyle = '#122'; ctx.fillRect(sx + 8 * s, sy + sh - 56 * s, 48 * s, 48 * s);
+  ctx.fillStyle = '#ff4d6d'; ctx.fillRect(sx + 10 * s + hash(i) * 30 * s, sy + sh - 40 * s, 6 * s, 6 * s);
+  ctx.fillStyle = '#4dff9a'; ctx.fillRect(sx + sw * .35, sy + 14 * s, sw * .3 * (.6 + .4 * Math.sin(t * 3 + i)), 7 * s);
+  // keyboard RGB strip
+  for (let k = 0; k < 10; k++) {
+    ctx.fillStyle = `hsl(${(hue + k * 25) % 360},100%,60%)`;
+    ctx.fillRect(x - w * .45 + k * w * .09, y + 52 * s, w * .08, 10 * s);
+  }
+}
+function stationRow(kind, t, k) {
+  const fn = kind === 0 ? crtMonitor : kind === 1 ? lcdMonitor : rgbMonitor;
+  const desk = kind === 0 ? '#3a2a1a' : kind === 1 ? '#262a33' : '#121220';
+  // rows: [y, scale, gap, delay, alpha]; vertical gets a smaller back row for depth
+  const rows = VERTICAL
+    ? [[H * .43, .78, 300, 0, .55], [H * .6, 1.12, 345, .2, 1]]
+    : [[H * .56, 1.2, 420, 0, 1]];
+  rows.forEach(([y, sc, gp, d, al]) => {
+    const s = sc * U * lerp(.85, 1, k), gap = gp * U;
+    for (let i = -1; i <= 1; i++) {
+      const ki = eBack(prog(k, d + .1 + (i + 1) * .12, d + .5 + (i + 1) * .12));
+      if (ki <= 0) continue;
+      ctx.save(); ctx.globalAlpha = clamp(ki) * al;
+      ctx.translate(CX + i * gap, y + (1 - ki) * 120 * U); fn(0, 0, s, t, i + 1 + d * 10);
+      ctx.restore();
+    }
+    ctx.fillStyle = desk; ctx.globalAlpha = clamp(k * 2) * al;
+    ctx.fillRect(0, y + 70 * s, W, 16 * U * sc);
+    ctx.globalAlpha = 1;
+  });
+}
+
+// ---------- scene: CRT boot + hook (0 – 3.4 s) ----------
+function boot(t) {
+  if (t > T.e90 + .1) return;
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  const on = prog(t, T.crtOn, T.crtOn + .35);
+  if (on <= 0) return;
+  const off = eInOut(prog(t, T.bootOut, T.bootOut + .3));         // CRT power-off squeeze
+  const sh = H * eOut(prog(on, .4, 1)) * (1 - off) + 4 * U;
+  const sw = W * eOut(prog(on, 0, .4)) * (1 - off * .0);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(CX - sw / 2, CY - sh / 2, sw, sh); ctx.clip();
+  ctx.fillStyle = C.phosBg; ctx.fillRect(0, 0, W, H);
+  if (on >= 1) {
+    ctx.fillStyle = C.phos; ctx.textAlign = 'left';
+    const fs = (VERTICAL ? 30 : 28) * U, x0 = W * .08;
+    ctx.font = font(400, fs, PIX);
+    const lines = ['NS-DOS v1.2', 'C:\\> LAN_CLUB.EXE', 'ЗАГРУЗКА ИСТОРИИ'];
+    lines.forEach((l, i) => ctx.fillText(typed(l, t, T.dos[i]), x0, H * .14 + i * fs * 2));
+    // progress bar
+    const pb = prog(t, T.dos[2] + .5, T.hook + .9);
+    if (t > T.dos[2] + .4) {
+      const by = H * .14 + 3 * fs * 2 - fs * .8, bw = W * .84;
+      ctx.strokeStyle = C.phos; ctx.lineWidth = 3 * U; ctx.strokeRect(x0, by, bw, fs);
+      const cells = Math.floor(pb * 20);
+      for (let c = 0; c < cells; c++) ctx.fillRect(x0 + 6 * U + c * (bw - 12 * U) / 20, by + 6 * U, (bw - 12 * U) / 20 - 4 * U, fs - 12 * U);
+    }
+    // hook headline
+    const hk = prog(t, T.hook, T.hook + .1);
+    if (hk > 0) {
+      const lines2 = VERTICAL ? ['КАК ПОЯВИЛИСЬ', 'КОМПЬЮТЕРНЫЕ', 'КЛУБЫ?'] : ['КАК ПОЯВИЛИСЬ', 'КОМПЬЮТЕРНЫЕ КЛУБЫ?'];
+      const size = Math.min(...lines2.map(l => fit(l, 400, 62 * U, PIX, W * .86)));
+      ctx.textAlign = 'center';
+      lines2.forEach((l, i) => {
+        const vis = typed(l, t, T.hook + i * .32, 40);
+        ctx.font = font(400, size, PIX);
+        ctx.fillStyle = i === lines2.length - 1 ? '#eaff6a' : C.phos;
+        ctx.shadowColor = C.phos; ctx.shadowBlur = 18 * U;
+        ctx.fillText(vis + (Math.floor(t * 4) % 2 && vis.length < l.length ? '█' : ''), CX, CY + (i - (lines2.length - 1) / 2) * size * 1.7);
+        ctx.shadowBlur = 0;
+      });
+    }
+  }
+  ctx.restore();
+  if (on < 1) {                                                     // power-on flash line
+    ctx.fillStyle = `rgba(220,255,230,${1 - on})`; ctx.fillRect(CX - sw / 2, CY - 2 * U, sw, 4 * U);
+  }
+}
+
+// ---------- scene: eras (3.5 – 15.6 s) ----------
+const ERA_TEXT = [
+  ['Подвал и пара ЭЛТ-мониторов', 'Локальная сеть по проводам', '«Мам, ещё полчасика!»'],
+  ['Первые турниры по локалке', 'Ночные игры до самого утра'],
+  ['Киберспорт выходит на большую сцену', 'Стримы, лиги и призовые']
+];
+const ERA_LINES = [T.l90, T.l00, T.l10];
+function eraBg(i, t) {
+  if (i === 0) { ctx.fillStyle = C.phosBg; ctx.fillRect(0, 0, W, H); }
+  else if (i === 1) {
+    const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#16233a'); g.addColorStop(1, '#070b14');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  } else {
+    const g = ctx.createRadialGradient(CX, H * .45, 0, CX, H * .45, H * .8);
+    g.addColorStop(0, '#2a1060'); g.addColorStop(1, '#07030f');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // stage light beams
+    for (let b = 0; b < 4; b++) {
+      const a = Math.sin(t * .8 + b * 1.7) * .35;
+      ctx.save(); ctx.translate(W * (.15 + b * .23), -20); ctx.rotate(a);
+      const gl = ctx.createLinearGradient(0, 0, 0, H);
+      gl.addColorStop(0, `hsla(${(b * 90 + t * 40) % 360},100%,65%,.28)`); gl.addColorStop(1, 'hsla(0,0%,100%,0)');
+      ctx.fillStyle = gl; ctx.beginPath(); ctx.moveTo(-10 * U, 0); ctx.lineTo(10 * U, 0); ctx.lineTo(160 * U, H); ctx.lineTo(-160 * U, H); ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+function eras(t) {
+  ERAS.forEach((e, i) => {
+    if (t < e.at || t >= e.end + .02) return;
+    const k = prog(t, e.at, e.at + 1.0);
+    eraBg(i, t);
+    // big era label, styled for its decade
+    const lk = eExpo(prog(t, e.at + .05, e.at + .6));
+    const ly = VERTICAL ? H * .19 : H * .2;
+    ctx.save(); ctx.textAlign = 'center';
+    if (i === 0) {
+      ctx.font = font(400, 120 * U, PIX); ctx.fillStyle = C.phos; ctx.shadowColor = C.phos; ctx.shadowBlur = 30 * U;
+    } else if (i === 1) {
+      const g = ctx.createLinearGradient(0, ly - 120 * U, 0, ly);
+      g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#7fa6d9');
+      ctx.font = font(400, 150 * U, RUSSO); ctx.fillStyle = g;
+    } else {
+      ctx.font = font(400, 150 * U, RUSSO);
+      const g = ctx.createLinearGradient(CX - 300 * U, 0, CX + 300 * U, 0);
+      const h0 = (t * 60) % 360;
+      g.addColorStop(0, `hsl(${h0},100%,65%)`); g.addColorStop(.5, `hsl(${(h0 + 120) % 360},100%,65%)`); g.addColorStop(1, `hsl(${(h0 + 240) % 360},100%,65%)`);
+      ctx.fillStyle = g; ctx.shadowColor = '#8b5cff'; ctx.shadowBlur = 30 * U;
+    }
+    ctx.globalAlpha = lk;
+    ctx.fillText(e.label, CX, ly + (1 - lk) * 60 * U);
+    ctx.restore();
+
+    stationRow(i, t, k);
+
+    // captions
+    const lines = ERA_TEXT[i], cues = ERA_LINES[i];
+    const capY = VERTICAL ? H * .73 : H * .8;
+    lines.forEach((l, j) => {
+      // one caption at a time: slides in on its cue, slides up/out on the next one
+      const ck = eOut(prog(t, cues[j], cues[j] + .45));
+      const next = cues[j + 1] ?? e.end + 1;
+      const ko = eInOut(prog(t, next - .1, next + .25));
+      if (ck <= 0 || ko >= 1) return;
+      ctx.save(); ctx.textAlign = 'center'; ctx.globalAlpha = ck * (1 - ko);
+      const fam = i === 0 ? PIX : RUSSO, maxS = (i === 0 ? 50 : 72) * U;
+      let parts = [l], sz = fit(l, 400, maxS, fam, W * .88);
+      if (sz < maxS * .95 && l.includes(' ')) {               // wrap at the space nearest the middle
+        const sp = [...l].map((c, n) => c === ' ' ? n : -1).filter(n => n > 0);
+        const cut = sp.reduce((x, y) => Math.abs(y - l.length / 2) < Math.abs(x - l.length / 2) ? y : x, sp[0]);
+        parts = [l.slice(0, cut), l.slice(cut + 1)];
+        sz = Math.min(...parts.map(q => fit(q, 400, maxS, fam, W * .88)));
+      }
+      ctx.font = font(400, sz, fam);
+      ctx.fillStyle = i === 0 ? (j === 2 ? '#eaff6a' : C.phos) : C.white;
+      if (i === 0) { ctx.shadowColor = C.phos; ctx.shadowBlur = 16 * U; }
+      const lh = sz * (i === 0 ? 1.8 : 1.3);
+      const y = capY + (1 - ck) * 40 * U - ko * 40 * U;
+      parts.forEach((q, n) => ctx.fillText(q, CX, y + n * lh));
+      ctx.restore();
+    });
+  });
+  // 90s: scanlines + vignette over the whole era
+  if (t >= T.e90 && t < T.e00) {
+    ctx.fillStyle = 'rgba(0,0,0,.22)';
+    for (let y = 0; y < H; y += 6 * U) ctx.fillRect(0, y, W, 2 * U);
+  }
+}
+
+// era-to-era «channel switch»: horizontal tear slices + white line
+function transitions(t) {
+  for (const at of [T.e90, T.e00, T.e10, T.glitch]) {
+    const k = prog(t, at - .12, at + .22);
+    if (k <= 0 || k >= 1) continue;
+    const amp = Math.sin(Math.PI * k);
+    for (let s = 0; s < 14; s++) {
+      const y = hash(s + at * 10) * H, h = (20 + hash(s * 3 + at) * 90) * U;
+      const dx = (hash(s * 7 + Math.floor(t * 30)) - .5) * 260 * U * amp;
+      ctx.drawImage(cv, 0, y, W, h, dx, y, W, h);
+    }
+    ctx.fillStyle = `rgba(255,255,255,${.7 * amp})`;
+    ctx.fillRect(0, CY - 3 * U + (k - .5) * H * .6, W, 6 * U);
+    if (at === T.glitch) {                                          // RGB split into the present day
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = .35 * amp; ctx.drawImage(cv, 14 * U * amp, 0); ctx.drawImage(cv, -14 * U * amp, 0);
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    }
+  }
+}
+
+// ---------- scene: today — NS12 Cyber (15.6 s – end) ----------
+function modernBg(t) {
+  const g = ctx.createRadialGradient(CX, H * .38, 0, CX, H * .38, H * .9);
+  g.addColorStop(0, '#0f2160'); g.addColorStop(.55, C.navy2); g.addColorStop(1, C.navy);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // perspective neon floor grid
+  ctx.save(); ctx.strokeStyle = 'rgba(47,107,255,.35)'; ctx.lineWidth = 2 * U;
+  const hz = H * (VERTICAL ? .62 : .66);
+  for (let x = -12; x <= 12; x++) { ctx.beginPath(); ctx.moveTo(CX + x * 30 * U, hz); ctx.lineTo(CX + x * 260 * U, H); ctx.stroke(); }
+  const off = (t * .6) % 1;
+  for (let r = 0; r < 12; r++) {
+    const p = Math.pow((r + off) / 12, 2.2), y = hz + p * (H - hz);
+    ctx.globalAlpha = p; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  ctx.restore();
+  // floating particles
+  for (let i = 0; i < 40; i++) {
+    const x = hash(i) * W, y = ((hash(i * 3) * H - t * (20 + hash(i * 5) * 60) * U) % H + H) % H;
+    ctx.fillStyle = i % 3 ? 'rgba(90,209,255,.5)' : 'rgba(139,92,255,.5)';
+    ctx.fillRect(x, y, 3 * U, 3 * U);
+  }
+}
+// NS12 CYBER lockup (recreated typographically from the profile avatar)
+function logo(t, x, y, s, a) {
+  if (a <= 0) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.globalAlpha = a; ctx.textAlign = 'center';
+  ctx.font = font(400, 230, RUSSO);
+  const g = ctx.createLinearGradient(0, -200, 0, 10);
+  g.addColorStop(0, C.chrome1); g.addColorStop(.45, C.chrome2); g.addColorStop(.5, C.chrome3); g.addColorStop(.75, '#c9d2e3'); g.addColorStop(1, '#6d7890');
+  ctx.lineWidth = 10; ctx.strokeStyle = '#0a0f1f'; ctx.strokeText('NS', 0, 0);
+  ctx.fillStyle = g; ctx.shadowColor = 'rgba(47,107,255,.6)'; ctx.shadowBlur = 40; ctx.fillText('NS', 0, 0);
+  ctx.shadowBlur = 0;
+  // chrome sheen sweep
+  const sh = prog(t, T.logo + .5, T.logo + 1.2);
+  if (sh > 0 && sh < 1) {
+    ctx.save(); ctx.globalCompositeOperation = 'source-atop';
+    const sx = lerp(-300, 300, sh), gg = ctx.createLinearGradient(sx - 60, 0, sx + 60, 0);
+    gg.addColorStop(0, 'rgba(255,255,255,0)'); gg.addColorStop(.5, 'rgba(255,255,255,.9)'); gg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gg; ctx.fillRect(-300, -220, 600, 240); ctx.restore();
+  }
+  ctx.font = font(400, 64, RUSSO); ctx.fillStyle = C.blue; ctx.shadowColor = C.blue; ctx.shadowBlur = 25;
+  const word = 'CYBER', sp = 62;
+  for (let i = 0; i < word.length; i++) ctx.fillText(word[i], (i - 2) * sp, 80);
+  ctx.font = font(400, 90, RUSSO); ctx.lineWidth = 5; ctx.strokeStyle = C.cyan; ctx.strokeText('12', 0, 180);
+  ctx.fillStyle = 'rgba(47,107,255,.35)'; ctx.fillText('12', 0, 180);
+  ctx.restore();
+}
+const SPECS = [
+  ['CPU', 'AMD Ryzen 7 9800X3D'], ['CPU', 'Ryzen 7 7800X3D · Ryzen 5 9600X'], ['GPU', 'NVIDIA RTX 5060 Ti'],
+  ['ЗАЛЫ', 'Premium · Bootcamp'], ['РЕЖИМ', 'Открыто 24/7']
+];
+function modern(t) {
+  if (t < T.glitch) return;
+  modernBg(t);
+  const lk = eBack(prog(t, T.logo, T.logo + .6));
+  const move = eInOut(prog(t, T.specs[0] - .5, T.specs[0] + .1));
+  const toCta = eInOut(prog(t, T.cta - .4, T.cta + .2));
+  const ls = (VERTICAL ? 1.6 : 1.3) * U * lk * lerp(1, .62, move);
+  const ly = lerp(CY - 40 * U, VERTICAL ? H * .2 : H * .3, move);
+  const lx = VERTICAL ? CX : lerp(CX, W * .27, move);
+  // «СЕГОДНЯ» + flash
+  const fl = t >= T.logo ? 1 - prog(t, T.logo, T.logo + .5) : 0;
+  if (fl > 0) { ctx.fillStyle = `rgba(150,190,255,${.6 * fl})`; ctx.fillRect(0, 0, W, H); }
+  const sk = eOut(prog(t, T.glitch + .2, T.glitch + .6)) * (1 - move);
+  if (sk > 0) {
+    ctx.save(); ctx.textAlign = 'center'; ctx.globalAlpha = sk; ctx.fillStyle = C.cyan;
+    ctx.font = font(400, 46 * U, RUSSO); ctx.fillText('СЕГОДНЯ', CX, CY - 330 * U * (VERTICAL ? 1.3 : 1)); ctx.restore();
+  }
+  logo(t, lx, ly, ls, clamp(lk));
+  // tagline
+  const tk = eOut(prog(t, T.tagline, T.tagline + .5)) * (1 - move);
+  if (tk > 0) {
+    ctx.save(); ctx.textAlign = 'center'; ctx.globalAlpha = tk; ctx.fillStyle = C.white;
+    const tl = 'киберспортивный клуб 24/7';
+    ctx.font = font(600, fit(tl, 600, 48 * U, TEXT, W * .86), TEXT);
+    ctx.fillText(tl, CX, ly + 420 * U * (VERTICAL ? 1 : .85) + (1 - tk) * 20 * U);
+    ctx.font = font(500, 34 * U, TEXT); ctx.fillStyle = C.cyan; ctx.fillText('Астана', CX, ly + 480 * U * (VERTICAL ? 1 : .85));
+    ctx.restore();
+  }
+  // spec rows (slide in, then give way to the CTA)
+  const x0 = VERTICAL ? W * .08 : W * .5, rw = VERTICAL ? W * .84 : W * .43;
+  const rh = (VERTICAL ? 120 : 100) * U, gap = 20 * U;
+  const y0 = VERTICAL ? H * .36 : (H - (5 * rh + 4 * gap)) / 2;
+  SPECS.forEach(([k, v], i) => {
+    const sk2 = eOut(prog(t, T.specs[i], T.specs[i] + .45)) * (1 - toCta);
+    if (sk2 <= 0) return;
+    const y = y0 + i * (rh + gap), x = x0 + (1 - sk2) * W * .5;
+    ctx.save(); ctx.globalAlpha = clamp(sk2 * 1.3);
+    const g = ctx.createLinearGradient(x, 0, x + rw, 0);
+    g.addColorStop(0, 'rgba(47,107,255,.35)'); g.addColorStop(1, 'rgba(47,107,255,.05)');
+    ctx.fillStyle = g; roundRect(x, y, rw, rh, 16 * U); ctx.fill();
+    ctx.strokeStyle = 'rgba(90,209,255,.6)'; ctx.lineWidth = 2 * U; ctx.stroke();
+    ctx.fillStyle = C.cyan; ctx.fillRect(x, y + 14 * U, 6 * U, rh - 28 * U);
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ctx.font = font(400, 26 * U, RUSSO); ctx.fillStyle = C.cyan; ctx.fillText(k, x + 34 * U, y + rh / 2);
+    ctx.font = font(400, fit(v, 400, (VERTICAL ? 44 : 38) * U, RUSSO, rw - 230 * U), RUSSO); ctx.fillStyle = C.white;
+    ctx.fillText(v, x + 190 * U, y + rh / 2 + 2 * U);
+    ctx.restore();
+  });
+  // CTA block
+  const ck = eBack(prog(t, T.cta, T.cta + .5));
+  if (ck > 0) {
+    const cy0 = VERTICAL ? H * .5 : H * .3, bx = VERTICAL ? CX : W * .715, bw = VERTICAL ? W * .84 : W * .4;
+    ctx.save(); ctx.textAlign = 'center';
+    ctx.globalAlpha = clamp(ck);
+    ctx.font = font(400, fit('Приходи играть', 400, 84 * U, RUSSO, bw), RUSSO); ctx.fillStyle = C.white;
+    ctx.fillText('Приходи играть', bx, cy0 + (1 - ck) * 40 * U);
+    const ak = eOut(prog(t, T.addr, T.addr + .5));
+    ctx.globalAlpha = ak; ctx.font = font(600, (VERTICAL ? 40 : 34) * U, TEXT); ctx.fillStyle = C.cyan;
+    ctx.fillText('Астана, ул. Байтурсынова 67', bx, cy0 + 90 * U);
+    // WhatsApp button
+    const wk = eBack(prog(t, T.wa, T.wa + .5));
+    if (wk > 0) {
+      const bh = (VERTICAL ? 150 : 120) * U, by = cy0 + 160 * U;
+      const pulse = t > T.wa + .6 ? 1 + .025 * Math.sin((t - T.wa) * 7) : 1;
+      ctx.save(); ctx.translate(bx, by + bh / 2); ctx.scale(wk * pulse, wk * pulse); ctx.globalAlpha = clamp(wk);
+      const g = ctx.createLinearGradient(-bw / 2, 0, bw / 2, 0); g.addColorStop(0, C.blue); g.addColorStop(1, C.violet);
+      ctx.shadowColor = 'rgba(47,107,255,.7)'; ctx.shadowBlur = 50 * U;
+      ctx.fillStyle = g; roundRect(-bw / 2, -bh / 2, bw, bh, bh / 2); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.fillStyle = C.white; ctx.textBaseline = 'middle';
+      ctx.font = font(400, fit('Бронь в WhatsApp', 400, (VERTICAL ? 54 : 44) * U, RUSSO, bw * .8), RUSSO);
+      ctx.fillText('Бронь в WhatsApp', 0, -bh * .14);
+      ctx.font = font(600, (VERTICAL ? 34 : 28) * U, TEXT); ctx.globalAlpha = .9;
+      ctx.fillText('+7 775 655 84 29', 0, bh * .24);
+      ctx.restore();
+      const hk = eOut(prog(t, T.handle, T.handle + .5));
+      ctx.globalAlpha = hk; ctx.font = font(400, (VERTICAL ? 50 : 40) * U, RUSSO); ctx.fillStyle = C.white;
+      ctx.fillText('@nscyber12', bx, by + bh + 100 * U);
+    }
+    ctx.restore();
+  }
+}
+
+function fades(t) {
+  const a = prog(t, T.end - .6, T.end);
+  if (a > 0) { ctx.fillStyle = `rgba(0,0,0,${a})`; ctx.fillRect(0, 0, W, H); }
+}
+
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.globalAlpha = 1;
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  boot(t);
+  eras(t);
+  modern(t);
+  transitions(t);
+  fades(t);
+}
+
+window.DURATION = DURATION;
+window.renderFrame = renderFrame;
+window.READY = (async () => {
+  await Promise.all([
+    document.fonts.load(font(400, 40, '"Press Start 2P"'), 'АБВ ABC 90'),
+    document.fonts.load(font(400, 40, '"Russo One"'), 'АБВ ABC 12'),
+    document.fonts.load(font(600, 40, 'Montserrat'), 'АБВ ABC'),
+    document.fonts.load(font(500, 40, 'Montserrat'), 'АБВ ABC')
+  ]);
+  return true;
+})();
+
+if (params.has('capture')) {
+  document.body.classList.add('capture');
+} else {
+  const fmt = document.getElementById('fmt');
+  if (!VERTICAL) { fmt.textContent = '9:16'; fmt.href = '?'; }
+  const playBtn = document.getElementById('play'), seek = document.getElementById('seek'), time = document.getElementById('time');
+  const snd = document.getElementById('snd');
+  let playing = true, start = 0, cur = 0;
+  const syncAudio = () => { try { snd.currentTime = cur; if (playing) snd.play().catch(() => {}); else snd.pause(); } catch (e) {} };
+  playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? '⏸' : '▶'; start = performance.now() - cur * 1000; syncAudio(); };
+  seek.oninput = () => { cur = +seek.value; start = performance.now() - cur * 1000; renderFrame(cur); time.textContent = cur.toFixed(1) + ' s'; syncAudio(); };
+  window.READY.then(() => {
+    start = performance.now(); syncAudio();
+    (function loop(now) {
+      if (playing) { const prev = cur; cur = ((now - start) / 1000) % DURATION; if (cur < prev) syncAudio(); seek.value = cur; time.textContent = cur.toFixed(1) + ' s'; renderFrame(cur); }
+      requestAnimationFrame(loop);
+    })(performance.now());
+  });
+}
+</script>
+</body>
+</html>
