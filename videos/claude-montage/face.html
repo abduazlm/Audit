@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Montage Face</title>
+<style>
+  @font-face { font-family: 'Montserrat'; src: url(assets/fonts/Montserrat.ttf); font-weight: 100 900; }
+  @font-face { font-family: 'Oswald'; src: url(assets/fonts/Oswald.ttf); font-weight: 200 700; }
+  @font-face { font-family: 'Marck Script'; src: url(assets/fonts/MarckScript-Regular.ttf); }
+  :root { --bg: #0b0909; --fg: #f5f1ee; --muted: #a39892; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--fg); font-family: Montserrat, Arial, sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    min-height: 100vh; padding: 16px; box-sizing: border-box; }
+  canvas { max-width: 100%; max-height: calc(100vh - 90px); height: auto; display: block;
+    border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; color: var(--muted); font-size: 14px; }
+  button { background: #2a1416; color: var(--fg); border: 1px solid #5a2328; border-radius: 6px; padding: 6px 14px; font: inherit; cursor: pointer; }
+  input[type=range] { width: min(60vw, 480px); accent-color: #e5383b; }
+  body.capture { display: block; padding: 0; }
+  body.capture .controls { display: none; }
+  body.capture canvas { max-width: none; max-height: none; border-radius: 0; box-shadow: none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<audio id="snd" src="assets/soundtrack-face.wav" preload="auto"></audio>
+<div class="controls">
+  <button id="play">⏸</button>
+  <input id="seek" type="range" min="0" max="38.6" step="0.01" value="0">
+  <span id="time">0.0 s</span>
+</div>
+<script>
+// ------------------------------------------------------------------
+// «Пока ИИ монтирует мои ролики…» — reel for @abduazlm about the reels-montage skill.
+// Visual language follows the skill's 'minimal' style: left-aligned titles at x=72, caps eyebrow,
+// one handwritten accent word per block, word-by-word subtitles. Deterministic: renderFrame(t).
+// ------------------------------------------------------------------
+const params = new URLSearchParams(location.search);
+const W = 1080, H = 1920, CX = W / 2;
+const cv = document.getElementById('c');
+cv.width = W; cv.height = H;
+cv.style.width = params.has('capture') ? W + 'px' : 'auto';
+cv.style.aspectRatio = `${W} / ${H}`;
+const ctx = cv.getContext('2d');
+
+// palette from the @abduazlm profile: near-black, warm white, crimson accent (avatar / covers)
+const C = { bg: '#0b0909', panel: '#171213', panel2: '#221a1b', line: '#3a2c2d', white: '#f5f1ee', muted: '#a39892',
+            red: '#e5383b', redDeep: '#7a0f16', cream: '#f3d9b1', green: '#3ccf7a' };
+const SANS = 'Montserrat, Arial, sans-serif', COND = 'Oswald, Arial Narrow, sans-serif', SCRIPT = '"Marck Script", cursive';
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = x => 1 - Math.pow(1 - x, 3);
+const eInOut = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const eBack = x => { const c1 = 1.70158, c3 = c1 + 1; return x <= 0 ? 0 : 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const hash = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+const font = (w, s, f) => `${w} ${Math.round(s)}px ${f}`;
+function rr(x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+// visibility envelope: in over .35 s from a, out over .3 s at b
+const vis = (t, a, b, inD = .35, outD = .3) => eOut(prog(t, a, a + inD)) * (1 - eInOut(prog(t, b - outD, b)));
+
+// ---------- voice: segments found by pause detection (timeline s = file s + 0.3) ----------
+const VO = 0.3;
+const SEGS = [
+  [0.15, 2.05, 'Пока ИИ монтирует мои ролики —'], [2.39, 3.48, 'я залипаю в рилсах.'], [3.95, 4.83, 'И ты можешь так же.'],
+  [5.24, 7.04, 'Вот пошаговая инструкция для Claude.'], [7.53, 8.16, 'Шаг первый.'], [8.63, 9.84, 'Напиши мне «МОНТАЖ»'],
+  [10.26, 10.69, 'в директ —'], [10.92, 12.19, 'я пришлю навык бесплатно.'], [12.60, 13.23, 'Шаг второй.'],
+  [13.70, 14.66, 'Загрузи его в Claude:'], [14.88, 15.59, '«Настройки»,'], [16.02, 16.79, '«Навыки»,'],
+  [17.12, 18.11, '«Загрузить»'], [18.55, 19.14, '— две минуты.'], [19.54, 20.20, 'Шаг третий.'],
+  [20.54, 21.88, 'Отправь видео и напиши:'], [22.31, 24.17, '«Смонтируй рилс в стиле минимал».'],
+  [24.59, 26.55, 'Через несколько минут — готовый'], [27.02, 27.32, 'ролик:'], [27.54, 28.46, 'субтитры, титры,'],
+  [28.94, 30.14, 'вставки на нужных словах,'], [30.60, 31.64, 'музыка и обложка.'], [32.00, 33.07, 'Правки — одной фразой:'],
+  [33.29, 33.73, '«шрифт'], [33.89, 34.30, 'тоньше»,'], [34.86, 35.65, '«текст ниже».'], [36.09, 36.98, 'А если не хочешь'],
+  [37.44, 38.69, 'заморачиваться — соберу'], [39.13, 39.94, 'индивидуальный'], [40.24, 41.30, 'навык под твой бренд.'],
+  [41.74, 42.99, 'Твой личный монтажёр в Claude.']
+];
+// word timings: split each segment by syllables (vowel count); tiny words ride with the next one
+const syl = w => Math.max(1, (w.match(/[аеёиоуыэюяaeiouy]/gi) || []).length);
+const WORDS = [];
+SEGS.forEach(([a, b, txt]) => {
+  const ws = txt.split(' ').filter(w => w !== '—');
+  const total = ws.reduce((s, w) => s + syl(w), 0);
+  let acc = 0;
+  ws.forEach(w => { const s0 = a + (b - a) * acc / total; acc += syl(w); WORDS.push({ w, a: s0 + VO, b: a + (b - a) * acc / total + VO }); });
+});
+const CHUNKS = [];
+for (let i = 0; i < WORDS.length; i++) {
+  const c = { text: WORDS[i].w, a: WORDS[i].a, b: WORDS[i].b };
+  while (c.text.replace(/[«»,.:]/g, '').length <= 2 && i + 1 < WORDS.length && WORDS[i + 1].a - c.b < .3) {
+    i++; c.text += ' ' + WORDS[i].w; c.b = WORDS[i].b;
+  }
+  CHUNKS.push(c);
+}
+const wordAt = (needle, from = 0) => { const o = WORDS.find(o => o.a >= from - .01 && o.w.replace(/[«»,.:—]/g, '').toLowerCase().startsWith(needle.toLowerCase())); if (!o) throw new Error('cue not found: ' + needle); return o.a; };
+
+// ---------- timeline (s) ----------
+const T = {
+  zalip: wordAt('залипаю'), tyzhe: 4.25, steps: 5.54, step1: 7.83, montazh: wordAt('МОНТАЖ'), navyk1: wordAt('навык', 10),
+  besplatno: wordAt('бесплатно'), step2: 12.9, nastr: wordAt('Настройки'), navyki: wordAt('Навыки'), zagruz: wordAt('Загрузить'),
+  dve: wordAt('две'), step3: 19.84, video: wordAt('видео', 20), typing: [22.61, 24.47], result: 24.89, rolik: wordAt('ролик', 26),
+  checks: [wordAt('субтитры'), wordAt('титры', 28.2), wordAt('вставки'), wordAt('музыка'), wordAt('обложка')],
+  edits: 32.3, tonshe: wordAt('шрифт'), nizhe: wordAt('текст'), upsell: 36.39, soberu: wordAt('соберу'),
+  indiv: wordAt('индивидуальный'), brand: wordAt('твой', 40), final: wordAt('Твой', 41.5), cta: 43.6, end: 46.0
+};
+const DURATION = T.end;
+// subtitles hidden where a title already says the same words
+const SUB_OFF = [[0, T.steps + 1.9], [T.result - .05, T.rolik + .4], [T.final - .1, 99],
+  [T.step1, T.step1 + .65], [T.step2, T.step2 + .65], [T.step3, T.step3 + .7],             // «Шаг …» = eyebrow
+  [wordAt('Напиши') - .05, wordAt('директ') + .45],                                      // step 1 title
+  [wordAt('Загрузи') - .05, wordAt('Настройки') - .05],                                  // step 2 title
+  [T.video - .35, T.video + .45],                                                        // «Отправь видео»
+  [wordAt('Правки') - .05, wordAt('шрифт') - .05],                                       // «Одной фразой»
+  [T.soberu - .05, T.soberu + .45], [wordAt('навык', 40) - .05, T.final]];               // «Соберу навык под твой бренд»
+
+// ---------- type helpers ----------
+function eyebrow(text, x, y, a, color = C.red) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a; ctx.font = font(600, 26, SANS); ctx.letterSpacing = '5px';
+  ctx.fillStyle = color; ctx.fillText(text, x, y + (1 - a) * 14); ctx.restore();
+}
+function title(text, x, y, size, a, w = 600, color = C.white) {
+  if (a <= 0) return 0;
+  ctx.save(); ctx.globalAlpha = a; ctx.font = font(w, size, SANS); ctx.letterSpacing = '-1px'; ctx.fillStyle = color;
+  ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 18;
+  ctx.fillText(text, x, y + (1 - a) * 18); const m = ctx.measureText(text).width; ctx.restore(); return m;
+}
+// handwritten accent: revealed left→right like a pen stroke
+function script(text, x, y, size, k, color = C.red) {
+  if (k <= 0) return;
+  ctx.save(); ctx.font = font(400, size, SCRIPT);
+  let w = ctx.measureText(text).width;
+  if (x + w > W - 50) { size *= (W - 50 - x) / w; ctx.font = font(400, size, SCRIPT); w = ctx.measureText(text).width; }
+  ctx.beginPath(); ctx.rect(x - 10, y - size * 1.2, (w + 30) * eOut(clamp(k)), size * 1.8); ctx.clip();
+  ctx.fillStyle = color; ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 14;
+  ctx.fillText(text, x, y); ctx.restore();
+}
+function bigNum(n, x, y, a) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = clamp(a); ctx.font = font(500, 300, COND); ctx.fillStyle = C.red;
+  const s = lerp(.85, 1, eBack(clamp(a)));
+  ctx.translate(x, y); ctx.scale(s, s); ctx.fillText(n, 0, 0); ctx.restore();
+}
+// block: big step number + eyebrow + title + script accent, left-aligned in the lower third
+function stepBlock(t, a, b, n, eb, ttl, scr, scrAt) {
+  const k = vis(t, a, b);
+  if (k <= 0) return;
+  const x0 = 72, y0 = 1330;
+  bigNum(n, x0 - 6, y0 + 70, k);
+  const tx = x0 + 175;
+  eyebrow(eb, tx, y0 - 150, k);
+  title(ttl, tx, y0 - 70, 74, k);
+  script(scr, tx + 6, y0 + 20, 92, prog(t, scrAt, scrAt + .5) * (1 - prog(t, b - .3, b)));
+}
+
+// ---------- background ----------
+function background(t) {
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  const g = ctx.createRadialGradient(CX, 380, 0, CX, 380, 900);
+  g.addColorStop(0, 'rgba(122,15,22,.38)'); g.addColorStop(1, 'rgba(122,15,22,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // drifting dust
+  for (let i = 0; i < 26; i++) {
+    const x = hash(i) * W, y = ((hash(i + 9) * H - t * (8 + hash(i + 3) * 18)) % H + H) % H;
+    ctx.fillStyle = `rgba(245,241,238,${.04 + hash(i + 5) * .06})`; ctx.fillRect(x, y, 3, 3);
+  }
+  // top label, like «SHEBER · АСТАНА» in the examples
+  ctx.save(); ctx.font = font(500, 22, SANS); ctx.letterSpacing = '6px'; ctx.fillStyle = 'rgba(245,241,238,.55)';
+  ctx.textAlign = 'center'; ctx.fillText('@ABDUAZLM  ·  REELS', CX, 118); ctx.restore();
+}
+
+// ---------- assets ----------
+const FEED = Array.from({ length: 9 }, (_, i) => { const im = new Image(); im.src = `assets/feed/f${i + 1}.jpg`; return im; });
+function cover(img, x, y, w, h) {
+  if (!img || !(img.naturalWidth || img.videoWidth)) { ctx.fillStyle = C.panel2; ctx.fillRect(x, y, w, h); return; }
+  const iw = img.naturalWidth || img.videoWidth, ih = img.naturalHeight || img.videoHeight;
+  const s = Math.max(w / iw, h / ih);
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  ctx.drawImage(img, x + (w - iw * s) / 2, y + (h - ih * s) / 2, iw * s, ih * s); ctx.restore();
+}
+function phone(x, y, w, h, drawScreen) {
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20;
+  ctx.fillStyle = '#050505'; rr(x - 14, y - 14, w + 28, h + 28, 58); ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = '#3b3536'; ctx.lineWidth = 3; rr(x - 14, y - 14, w + 28, h + 28, 58); ctx.stroke();
+  rr(x, y, w, h, 44); ctx.clip(); drawScreen(x, y, w, h);
+  ctx.restore();
+  ctx.fillStyle = '#050505'; rr(x + w / 2 - 60, y + 12, 120, 30, 15); ctx.fill();            // notch
+}
+function panel(x, y, w, h, a, head) {
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16;
+  ctx.fillStyle = C.panel; rr(x, y, w, h, 34); ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = C.line; ctx.lineWidth = 2; rr(x, y, w, h, 34); ctx.stroke();
+  if (head) {
+    ctx.fillStyle = C.panel2; rr(x, y, w, 86, 34); ctx.fill(); ctx.fillRect(x, y + 50, w, 36);
+    ['#ff5f57', '#febc2e', '#28c840'].forEach((c, i) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x + 40 + i * 30, y + 43, 9, 0, 7); ctx.fill(); });
+    ctx.font = font(600, 28, SANS); ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.fillText(head, x + w / 2, y + 53); ctx.textAlign = 'left';
+  }
+  ctx.restore();
+}
+function bubble(text, x, y, mine, a, opts = {}) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = clamp(a);
+  ctx.font = font(opts.w || 600, opts.size || 34, SANS);
+  const tw = ctx.measureText(text).width, bw = tw + 56, bh = (opts.size || 34) + 40;
+  const bx = mine ? x - bw : x, s = lerp(.7, 1, eBack(clamp(a)));
+  ctx.translate(bx + (mine ? bw : 0), y + bh); ctx.scale(s, s); ctx.translate(-(bx + (mine ? bw : 0)), -(y + bh));
+  ctx.fillStyle = mine ? C.red : C.panel2; rr(bx, y, bw, bh, 30); ctx.fill();
+  ctx.fillStyle = C.white; ctx.fillText(text, bx + 28, y + bh / 2 + (opts.size || 34) * .36);
+  ctx.restore();
+}
+function fileCard(x, y, w, a, name, sub, iconColor = C.red) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = clamp(a); const s = lerp(.8, 1, eBack(clamp(a)));
+  ctx.translate(x + w / 2, y + 60); ctx.scale(s, s); ctx.translate(-(x + w / 2), -(y + 60));
+  ctx.fillStyle = C.panel2; rr(x, y, w, 120, 26); ctx.fill(); ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = iconColor; rr(x + 22, y + 22, 76, 76, 18); ctx.fill();
+  ctx.fillStyle = C.white; ctx.font = font(700, 26, SANS); ctx.textAlign = 'center'; ctx.fillText('ZIP', x + 60, y + 70);
+  ctx.textAlign = 'left'; ctx.font = font(600, 32, SANS); ctx.fillText(name, x + 122, y + 54);
+  ctx.font = font(500, 24, SANS); ctx.fillStyle = C.muted; ctx.fillText(sub, x + 122, y + 90);
+  ctx.restore();
+}
+function check(x, y, label, k) {
+  if (k <= 0) return;
+  ctx.save(); ctx.globalAlpha = clamp(k * 1.5);
+  ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(x + 22, y - 12, 22, 0, 7); ctx.fill();
+  ctx.strokeStyle = C.white; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const p = eOut(clamp(k * 1.4));
+  ctx.beginPath(); ctx.moveTo(x + 12, y - 12); ctx.lineTo(x + 12 + 7 * Math.min(1, p * 2), y - 12 + 7 * Math.min(1, p * 2));
+  if (p > .5) ctx.lineTo(x + 19 + 14 * (p - .5) * 2, y - 19 - 7 * (p - .5) * 2 + 7 - 7);
+  ctx.stroke();
+  ctx.font = font(600, 40, SANS); ctx.fillStyle = C.white; ctx.fillText(label, x + 62 + (1 - eOut(clamp(k))) * 30, y);
+  ctx.restore();
+}
+
+// ---------- showcase clip (a real reel made with the skill) ----------
+const SHOW = { start: 26.0, fps: 30 };
+const showImg = new Image(); let showIdx = -1;
+const showVid = document.createElement('video');
+showVid.src = 'assets/showcase.mp4'; showVid.muted = true; showVid.playsInline = true; showVid.preload = 'auto';
+window.prepare = async t => {
+  if (t < SHOW.start || t > T.edits + .3) return;
+  const idx = Math.min(216, Math.floor((t - SHOW.start) * SHOW.fps + 1e-6) + 1);
+  if (idx === showIdx) return;
+  showIdx = idx; showImg.src = `.frames/f${String(idx).padStart(4, '0')}.jpg`;
+  try { await showImg.decode(); } catch (e) { showIdx = -1; }
+};
+function showSrc(t) {
+  if (params.has('capture')) return showIdx > 0 && showImg.naturalWidth ? showImg : null;
+  const want = t - SHOW.start;
+  if (Math.abs(showVid.currentTime - want) > .25) showVid.currentTime = Math.max(0, want);
+  if (showVid.paused) showVid.play().catch(() => {});
+  return showVid.readyState >= 2 ? showVid : null;
+}
+
+// ---------- scenes ----------
+function sceneHook(t) {
+  // A: the AI edits — a timeline cutting itself
+  const ka = vis(t, .1, T.zalip + .25, .4, .45);
+  if (ka > 0) {
+    const y = 230 - (1 - ka) * 40;
+    panel(72, y, 936, 700, ka, 'Монтаж · авто');
+    ctx.save(); ctx.globalAlpha = ka;
+    const fi = Math.floor(t * 2.5) % 9;
+    cover(FEED[fi], 72 + 318, y + 110, 300, 400);
+    ctx.strokeStyle = C.line; ctx.strokeRect(72 + 318, y + 110, 300, 400);
+    for (let r = 0; r < 3; r++) {                                     // tracks
+      const ty = y + 545 + r * 44;
+      ctx.fillStyle = '#100c0d'; ctx.fillRect(110, ty, 860, 34);
+      let x = 110 - ((t * 140 + r * 90) % 160);
+      for (let k = 0; x < 970; k++) {
+        const w = 70 + hash(r * 31 + k) * 120;
+        ctx.fillStyle = r === 0 ? '#c43a3d' : r === 1 ? '#8a6d4a' : '#5a5f7a';
+        if (x + w > 110) { const cx0 = Math.max(110, x), cw = Math.min(970, x + w - 6) - cx0; if (cw > 0) { rr(cx0, ty + 3, cw, 28, 6); ctx.fill(); } }
+        x += w;
+      }
+    }
+    const ph = 110 + ((t * .55) % 1) * 860;                            // playhead
+    ctx.fillStyle = C.white; ctx.fillRect(ph, y + 530, 3, 160);
+    ctx.font = font(600, 26, SANS); ctx.fillStyle = C.muted;
+    ctx.fillText('ИИ монтирует' + '.'.repeat(1 + Math.floor(t * 3) % 3), 110, y + 152);
+    ctx.fillStyle = C.red; ctx.fillText(`${Math.min(99, Math.floor(t * 31))}%`, 110, y + 192);
+    ctx.restore();
+  }
+  // B: me — doom-scrolling a reels feed
+  const kb = vis(t, T.zalip - .15, T.steps - .05, .45, .35);
+  if (kb > 0) {
+    const pw = 400, phh = 760, px = CX - pw / 2, py = 170 + (1 - kb) * 120;
+    ctx.save(); ctx.globalAlpha = kb;
+    phone(px, py, pw, phh, (x, y, w, h) => {
+      const sp = (t - T.zalip) * 1.25, i0 = Math.floor(sp), f = eInOut(clamp((sp - i0) * 2.2));
+      for (let k = -1; k <= 1; k++) cover(FEED[((i0 + k) % 9 + 9) % 9], x, y + (k - f) * h, w, h);
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x, y + h - 160, w, 160);
+      ctx.fillStyle = C.white; ctx.font = font(700, 26, SANS); ctx.fillText('Reels', x + 26, y + 70);
+      [0, 1, 2].forEach(n => { ctx.beginPath(); ctx.arc(x + w - 40, y + h - 260 + n * 70, 18, 0, 7); ctx.strokeStyle = C.white; ctx.lineWidth = 3; ctx.stroke(); });
+    });
+    ctx.restore();
+  }
+  // titles
+  const k1 = vis(t, .45, T.tyzhe - .05);
+  title('Пока ИИ монтирует', 72, 1210, 76, k1);
+  title('мои ролики —', 72, 1300, 76, k1);
+  const kz = vis(t, T.zalip - .1, T.tyzhe - .05);
+  title('я', 72, 1420, 76, kz);
+  script('залипаю', 128, 1418, 108, prog(t, T.zalip, T.zalip + .55) * (1 - prog(t, T.tyzhe - .35, T.tyzhe - .05)));
+  title('в рилсах', 520, 1420, 76, vis(t, T.zalip + .5, T.tyzhe - .05));
+  const k3 = vis(t, T.tyzhe, T.steps - .05);
+  title('И ты можешь', 72, 1300, 80, k3);
+  script('так же', 80, 1420, 120, prog(t, T.tyzhe + .3, T.tyzhe + .8) * (1 - prog(t, T.steps - .35, T.steps - .05)));
+}
+function sceneSteps(t) {
+  const k = vis(t, T.steps, T.step1 - .05);
+  if (k <= 0) return;
+  // three step markers on a line
+  ctx.save(); ctx.globalAlpha = k;
+  const y = 560, xs = [240, 540, 840];
+  ctx.strokeStyle = C.line; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(xs[0], y); ctx.lineTo(xs[0] + 600 * eOut(prog(t, T.steps + .2, T.steps + 1)), y); ctx.stroke();
+  xs.forEach((x, i) => {
+    const ki = eBack(prog(t, T.steps + .15 + i * .2, T.steps + .55 + i * .2));
+    if (ki <= 0) return;
+    ctx.save(); ctx.translate(x, y); ctx.scale(ki, ki);
+    ctx.fillStyle = i === 0 ? C.red : C.panel2; ctx.beginPath(); ctx.arc(0, 0, 92, 0, 7); ctx.fill();
+    ctx.strokeStyle = i === 0 ? C.red : C.line; ctx.lineWidth = 4; ctx.stroke();
+    ctx.fillStyle = C.white; ctx.font = font(500, 110, COND); ctx.textAlign = 'center'; ctx.fillText(i + 1, 0, 40);
+    ctx.restore();
+  });
+  ctx.restore();
+  bigNum('3', 66, 1400, k);
+  eyebrow('ИНСТРУКЦИЯ', 247, 1180, k);
+  title('шага', 247, 1270, 84, k);
+  script('для Claude', 252, 1380, 104, prog(t, wordAt('Claude', 5) - .1, wordAt('Claude', 5) + .45) * (1 - prog(t, T.step1 - .35, T.step1 - .05)));
+}
+function sceneStep1(t) {
+  const k = vis(t, T.step1, T.step2 - .05);
+  if (k <= 0) return;
+  const y = 200 + (1 - k) * 50;
+  panel(72, y, 936, 760, k, 'Директ · @abduazlm');
+  ctx.save(); ctx.globalAlpha = k;
+  bubble('Привет! Хочу навык 🙌', 940, y + 150, true, eOut(prog(t, T.step1 + .3, T.step1 + .6)) * .55, { size: 30, w: 500 });
+  bubble('МОНТАЖ', 940, y + 260, true, prog(t, T.montazh - .05, T.montazh + .35), { size: 46, w: 800 });
+  const kr = prog(t, T.navyk1 - .2, T.navyk1 + .25);
+  bubble('Лови 👇', 120, y + 400, false, kr, { size: 32, w: 500 });
+  fileCard(120, y + 500, 620, prog(t, T.navyk1, T.navyk1 + .4), 'reels-montage.zip', 'Навык для Claude · 2,7 МБ');
+  const kf = eBack(prog(t, T.besplatno, T.besplatno + .4));
+  if (kf > 0) {
+    ctx.save(); ctx.translate(780, y + 520); ctx.rotate(-.08); ctx.scale(kf, kf);
+    ctx.fillStyle = C.cream; rr(-20, -10, 240, 64, 32); ctx.fill();
+    ctx.fillStyle = C.redDeep; ctx.font = font(800, 28, SANS); ctx.textAlign = 'center'; ctx.fillText('БЕСПЛАТНО', 100, 33);
+    ctx.restore();
+  }
+  ctx.restore();
+  stepBlock(t, T.step1, T.step2 - .05, '1', 'ШАГ ПЕРВЫЙ', 'Напиши «МОНТАЖ»', 'в директ', wordAt('директ') - .1);
+}
+function sceneStep2(t) {
+  const k = vis(t, T.step2, T.step3 - .05);
+  if (k <= 0) return;
+  const y = 200 + (1 - k) * 50;
+  panel(72, y, 936, 760, k, 'Claude');
+  ctx.save(); ctx.globalAlpha = k;
+  // breadcrumb path, each item lights up on its word
+  const crumbs = [['Настройки', T.nastr], ['Навыки', T.navyki], ['Загрузить', T.zagruz]];
+  let x = 120; const by = y + 150;
+  crumbs.forEach(([lbl, at], i) => {
+    ctx.font = font(600, 34, SANS); const w = ctx.measureText(lbl).width + 52;
+    const on = prog(t, at - .05, at + .2);
+    ctx.fillStyle = on > 0 ? `rgba(229,56,59,${.25 + .75 * on})` : C.panel2; rr(x, by, w, 70, 35); ctx.fill();
+    ctx.fillStyle = C.white; ctx.fillText(lbl, x + 26, by + 47);
+    if (i < 2) { ctx.fillStyle = C.muted; ctx.fillText('›', x + w + 14, by + 47); }
+    // cursor click
+    const cl = prog(t, at - .25, at);
+    if (t > at - .35 && t < at + .4) {
+      const cx = x + w * .6, cy = by + 50 + (1 - eOut(cl)) * 60;
+      ctx.fillStyle = C.white; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + 18, cy + 44); ctx.lineTo(cx + 26, cy + 26); ctx.lineTo(cx + 44, cy + 20); ctx.closePath(); ctx.fill();
+      const rp = prog(t, at, at + .35);
+      if (rp > 0 && rp < 1) { ctx.strokeStyle = `rgba(245,241,238,${1 - rp})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, 10 + rp * 40, 0, 7); ctx.stroke(); }
+    }
+    x += w + 46;
+  });
+  // drop zone → zip flies in → progress → enabled toggle
+  const dz = { x: 120, y: y + 270, w: 840, h: 300 };
+  ctx.setLineDash([14, 12]); ctx.strokeStyle = C.line; ctx.lineWidth = 3; rr(dz.x, dz.y, dz.w, dz.h, 26); ctx.stroke(); ctx.setLineDash([]);
+  const fly = eInOut(prog(t, T.zagruz + .1, T.zagruz + .6));
+  if (fly <= 0) { ctx.fillStyle = C.muted; ctx.font = font(500, 30, SANS); ctx.textAlign = 'center'; ctx.fillText('Перетащите навык сюда', CX, dz.y + dz.h / 2 + 10); ctx.textAlign = 'left'; }
+  else fileCard(lerp(560, 230, fly), lerp(y + 900, dz.y + 50, fly), 620, 1, 'reels-montage.zip', 'Загрузка навыка');
+  const pr = prog(t, T.zagruz + .6, T.dve);
+  if (pr > 0) { ctx.fillStyle = C.panel2; rr(230, dz.y + 210, 620, 14, 7); ctx.fill(); ctx.fillStyle = C.red; rr(230, dz.y + 210, 620 * pr, 14, 7); ctx.fill(); }
+  const on = eOut(prog(t, T.dve, T.dve + .35));
+  ctx.font = font(600, 34, SANS); ctx.fillStyle = C.white; ctx.fillText('Навык включён', 120, y + 660);
+  ctx.fillStyle = on > .5 ? C.green : C.panel2; rr(800, y + 625, 110, 56, 28); ctx.fill();
+  ctx.fillStyle = C.white; ctx.beginPath(); ctx.arc(828 + 54 * on, y + 653, 22, 0, 7); ctx.fill();
+  const kt = eBack(prog(t, T.dve, T.dve + .4));
+  if (kt > 0) { ctx.save(); ctx.translate(600, y + 650); ctx.scale(kt, kt); ctx.fillStyle = C.cream; rr(-80, -32, 160, 60, 30); ctx.fill();
+    ctx.fillStyle = C.redDeep; ctx.font = font(800, 28, SANS); ctx.textAlign = 'center'; ctx.fillText('2 мин', 0, 9); ctx.restore(); }
+  ctx.restore();
+  stepBlock(t, T.step2, T.step3 - .05, '2', 'ШАГ ВТОРОЙ', 'Загрузи навык', 'в Claude', wordAt('Claude', 13) - .1);
+}
+function sceneStep3(t) {
+  const k = vis(t, T.step3, T.result - .05);
+  if (k <= 0) return;
+  const y = 200 + (1 - k) * 50;
+  panel(72, y, 936, 760, k, 'Claude');
+  ctx.save(); ctx.globalAlpha = k;
+  // attached video
+  const kv = eBack(prog(t, T.video - .05, T.video + .35));
+  if (kv > 0) {
+    ctx.save(); ctx.translate(700, y + 330); ctx.scale(kv, kv);
+    ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 30; cover(FEED[4], -110, -190, 220, 380); ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.beginPath(); ctx.arc(0, 0, 44, 0, 7); ctx.fill();
+    ctx.fillStyle = C.white; ctx.beginPath(); ctx.moveTo(-14, -22); ctx.lineTo(24, 0); ctx.lineTo(-14, 22); ctx.fill();
+    ctx.font = font(600, 26, SANS); ctx.textAlign = 'center'; ctx.fillText('видео.mp4', 0, 230);
+    ctx.restore();
+  }
+  // typed prompt
+  const msg = 'Смонтируй рилс в стиле минимал';
+  const n = Math.floor(msg.length * prog(t, T.typing[0], T.typing[1]));
+  const sent = t > T.typing[1] + .1;
+  if (!sent) {
+    ctx.fillStyle = C.panel2; rr(110, y + 610, 860, 100, 50); ctx.fill();
+    ctx.font = font(500, 34, SANS); ctx.fillStyle = n ? C.white : C.muted;
+    ctx.fillText(n ? msg.slice(0, n) + (Math.floor(t * 3) % 2 ? '|' : '') : 'Напишите задачу…', 150, y + 672);
+    ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(920, y + 660, 34, 0, 7); ctx.fill();
+    ctx.fillStyle = C.white; ctx.beginPath(); ctx.moveTo(906, y + 646); ctx.lineTo(936, y + 660); ctx.lineTo(906, y + 674); ctx.fill();
+  } else bubble(msg, 960, y + 600, true, prog(t, T.typing[1] + .1, T.typing[1] + .4), { size: 34, w: 600 });
+  ctx.restore();
+  stepBlock(t, T.step3, T.result - .05, '3', 'ШАГ ТРЕТИЙ', 'Отправь видео', 'и задачу', T.typing[0]);
+}
+function sceneResult(t) {
+  const k = vis(t, T.result, T.edits - .05);
+  if (k <= 0) return;
+  // render progress, then the finished reel playing in a phone
+  const pk = vis(t, T.result, T.rolik + .1, .3, .3);
+  if (pk > 0) {
+    ctx.save(); ctx.globalAlpha = pk;
+    const p = eInOut(prog(t, T.result + .1, T.rolik - .2));
+    ctx.lineWidth = 18; ctx.strokeStyle = C.panel2; ctx.beginPath(); ctx.arc(CX, 560, 170, 0, 7); ctx.stroke();
+    ctx.strokeStyle = C.red; ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(CX, 560, 170, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p); ctx.stroke();
+    ctx.fillStyle = C.white; ctx.font = font(500, 110, COND); ctx.textAlign = 'center'; ctx.fillText(`${Math.round(p * 100)}%`, CX, 600);
+    ctx.font = font(600, 28, SANS); ctx.fillStyle = C.muted; ctx.fillText('Рендер ролика', CX, 800);
+    ctx.restore();
+  }
+  const kp = vis(t, T.rolik - .2, T.edits - .05, .45);
+  if (kp > 0) {
+    ctx.save(); ctx.globalAlpha = kp;
+    const pw = 400, ph = 711, px = 96 - (1 - kp) * 80, py = 190;
+    phone(px, py, pw, ph, (x, y, w, h) => cover(showSrc(t), x, y, w, h));
+    const items = ['Субтитры', 'Титры', 'Вставки', 'Музыка', 'Обложка'];
+    items.forEach((s, i) => check(560, 330 + i * 120, s, prog(t, T.checks[i] - .05, T.checks[i] + .35)));
+    ctx.restore();
+  }
+  const kt = vis(t, T.result, T.rolik + .5);
+  eyebrow('ЧЕРЕЗ НЕСКОЛЬКО МИНУТ', 72, 1180, kt);
+  title('Готовый', 72, 1290, 96, kt);
+  script('ролик', 80, 1410, 130, prog(t, T.rolik - .1, T.rolik + .4) * (1 - prog(t, T.rolik + .2, T.rolik + .5)));
+}
+function sceneEdits(t) {
+  const k = vis(t, T.edits, T.upsell - .05);
+  if (k <= 0) return;
+  ctx.save(); ctx.globalAlpha = k;
+  // a sample reel frame whose title obeys the edits
+  const pw = 400, ph = 711, px = 96, py = 190;
+  const thin = eInOut(prog(t, T.tonshe + .45, T.tonshe + 1.0)), low = eInOut(prog(t, T.nizhe + .35, T.nizhe + .9));
+  phone(px, py, pw, ph, (x, y, w, h) => {
+    ctx.filter = 'blur(18px) brightness(.7)'; cover(FEED[7], x - 30, y - 30, w + 60, h + 60); ctx.filter = 'none';
+    const ty = y + lerp(300, 470, low);
+    ctx.fillStyle = C.white; ctx.font = font(Math.round(lerp(800, 300, thin)), 56, SANS); ctx.fillText('Ремонт', x + 30, ty);
+    ctx.font = font(400, 64, SCRIPT); ctx.fillStyle = C.red; ctx.fillText('под ключ', x + 34, ty + 66);
+  });
+  bubble('шрифт тоньше', 990, 330, true, prog(t, T.tonshe - .05, T.tonshe + .3), { size: 36 });
+  bubble('Готово ✓', 560, 450, false, prog(t, T.tonshe + .9, T.tonshe + 1.2), { size: 30, w: 500 });
+  bubble('текст ниже', 990, 600, true, prog(t, T.nizhe - .05, T.nizhe + .3), { size: 36 });
+  bubble('Готово ✓', 560, 720, false, prog(t, T.nizhe + .9, T.nizhe + 1.2), { size: 30, w: 500 });
+  ctx.restore();
+  eyebrow('ПРАВКИ', 72, 1180, k);
+  title('Одной', 72, 1290, 96, k);
+  script('фразой', 80, 1410, 130, prog(t, wordAt('фразой') - .1, wordAt('фразой') + .4) * (1 - prog(t, T.upsell - .35, T.upsell - .05)));
+}
+function sceneUpsell(t) {
+  const k = vis(t, T.upsell, T.final - .05);
+  if (k <= 0) return;
+  ctx.save(); ctx.globalAlpha = k;
+  // a personal skill card assembles: brand colours, fonts, logo
+  const x = 140, y = 230 + (1 - k) * 40, w = 800, h = 640;
+  ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 50; ctx.fillStyle = C.panel; rr(x, y, w, h, 40); ctx.fill(); ctx.shadowBlur = 0;
+  ctx.strokeStyle = C.red; ctx.lineWidth = 3; rr(x, y, w, h, 40); ctx.stroke();
+  ctx.font = font(600, 26, SANS); ctx.letterSpacing = '5px'; ctx.fillStyle = C.red; ctx.fillText('НАВЫК · МОНТАЖ', x + 50, y + 80); ctx.letterSpacing = '0px';
+  const kb = prog(t, T.brand - .05, T.brand + .4);
+  ctx.font = font(700, 64, SANS); ctx.fillStyle = C.white;
+  ctx.fillText(kb > .5 ? 'Твой бренд' : 'Без названия', x + 50, y + 170);
+  ctx.font = font(500, 28, SANS); ctx.fillStyle = C.muted; ctx.fillText('шрифты · цвета · логотип · стиль', x + 50, y + 220);
+  const sw = ['#e5383b', '#f3d9b1', '#1d1d1f', '#9ec4a8', '#7098ff'];
+  sw.forEach((c, i) => { const ki = eBack(prog(t, T.soberu + i * .12, T.soberu + .4 + i * .12));
+    if (ki > 0) { ctx.save(); ctx.translate(x + 95 + i * 115, y + 330); ctx.scale(ki, ki); ctx.fillStyle = c; ctx.beginPath(); ctx.arc(0, 0, 44, 0, 7); ctx.fill(); ctx.strokeStyle = C.line; ctx.lineWidth = 3; ctx.stroke(); ctx.restore(); } });
+  const kf = prog(t, T.soberu + .5, T.soberu + .9);
+  if (kf > 0) {
+    ctx.globalAlpha = k * kf;
+    ctx.font = font(600, 92, SANS); ctx.fillStyle = C.white; ctx.fillText('Аа', x + 50, y + 500);
+    ctx.font = font(400, 96, SCRIPT); ctx.fillStyle = C.red; ctx.fillText('Аа', x + 210, y + 500);
+    ctx.font = font(500, 92, COND); ctx.fillStyle = C.cream; ctx.fillText('Аа', x + 360, y + 500);
+    ctx.globalAlpha = k;
+  }
+  const ks = eBack(prog(t, T.indiv, T.indiv + .45));
+  if (ks > 0) {                                                       // stamp
+    ctx.save(); ctx.translate(x + 600, y + 520); ctx.rotate(-.18); ctx.scale(lerp(1.6, 1, ks), lerp(1.6, 1, ks)); ctx.globalAlpha = k * clamp(ks);
+    ctx.strokeStyle = C.red; ctx.lineWidth = 6; rr(-150, -50, 300, 100, 18); ctx.stroke();
+    ctx.fillStyle = C.red; ctx.font = font(800, 30, SANS); ctx.textAlign = 'center'; ctx.fillText('ИНДИВИДУАЛЬНЫЙ', 0, 11);
+    ctx.restore();
+  }
+  ctx.restore();
+  eyebrow('ДЛЯ ТЕХ, КТО ЦЕНИТ ВРЕМЯ', 72, 1180, k);
+  const k2 = vis(t, T.soberu - .1, T.final - .05);
+  title('Соберу навык', 72, 1290, 90, k2);
+  script('под твой бренд', 80, 1410, 116, prog(t, T.brand - .25, T.brand + .4) * (1 - prog(t, T.final - .35, T.final - .05)));
+}
+function sceneFinal(t) {
+  const k = vis(t, T.final, T.end + 1);
+  if (k <= 0) return;
+  const lift = eInOut(prog(t, T.cta - .2, T.cta + .4));
+  const y = lerp(800, 560, lift);
+  title('Твой', 72, y, 120, k);
+  script('личный монтажёр', 80, y + 150, 150, prog(t, wordAt('личный', 41) - .05, wordAt('личный', 41) + .7));
+  title('в Claude', 72, y + 290, 120, vis(t, wordAt('Claude', 42) - .1, T.end + 1));
+  const kc = eOut(prog(t, T.cta, T.cta + .5));
+  if (kc > 0) {
+    ctx.save(); ctx.globalAlpha = kc;
+    eyebrow('ЗАБИРАЙ ШАБЛОН', 72, 1150, kc);
+    ctx.font = font(600, 64, SANS); ctx.fillStyle = C.white; ctx.fillText('Пиши', 72, 1250);
+    const pw = ctx.measureText('Пиши ').width;
+    ctx.font = font(800, 64, SANS); ctx.fillStyle = C.red; ctx.fillText('«МОНТАЖ»', 72 + pw, 1250);
+    ctx.font = font(600, 64, SANS); ctx.fillStyle = C.white; ctx.fillText('в директ', 72, 1335);
+    for (let i = 0; i < 2; i++) {                                     // ⌄⌄ arrows
+      const a = .4 + .6 * Math.max(0, Math.sin((t - T.cta) * 5 - i));
+      ctx.strokeStyle = `rgba(229,56,59,${a})`; ctx.lineWidth = 8; ctx.lineCap = 'round';
+      const ay = 1410 + i * 40; ctx.beginPath(); ctx.moveTo(90, ay); ctx.lineTo(120, ay + 26); ctx.lineTo(150, ay); ctx.stroke();
+    }
+    ctx.font = font(600, 40, SANS); ctx.fillStyle = C.muted; ctx.fillText('@abduazlm', 190, 1460);
+    ctx.restore();
+  }
+}
+
+// ---------- subtitles: one word (or short group) at a time ----------
+function subtitles(t) {
+  if (SUB_OFF.some(([a, b]) => t >= a && t < b)) return;
+  const c = CHUNKS.find(c => t >= c.a - .02 && t < Math.max(c.b, c.a + .25) + .05);
+  if (!c) return;
+  const k = eOut(prog(t, c.a - .02, c.a + .1));
+  const text = c.text.replace(/[«»]/g, '').replace(/[,.:]$/, '');
+  ctx.save(); ctx.textAlign = 'center'; ctx.globalAlpha = k;
+  ctx.font = font(600, 64, SANS); ctx.letterSpacing = '-1px';
+  ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 20;
+  ctx.fillStyle = C.white; ctx.fillText(text, CX, 1560 + (1 - k) * 10);
+  ctx.restore();
+}
+function fades(t) {
+  const a = Math.max(1 - prog(t, 0, .25), prog(t, T.end - .5, T.end));
+  if (a > 0) { ctx.fillStyle = `rgba(0,0,0,${a})`; ctx.fillRect(0, 0, W, H); }
+}
+
+function renderFrameOld(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.globalAlpha = 1; ctx.letterSpacing = '0px'; ctx.setLineDash([]);
+  background(t);
+  sceneHook(t); sceneSteps(t); sceneStep1(t); sceneStep2(t); sceneStep3(t);
+  sceneResult(t); sceneEdits(t); sceneUpsell(t); sceneFinal(t);
+  subtitles(t);
+  fades(t);
+}
+
+// ---------- covers (?cover=A|B): text kept inside y 240–1680 so the 3:4 profile grid doesn't crop it ----------
+function coverFrame(v) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.globalAlpha = 1; ctx.letterSpacing = '0px';
+  background(0);
+  if (v === 'A') {
+    // reels feed in a phone, tilted, with the AI timeline behind it
+    panel(60, 300, 640, 520, .9, 'Монтаж · авто');
+    ctx.save(); ctx.globalAlpha = .9;
+    for (let r = 0; r < 3; r++) { const ty = 640 + r * 44; ctx.fillStyle = '#100c0d'; ctx.fillRect(96, ty, 570, 34);
+      let x = 96; for (let k = 0; x < 666; k++) { const w = 60 + hash(r * 31 + k) * 110; ctx.fillStyle = r === 0 ? '#c43a3d' : r === 1 ? '#8a6d4a' : '#5a5f7a'; rr(x, ty + 3, Math.min(w - 6, 666 - x), 28, 6); ctx.fill(); x += w; } }
+    ctx.fillStyle = C.white; ctx.fillRect(420, 620, 3, 160);
+    ctx.font = font(600, 26, SANS); ctx.fillStyle = C.muted; ctx.fillText('ИИ монтирует...', 96, 420); ctx.fillStyle = C.red; ctx.fillText('87%', 96, 460);
+    ctx.restore();
+    ctx.save(); ctx.translate(800, 620); ctx.rotate(.08);
+    phone(-170, -330, 340, 640, (x, y, w, h) => { cover(FEED[0], x, y, w, h); ctx.fillStyle = C.white; ctx.font = font(700, 24, SANS); ctx.fillText('Reels', x + 22, y + 62); });
+    ctx.restore();
+    eyebrow('ИНСТРУКЦИЯ · 3 ШАГА', 72, 1130, 1);
+    title('Пока ИИ монтирует', 72, 1250, 90, 1);
+    script('я залипаю', 80, 1395, 150, 1);
+    ctx.font = font(500, 40, SANS); ctx.fillStyle = C.muted; ctx.fillText('Навык для Claude — забирай бесплатно', 72, 1530);
+  } else {
+    // big 3 + steps, «личный монтажёр» accent
+    const xs = [250, 540, 830];
+    ctx.strokeStyle = C.line; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(250, 560); ctx.lineTo(830, 560); ctx.stroke();
+    xs.forEach((x, i) => { ctx.fillStyle = i === 0 ? C.red : C.panel2; ctx.beginPath(); ctx.arc(x, 560, 100, 0, 7); ctx.fill();
+      ctx.strokeStyle = i === 0 ? C.red : C.line; ctx.lineWidth = 4; ctx.stroke();
+      ctx.fillStyle = C.white; ctx.font = font(500, 120, COND); ctx.textAlign = 'center'; ctx.fillText(i + 1, x, 603); ctx.textAlign = 'left'; });
+    ['Пиши «МОНТАЖ»', 'Загрузи навык', 'Отправь видео'].forEach((l, i) => { ctx.font = font(600, 30, SANS); ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.fillText(l, xs[i], 720); ctx.textAlign = 'left'; });
+    eyebrow('НАВЫК ДЛЯ CLAUDE', 72, 1080, 1);
+    title('Твой', 72, 1200, 120, 1);
+    script('личный монтажёр', 80, 1350, 150, 1);
+    title('за 3 шага', 72, 1480, 120, 1);
+    ctx.font = font(500, 40, SANS); ctx.fillStyle = C.muted; ctx.fillText('Субтитры, титры, музыка — сам', 72, 1600);
+  }
+}
+window.coverFrame = coverFrame;
+
+
+// =====================================================================================
+// FACE VERSION: the user's own take (assets/face-cut.mp4, cut by cut_face.py) is the base.
+// Hook + ending stay on the face with titles in the dark sky above the head (y < 470);
+// steps / result / edits / upsell are full-screen inserts that replay the motion scenes
+// above, time-warped so their key beats land on the new words.
+// =====================================================================================
+const DUR2 = 38.6, FACE_LEN = 36.75;
+const FIX = { 'ей': 'ИИ', 'монтируют': 'монтирует', 'залепаю': 'залипаю', 'клаут': 'Claude', 'монтаж': 'МОНТАЖ',
+              '2': 'две', '1.': 'первый', '2.': 'второй', '3.': 'третий', 'фразы': 'фразой', 'монтажер': 'монтажёр', '-титры': 'титры' };
+let NW = [];                                            // [{w, a, b}] in the cut timeline (from whisper)
+const fixWord = w => { const core = w.replace(/[.,!?…]+$/, ''); const tail = w.slice(core.length); return (FIX[core] ?? FIX[w] ?? core) + tail; };
+// insert windows: [start, end, sceneFn, anchors [newT, oldT]...]
+const INS = [
+  [4.6, 6.7, t => sceneSteps(t), [[4.6, 5.54], [6.7, 7.75]]],
+  [6.7, 11.3, t => sceneStep1(t), [[6.7, 7.83], [8.46, 9.74], [10.06, 11.7], [10.4, 12.01], [11.3, 12.85]]],
+  [11.3, 16.55, t => sceneStep2(t), [[11.3, 12.9], [13.6, 15.18], [14.48, 16.32], [15.02, 17.42], [15.52, 18.85], [16.55, 19.8]]],
+  [16.55, 21.2, t => sceneStep3(t), [[16.55, 19.84], [17.92, 21.14], [19.22, 22.61], [21.04, 24.47], [21.2, 24.85]]],
+  [21.2, 27.2, t => sceneResult(t), [[21.2, 24.89], [22.76, 27.32], [23.06, 27.84], [23.62, 28.39], [24.1, 29.24], [25.78, 30.9], [26.42, 31.49], [27.2, 32.25]]],
+  [27.2, 30.6, t => sceneEdits(t), [[27.2, 32.3], [28.64, 33.59], [29.6, 35.16], [30.6, 36.35]]],
+  [30.6, 35.0, t => sceneUpsell(t), [[30.6, 36.39], [32.55, 38.57], [32.89, 39.43], [34.19, 41.18], [35.0, 42.0]]],
+  [36.7, 99, t => sceneFinal(t), [[36.7, 43.55], [38.6, 45.45]]]
+];
+const warp = (t, an) => { for (let i = 1; i < an.length; i++) if (t <= an[i][0] || i === an.length - 1) {
+  const [n0, o0] = an[i - 1], [n1, o1] = an[i]; return o0 + (t - n0) * (o1 - o0) / (n1 - n0); } };
+const insAt = t => INS.find(([a, b]) => t >= a && t < b);
+
+// face frames (capture) / <video> (preview)
+const faceImg = new Image(); let faceIdx = -1;
+const faceVid = document.createElement('video'); faceVid.src = 'assets/face-cut.mp4'; faceVid.muted = true; faceVid.playsInline = true; faceVid.preload = 'auto';
+const prepareOld = window.prepare;
+window.prepare = async t => {
+  const fi = Math.min(Math.floor(FACE_LEN * 30) - 1, Math.floor(t * 30 + 1e-6)) + 1;
+  const jobs = [];
+  if (fi !== faceIdx) { faceIdx = fi; faceImg.src = `.frames-face/f${String(fi).padStart(4, '0')}.jpg`; jobs.push(faceImg.decode().catch(() => { faceIdx = -1; })); }
+  const ins = insAt(t); if (ins && ins[2].toString().includes('sceneResult')) jobs.push(prepareOld(warp(t, ins[3])));
+  await Promise.all(jobs);
+};
+function drawFace(t) {
+  let src = null;
+  if (params.has('capture')) src = faceIdx > 0 && faceImg.naturalWidth ? faceImg : null;
+  else { const want = Math.min(t, FACE_LEN - .05);
+    if (Math.abs(faceVid.currentTime - want) > .25) faceVid.currentTime = want;
+    if (faceVid.paused && t < FACE_LEN) faceVid.play().catch(() => {});
+    src = faceVid.readyState >= 2 ? faceVid : null; }
+  if (src) cover(src, 0, 0, W, H); else { ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H); }
+  // darker sky for the titles + soft band for the subtitles (style: minimal)
+  let g = ctx.createLinearGradient(0, 0, 0, 560); g.addColorStop(0, 'rgba(5,4,4,.75)'); g.addColorStop(1, 'rgba(5,4,4,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, 560);
+  g = ctx.createLinearGradient(0, 1380, 0, H); g.addColorStop(0, 'rgba(5,4,4,0)'); g.addColorStop(1, 'rgba(5,4,4,.8)');
+  ctx.fillStyle = g; ctx.fillRect(0, 1380, W, H - 1380);
+}
+// titles over the face live in the sky band
+function faceTitles(t) {
+  const k1 = vis(t, .05, 3.3, .35, .2);
+  eyebrow('@ABDUAZLM · REELS', 72, 175, vis(t, .05, 4.55) * .8, 'rgba(245,241,238,.7)');
+  title('Пока ИИ монтирует', 72, 270, 78, k1);
+  title('мои ролики —', 72, 355, 78, vis(t, .9, 2.3, .35, .2));
+  const kz = prog(t, 2.32, 2.85) * (1 - prog(t, 3.0, 3.3));
+  title('я', 72, 360, 78, vis(t, 2.3, 3.3));
+  script('залипаю в рилсах', 142, 360, 104, kz);
+  const k3 = vis(t, 3.3, 4.55);
+  title('И ты можешь', 72, 270, 78, k3);
+  script('так же', 80, 390, 120, prog(t, 3.9, 4.35) * (1 - prog(t, 4.3, 4.55)));
+  // ending on the face
+  const kf = vis(t, 35.0, 36.75);
+  eyebrow('ТВОЙ', 72, 175, kf);
+  title('личный', 72, 270, 82, kf);
+  script('монтажёр в Claude', 80, 385, 112, prog(t, 35.55, 36.2) * (1 - prog(t, 36.45, 36.75)));
+}
+function subtitles2(t) {
+  const off = [[0, 4.65], [4.6, 6.6], [6.76, 7.6], [7.9, 9.3], [11.36, 11.95], [12.3, 13.4], [16.55, 17.3], [17.5, 18.2],
+               [21.2, 23.05], [27.28, 28.4], [32.5, 32.9], [33.49, 34.75], [35.0, 99]];
+  if (off.some(([a, b]) => t >= a && t < b)) return;
+  const c = NW.find(c => t >= c.a - .02 && t < Math.max(c.b, c.a + .25) + .05);
+  if (!c) return;
+  const k = eOut(prog(t, c.a - .02, c.a + .1));
+  const text = c.w.replace(/[«»]/g, '').replace(/[,.:]$/, '');
+  ctx.save(); ctx.textAlign = 'center'; ctx.globalAlpha = k; ctx.font = font(600, 64, SANS); ctx.letterSpacing = '-1px';
+  ctx.shadowColor = 'rgba(0,0,0,.8)'; ctx.shadowBlur = 22; ctx.fillStyle = C.white;
+  ctx.fillText(text, CX, 1560 + (1 - k) * 10); ctx.restore();
+}
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.globalAlpha = 1; ctx.letterSpacing = '0px'; ctx.setLineDash([]);
+  drawFace(t);
+  faceTitles(t);
+  const ins = insAt(t);
+  if (ins) {
+    const [a, b, fn, an] = ins;
+    // quick punch-in transition from the face; consecutive inserts cut straight into each other
+    const prevIns = INS.find(x => Math.abs(x[1] - a) < .01), nextIns = INS.find(x => Math.abs(x[0] - b) < .01);
+    const kin = prevIns ? 1 : eOut(prog(t, a, a + .18)), kout = nextIns ? 1 : 1 - prog(t, b - .15, b);
+    const k = Math.min(kin, kout);
+    ctx.save(); ctx.globalAlpha = k;
+    const s = lerp(1.04, 1, kin); ctx.translate(CX, H / 2); ctx.scale(s, s); ctx.translate(-CX, -H / 2);
+    const ot = warp(t, an);
+    background(ot); fn(ot);
+    ctx.restore();
+    if (!prevIns && t < a + .08) { ctx.fillStyle = `rgba(255,255,255,${.35 * (1 - (t - a) / .08)})`; ctx.fillRect(0, 0, W, H); }
+  }
+  subtitles2(t);
+  const a = Math.max(1 - prog(t, 0, .2), prog(t, DUR2 - .45, DUR2));
+  if (a > 0) { ctx.fillStyle = `rgba(0,0,0,${a})`; ctx.fillRect(0, 0, W, H); }
+}
+
+window.DURATION = DUR2;
+window.renderFrame = renderFrame;
+window.TIMELINE = { T, WORDS, CHUNKS };
+window.READY = (async () => {
+  NW = (await (await fetch('assets/words-face.json')).json()).map(([w, a, b]) => ({ w: fixWord(w), a, b }));
+  NW.push({ w: 'Шаг', a: 16.62, b: 16.92 }, { w: 'Через', a: 21.26, b: 21.44 }, { w: 'А', a: 30.7, b: 30.87 });
+  NW.sort((x, y) => x.a - y.a);
+  await Promise.all([
+    ...FEED.map(im => im.decode().catch(() => {})),
+    document.fonts.load(font(600, 40, 'Montserrat'), 'АБВ ABC'), document.fonts.load(font(800, 40, 'Montserrat'), 'АБВ'),
+    document.fonts.load(font(300, 40, 'Montserrat'), 'АБВ'), document.fonts.load(font(500, 40, 'Oswald'), '123'),
+    document.fonts.load(font(400, 40, '"Marck Script"'), 'АБВ абв')
+  ]);
+  return true;
+})();
+
+if (params.has('capture')) document.body.classList.add('capture');
+else {
+  const playBtn = document.getElementById('play'), seek = document.getElementById('seek'), time = document.getElementById('time');
+  const snd = document.getElementById('snd');
+  let playing = true, start = 0, cur = 0;
+  const syncAudio = () => { try { snd.currentTime = cur; if (playing) snd.play().catch(() => {}); else snd.pause(); } catch (e) {} };
+  playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? '⏸' : '▶'; start = performance.now() - cur * 1000; syncAudio(); };
+  seek.oninput = () => { cur = +seek.value; start = performance.now() - cur * 1000; renderFrame(cur); time.textContent = cur.toFixed(1) + ' s'; syncAudio(); };
+  window.READY.then(() => {
+    start = performance.now(); syncAudio();
+    (function loop(now) {
+      if (playing) { const prev = cur; cur = ((now - start) / 1000) % DUR2; if (cur < prev) syncAudio(); seek.value = cur; time.textContent = cur.toFixed(1) + ' s'; renderFrame(cur); }
+      requestAnimationFrame(loop);
+    })(performance.now());
+  });
+}
+</script>
+</body>
+</html>
