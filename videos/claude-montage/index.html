@@ -571,6 +571,43 @@ function renderFrame(t) {
   fades(t);
 }
 
+// ---------- covers (?cover=A|B): text kept inside y 240–1680 so the 3:4 profile grid doesn't crop it ----------
+function coverFrame(v) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.globalAlpha = 1; ctx.letterSpacing = '0px';
+  background(0);
+  if (v === 'A') {
+    // reels feed in a phone, tilted, with the AI timeline behind it
+    panel(60, 300, 640, 520, .9, 'Монтаж · авто');
+    ctx.save(); ctx.globalAlpha = .9;
+    for (let r = 0; r < 3; r++) { const ty = 640 + r * 44; ctx.fillStyle = '#100c0d'; ctx.fillRect(96, ty, 570, 34);
+      let x = 96; for (let k = 0; x < 666; k++) { const w = 60 + hash(r * 31 + k) * 110; ctx.fillStyle = r === 0 ? '#c43a3d' : r === 1 ? '#8a6d4a' : '#5a5f7a'; rr(x, ty + 3, Math.min(w - 6, 666 - x), 28, 6); ctx.fill(); x += w; } }
+    ctx.fillStyle = C.white; ctx.fillRect(420, 620, 3, 160);
+    ctx.font = font(600, 26, SANS); ctx.fillStyle = C.muted; ctx.fillText('ИИ монтирует...', 96, 420); ctx.fillStyle = C.red; ctx.fillText('87%', 96, 460);
+    ctx.restore();
+    ctx.save(); ctx.translate(800, 620); ctx.rotate(.08);
+    phone(-170, -330, 340, 640, (x, y, w, h) => { cover(FEED[0], x, y, w, h); ctx.fillStyle = C.white; ctx.font = font(700, 24, SANS); ctx.fillText('Reels', x + 22, y + 62); });
+    ctx.restore();
+    eyebrow('ИНСТРУКЦИЯ · 3 ШАГА', 72, 1130, 1);
+    title('Пока ИИ монтирует', 72, 1250, 90, 1);
+    script('я залипаю', 80, 1395, 150, 1);
+    ctx.font = font(500, 40, SANS); ctx.fillStyle = C.muted; ctx.fillText('Навык для Claude — забирай бесплатно', 72, 1530);
+  } else {
+    // big 3 + steps, «личный монтажёр» accent
+    const xs = [250, 540, 830];
+    ctx.strokeStyle = C.line; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(250, 560); ctx.lineTo(830, 560); ctx.stroke();
+    xs.forEach((x, i) => { ctx.fillStyle = i === 0 ? C.red : C.panel2; ctx.beginPath(); ctx.arc(x, 560, 100, 0, 7); ctx.fill();
+      ctx.strokeStyle = i === 0 ? C.red : C.line; ctx.lineWidth = 4; ctx.stroke();
+      ctx.fillStyle = C.white; ctx.font = font(500, 120, COND); ctx.textAlign = 'center'; ctx.fillText(i + 1, x, 603); ctx.textAlign = 'left'; });
+    ['Пиши «МОНТАЖ»', 'Загрузи навык', 'Отправь видео'].forEach((l, i) => { ctx.font = font(600, 30, SANS); ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.fillText(l, xs[i], 720); ctx.textAlign = 'left'; });
+    eyebrow('НАВЫК ДЛЯ CLAUDE', 72, 1080, 1);
+    title('Твой', 72, 1200, 120, 1);
+    script('личный монтажёр', 80, 1350, 150, 1);
+    title('за 3 шага', 72, 1480, 120, 1);
+    ctx.font = font(500, 40, SANS); ctx.fillStyle = C.muted; ctx.fillText('Субтитры, титры, музыка — сам', 72, 1600);
+  }
+}
+window.coverFrame = coverFrame;
+
 window.DURATION = DURATION;
 window.renderFrame = renderFrame;
 window.TIMELINE = { T, WORDS, CHUNKS };
