@@ -173,15 +173,19 @@ function textBand(a = .55) {
 
 // ---------- scenes ----------
 const TY = 1330;                                                          // text baseline over the chest
-function scene1(t) {                                                      // «Нас часто спрашивают, боимся ли мы…»
-  drawSrc(0, 0, W, H, 1 + t * .01);
-  // headline «REELS 10 за 100 000 тг.» sits behind the actor from the very first frame (works as the cover)
+// headline «REELS 10 за 100 000 тг.» sits behind the actor from the very first frame (works as the cover)
+// and stays until the white card
+function headline(t) {
   const tg = ctx.createLinearGradient(0, 80, 0, 620);
   tg.addColorStop(0, 'rgba(0,0,0,0)'); tg.addColorStop(.3, 'rgba(0,0,0,.5)'); tg.addColorStop(.75, 'rgba(0,0,0,.5)'); tg.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = tg; ctx.fillRect(0, 80, W, 540);
-  word('REELS', CX - 125, 315, { size: 210, kind: 'mid' }, t, -1, 1.75);
-  word('10', CX + 330, 315, { size: 210 }, t, -1, 1.75);
-  word('за 100 000 тг.', CX, 405, { size: 88, kind: 'serif' }, t, -1, 1.75);
+  word('REELS', CX - 125, 315, { size: 210, kind: 'mid' }, t, -1, 4.4);
+  word('10', CX + 330, 315, { size: 210 }, t, -1, 4.4);
+  word('за 100 000 тг.', CX, 405, { size: 88, kind: 'serif' }, t, -1, 4.4);
+}
+function scene1(t) {                                                      // «Нас часто спрашивают, боимся ли мы…»
+  drawSrc(0, 0, W, H, 1 + t * .01);
+  headline(t);
   drawCut(1 + t * .01); textBand();                                    // actor in front of the headline
   word('Нас часто', CX - 120, TY - 92, { size: 78, kind: 'serif' }, t, W_.nas, W_.sprash + .3);
   word('СПРАШИВАЮТ', CX, TY, { size: fitSize('СПРАШИВАЮТ', 190, W * .92) }, t, W_.sprash, W_.boimsya);
@@ -191,6 +195,7 @@ function sceneGrid(t) {                                                   // «�
   const [a] = SC[1];
   gridBg(t);
   const s = fitSize('КОНКУРЕНЦИИ', 200, W * .94);
+  headline(t);
   drawCut(lerp(1.0, 1.06, prog(t, a, 4.42)));
   const band = ctx.createLinearGradient(0, 1100, 0, 1700); band.addColorStop(0, 'rgba(0,0,0,0)'); band.addColorStop(.5, 'rgba(0,0,0,.55)'); band.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = band; ctx.fillRect(0, 1100, W, 600);
