@@ -227,8 +227,8 @@ function sceneFire(t) {                                                   // «�
   fireBg(t); drawCut(1.03, 40);
   const s = fitSize('МОНТИРУЕМ', 160, W * .88);
   word('пишем', CX - 250, 1080 - s * .92, { size: 88, kind: 'serif' }, t, W_.pishem, b);
-  [['СЦЕНАРИЙ', W_.scenariy], ['СНИМАЕМ', W_.snimaem], ['МОНТИРУЕМ', W_.montiruem]]
-    .forEach(([w, at], i) => word(w, CX, 1080 + i * s * .82, { size: s }, t, at, b));
+  [['СЦЕНАРИЙ', W_.scenariy], ['СНИМАЕМ', W_.snimaem, 'mid'], ['МОНТИРУЕМ', W_.montiruem]]   // «СНИМАЕМ» in white
+    .forEach(([w, at, kind = 'big'], i) => word(w, CX, 1080 + i * s * .82, { size: s, kind }, t, at, b));
 }
 function sceneGift(t) {                                                   // «Да, ещё и бонусом у нас идёт студия в подарок»
   const [a, b] = SC[6];
