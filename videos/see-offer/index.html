@@ -85,8 +85,8 @@ function word(text, x, y, opt, t, a, b) {
   else { ctx.font = font(kind === 'mid' ? 800 : 900, size, HEAVY); ctx.letterSpacing = `${-size * .045}px`; }
   const col = color || (kind === 'big' ? RED : WHITE);
   if (kind === 'big' && !opt.flat) {                                     // glow, as in the reference
-    ctx.shadowColor = col; ctx.shadowBlur = size * .35; ctx.fillStyle = col; ctx.fillText(text, 0, 0);
-    ctx.shadowBlur = size * .1;
+    ctx.shadowColor = 'rgba(255,58,28,.45)'; ctx.shadowBlur = size * .16; ctx.fillStyle = col; ctx.fillText(text, 0, 0);
+    ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 18;           // soft glow + dark edge keeps letters crisp
   } else { ctx.shadowColor = opt.color && opt.color !== WHITE ? 'rgba(0,0,0,0)' : 'rgba(0,0,0,.75)'; ctx.shadowBlur = 26; }
   ctx.fillStyle = col; ctx.fillText(text, 0, 0);
   const w = ctx.measureText(text).width;
@@ -227,7 +227,7 @@ function sceneIncluded(t) {                                               // «�
   word('всё это входит', CX - 60, TY - 104, { size: 84, kind: 'serif' }, t, W_.vsyo, 12.95);
   word('В СТОИМОСТЬ', CX, TY, { size: fitSize('В СТОИМОСТЬ', 190, W * .92), kind: 'mid' }, t, W_.v, 12.95);
   const u = eInOut(prog(t, W_.stoimost, W_.stoimost + .35));            // red underline swipe
-  if (u > 0 && t < 12.95) { ctx.fillStyle = RED; ctx.shadowColor = RED; ctx.shadowBlur = 20; ctx.fillRect(CX - 420, TY + 30, 840 * u, 14); ctx.shadowBlur = 0; }
+  if (u > 0 && t < 12.95) { ctx.fillStyle = RED; ctx.shadowColor = 'rgba(255,58,28,.45)'; ctx.shadowBlur = 10; ctx.fillRect(CX - 420, TY + 30, 840 * u, 14); ctx.shadowBlur = 0; }
 }
 function sceneCta(t) {                                                    // «Жми кнопку подробнее и заказывай»
   drawSrc(0, 0, W, H, 1.04 + (t - 12.95) * .015); textBand();
@@ -237,7 +237,7 @@ function sceneCta(t) {                                                    // «�
     const tap = Math.sin(Math.PI * prog(t, W_.podrobnee + .45, W_.podrobnee + .7));
     const bw = 720, bh = 170, s = kb * (1 - .06 * tap);
     ctx.save(); ctx.translate(CX, TY - 30); ctx.scale(s, s);
-    ctx.shadowColor = RED; ctx.shadowBlur = 50; rr(-bw / 2, -bh / 2, bw, bh, bh / 2); ctx.fillStyle = RED; ctx.fill(); ctx.shadowBlur = 0;
+    ctx.shadowColor = 'rgba(255,58,28,.45)'; ctx.shadowBlur = 24; rr(-bw / 2, -bh / 2, bw, bh, bh / 2); ctx.fillStyle = RED; ctx.fill(); ctx.shadowBlur = 0;
     ctx.fillStyle = WHITE; ctx.font = font(900, 84, HEAVY); ctx.letterSpacing = '-3px'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('ПОДРОБНЕЕ', 0, 6); ctx.restore();
     const rp = prog(t, W_.podrobnee + .45, W_.podrobnee + 1.0);           // tap ripple
