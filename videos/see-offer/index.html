@@ -196,15 +196,10 @@ function sceneWhite(t) {                                                  // «�
   word('НЕ БОИМСЯ', CX, 1340, { size: fitSize('НЕ БОИМСЯ', 210, W * .92), flat: true }, t, W_.ne, 5.55);
 }
 function sceneNumbers(t) {                                                // «потому что 10 рилс-видео у нас стоит 100 000 ₸»
-  gridBg(t);
-  // the take plays in a rounded card, like the reference's laptop B-roll
-  const cw = 760, ch = 520, cx = CX - cw / 2, cy = 330 + (1 - eOut(prog(t, 5.55, 5.9))) * 60;
-  ctx.save(); ctx.globalAlpha = eOut(prog(t, 5.55, 5.85));
-  ctx.shadowColor = 'rgba(255,58,28,.35)'; ctx.shadowBlur = 60; rr(cx, cy, cw, ch, 36); ctx.fillStyle = '#111'; ctx.fill(); ctx.shadowBlur = 0;
-  rr(cx, cy, cw, ch, 36); ctx.clip();
-  if (ok(srcImg)) { const s = cw / W; ctx.drawImage(srcImg, 0, H * .12, W, ch / s, cx, cy, cw, ch); }
-  ctx.restore();
-  ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 2; rr(cx, cy, cw, ch, 36); ctx.stroke();
+  // the take plays full screen (no card), slowly pushing in; dark band keeps the numbers readable
+  drawSrc(0, 0, W, H, 1.04 + .04 * prog(t, 5.55, 9));
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(0, 0, W, H);
+  textBand(.7);
   // phase 1: 10 РИЛС-ВИДЕО
   word('потому что', CX - 170, 1112, { size: 80, kind: 'serif' }, t, W_.potomu, W_.u);
   word('10', CX, 1400, { size: 420 }, t, W_.ten, W_.u);
