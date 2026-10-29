@@ -175,7 +175,7 @@ function textBand(a = .55) {
 const TY = 1330;                                                          // text baseline over the chest
 function scene1(t) {                                                      // «Нас часто спрашивают, боимся ли мы…»
   drawSrc(0, 0, W, H, 1 + t * .01); textBand();
-  word('Нас часто', CX - 120, TY - 120, { size: 78, kind: 'serif' }, t, W_.nas, W_.sprash + .3);
+  word('Нас часто', CX - 120, TY - 92, { size: 78, kind: 'serif' }, t, W_.nas, W_.sprash + .3);
   word('СПРАШИВАЮТ', CX, TY, { size: fitSize('СПРАШИВАЮТ', 190, W * .92) }, t, W_.sprash, W_.boimsya);
   word('боимся ли мы', CX + 40, TY - 30, { size: 92, kind: 'serif' }, t, W_.boimsya, 2.02);
 }
@@ -186,13 +186,13 @@ function sceneGrid(t) {                                                   // «�
   drawCut(lerp(1.0, 1.06, prog(t, a, 4.42)));
   const band = ctx.createLinearGradient(0, 1100, 0, 1700); band.addColorStop(0, 'rgba(0,0,0,0)'); band.addColorStop(.5, 'rgba(0,0,0,.55)'); band.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = band; ctx.fillRect(0, 1100, W, 600);
-  word('боимся ли мы', CX - 150, 1290, { size: 84, kind: 'serif' }, t, a, 4.4);
+  word('боимся ли мы', CX - 150, 1345, { size: 84, kind: 'serif' }, t, a, 4.4);
   word('КОНКУРЕНЦИИ', CX, 1460, { size: s }, t, W_.konk, 4.4);
-  word('?', CX + 360, 1690, { size: 300, rot: .12 }, t, 2.75, 4.4);
+  word('?', CX + 360, 1640, { size: 300, rot: .12 }, t, 2.75, 4.4);
 }
 function sceneWhite(t) {                                                  // «Да нет, не боимся»
   whiteBg(t); drawCut(1.02);
-  word('Да нет,', CX - 160, 1180, { size: 100, kind: 'serif', color: RED }, t, W_.da - .02, 5.55);
+  word('Да нет,', CX - 160, 1238, { size: 100, kind: 'serif', color: RED }, t, W_.da - .02, 5.55);
   word('НЕ БОИМСЯ', CX, 1340, { size: fitSize('НЕ БОИМСЯ', 210, W * .92), flat: true }, t, W_.ne, 5.55);
 }
 function sceneNumbers(t) {                                                // «потому что 10 рилс-видео у нас стоит 100 000 ₸»
@@ -206,32 +206,32 @@ function sceneNumbers(t) {                                                // «�
   ctx.restore();
   ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 2; rr(cx, cy, cw, ch, 36); ctx.stroke();
   // phase 1: 10 РИЛС-ВИДЕО
-  word('потому что', CX - 170, 1060, { size: 80, kind: 'serif' }, t, W_.potomu, W_.u);
+  word('потому что', CX - 170, 1112, { size: 80, kind: 'serif' }, t, W_.potomu, W_.u);
   word('10', CX, 1400, { size: 420 }, t, W_.ten, W_.u);
-  word('РИЛС-ВИДЕО', CX, 1540, { size: fitSize('РИЛС-ВИДЕО', 150, W * .9, 'mid'), kind: 'mid' }, t, W_.rils, W_.u);
+  word('РИЛС-ВИДЕО', CX, 1512, { size: fitSize('РИЛС-ВИДЕО', 150, W * .9, 'mid'), kind: 'mid' }, t, W_.rils, W_.u);
   // phase 2: у нас стоит 100 000 ₸
-  word('у нас стоит', CX - 150, 1060, { size: 80, kind: 'serif' }, t, W_.u, 9.0);
+  word('у нас стоит', CX - 150, 1172, { size: 80, kind: 'serif' }, t, W_.u, 9.0);
   word('100 000', CX, 1360, { size: fitSize('100 000', 300, W * .92) }, t, W_.sto, 9.0);
-  word('ТЕНГЕ', CX, 1520, { size: 150, kind: 'mid' }, t, W_.tenge, 9.0);
+  word('ТЕНГЕ', CX, 1488, { size: 150, kind: 'mid' }, t, W_.tenge, 9.0);
 }
 function sceneFire(t) {                                                   // «съёмка, сценарий, монтаж, даже студия»
   fireBg(t); drawCut(1.03, 40);
   const items = [['СЪЁМКА', W_.syomka], ['СЦЕНАРИЙ', W_.scenariy], ['МОНТАЖ', W_.montazh]];
   const s = fitSize('СЦЕНАРИЙ', 150, W * .86);
-  items.forEach(([w, at], i) => word(w, CX, 1060 + i * s * .92, { size: s }, t, at, 11.72));
-  word('даже', CX - 210, 1060 + 3 * s * .92 - 10, { size: 84, kind: 'serif' }, t, W_.dazhe, 11.72);
-  word('СТУДИЯ', CX + 60, 1060 + 3 * s * .92 + 110, { size: s, kind: 'mid' }, t, W_.studiya, 11.72);
+  items.forEach(([w, at], i) => word(w, CX, 1080 + i * s * .8, { size: s }, t, at, 11.72));
+  word('даже', CX - 210, 1080 + 3 * s * .8 - 28, { size: 84, kind: 'serif' }, t, W_.dazhe, 11.72);
+  word('СТУДИЯ', CX + 60, 1080 + 3 * s * .8 + 82, { size: s, kind: 'mid' }, t, W_.studiya, 11.72);
 }
 function sceneIncluded(t) {                                               // «Всё это входит в стоимость»
   drawSrc(0, 0, W, H, 1.04); textBand();
-  word('всё это входит', CX - 60, TY - 140, { size: 84, kind: 'serif' }, t, W_.vsyo, 12.95);
+  word('всё это входит', CX - 60, TY - 104, { size: 84, kind: 'serif' }, t, W_.vsyo, 12.95);
   word('В СТОИМОСТЬ', CX, TY, { size: fitSize('В СТОИМОСТЬ', 190, W * .92), kind: 'mid' }, t, W_.v, 12.95);
   const u = eInOut(prog(t, W_.stoimost, W_.stoimost + .35));            // red underline swipe
   if (u > 0 && t < 12.95) { ctx.fillStyle = RED; ctx.shadowColor = RED; ctx.shadowBlur = 20; ctx.fillRect(CX - 420, TY + 30, 840 * u, 14); ctx.shadowBlur = 0; }
 }
 function sceneCta(t) {                                                    // «Жми кнопку подробнее и заказывай»
   drawSrc(0, 0, W, H, 1.04 + (t - 12.95) * .015); textBand();
-  word('жми кнопку', CX - 130, TY - 170, { size: 88, kind: 'serif' }, t, W_.zhmi, 15.2);
+  word('жми кнопку', CX - 130, TY - 128, { size: 88, kind: 'serif' }, t, W_.zhmi, 15.2);
   const kb = eBack(prog(t, W_.podrobnee - .05, W_.podrobnee + .35));
   if (kb > 0) {
     const tap = Math.sin(Math.PI * prog(t, W_.podrobnee + .45, W_.podrobnee + .7));
@@ -243,7 +243,7 @@ function sceneCta(t) {                                                    // «�
     const rp = prog(t, W_.podrobnee + .45, W_.podrobnee + 1.0);           // tap ripple
     if (rp > 0 && rp < 1) { ctx.strokeStyle = `rgba(255,255,255,${1 - rp})`; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(CX + 220, TY - 30, 30 + rp * 140, 0, 7); ctx.stroke(); }
   }
-  word('и заказывай', CX + 90, TY + 150, { size: 88, kind: 'serif' }, t, W_.i, 15.2);
+  word('и заказывай', CX + 90, TY + 108, { size: 88, kind: 'serif' }, t, W_.i, 15.2);
 }
 
 function renderFrame(t) {
