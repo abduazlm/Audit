@@ -62,7 +62,7 @@ window.prepare = async t => {
   const i = Math.min(408, Math.floor(t * FPS + 1e-6) + 1), jobs = [];
   if (i !== srcIdx) { srcIdx = i; srcImg.src = `.frames-src/f${String(i).padStart(4, '0')}.jpg`; jobs.push(srcImg.decode().catch(() => { srcIdx = -1; })); }
   const k = sceneAt(t)[2];
-  if ((k === 'grid' || k === 'fire' || t < SC[1][0]) && i !== cutIdx) { cutIdx = i; cutImg.src = `.frames-cut/f${String(i).padStart(4, '0')}.webp`; jobs.push(cutImg.decode().catch(() => { cutIdx = -1; })); }
+  if ((k === 'grid' || k === 'fire') && i !== cutIdx) { cutIdx = i; cutImg.src = `.frames-cut/f${String(i).padStart(4, '0')}.webp`; jobs.push(cutImg.decode().catch(() => { cutIdx = -1; })); }
   await Promise.all(jobs);
 };
 const ok = im => im.complete && im.naturalWidth > 0;
@@ -175,8 +175,7 @@ function textBand(a = .55) {
 
 // ---------- scenes ----------
 const TY = 1440;                                                          // text baseline under the hands (dark lower third)
-// headline «REELS 10 за 100 000 тг.» from the very first frame (works as the cover), behind the actor,
-// until the first white card
+// headline «REELS 10 за 100 000 тг.» from the very first frame (works as the cover) until the first white card
 function headline(t) {
   const tg = ctx.createLinearGradient(0, 80, 0, 620);
   tg.addColorStop(0, 'rgba(0,0,0,0)'); tg.addColorStop(.3, 'rgba(0,0,0,.5)'); tg.addColorStop(.75, 'rgba(0,0,0,.5)'); tg.addColorStop(1, 'rgba(0,0,0,0)');
@@ -198,21 +197,20 @@ function question(t, lead, big, at, bigAt, end) {
   word('?', CX, 1330, { size: 300, rot: .1 }, t, bigAt + .15, end);
 }
 function scene1(t) {                                                      // «Вообще, наш самый популярный продукт —»
-  drawSrc(0, 0, W, H, 1 + t * .01);
-  headline(t);
-  drawCut(1 + t * .01); textBand();                                    // actor in front of the headline
+  drawSrc(0, 0, W, H, 1 + t * .01); textBand();
+  headline(t);                                                          // the head sits below it, nothing to hide behind
   word('наш самый', CX - 140, TY - 104, { size: 84, kind: 'serif' }, t, W_.nash, SC[1][0]);
   word('ПОПУЛЯРНЫЙ', CX, TY, { size: fitSize('ПОПУЛЯРНЫЙ', 200, W * .92) }, t, W_.popular, SC[1][0]);
   word('продукт', CX + 200, TY + 100, { size: 84, kind: 'serif' }, t, W_.produkt, SC[1][0]);
 }
 function sceneOffer(t) {                                                  // «— это 10 рилс-видео за 100 тысяч тенге»
   const [a, b] = SC[1];
-  gridBg(t); headline(t);
-  drawCut(lerp(1.0, 1.06, prog(t, a, b))); bandGrid();
+  gridBg(t);
+  drawCut(lerp(1.0, 1.06, prog(t, a, b))); bandGrid(); headline(t);
   word('это', CX - 230, TY - 230, { size: 84, kind: 'serif' }, t, a, W_.za);
   word('10', CX, TY - 30, { size: 300 }, t, W_.ten, W_.za);
   word('РИЛС-ВИДЕО', CX, TY + 100, { size: fitSize('РИЛС-ВИДЕО', 140, W * .9, 'mid'), kind: 'mid' }, t, W_.rils, W_.za);
-  word('за', CX - 260, TY - 120, { size: 84, kind: 'serif' }, t, W_.za, b);
+  word('за', CX - 300, TY - 215, { size: 84, kind: 'serif' }, t, W_.za, b);
   word('100 000', CX, TY, { size: fitSize('100 000', 280, W * .9) }, t, W_.sto, b);
   word('ТЕНГЕ', CX, TY + 120, { size: 130, kind: 'mid' }, t, W_.tenge, b);
 }
@@ -220,7 +218,7 @@ function sceneKey(t) {                                                    // «�
   const [a, b] = SC[3];
   gridBg(t);
   drawCut(lerp(1.02, 1.08, prog(t, a, b))); bandGrid();
-  word('потому что мы', CX - 120, TY - 250, { size: 84, kind: 'serif' }, t, W_.potomu, b);
+  word('потому что мы', CX - 120, TY - 268, { size: 84, kind: 'serif' }, t, W_.potomu, b);
   word('ВСЁ ДЕЛАЕМ', CX, TY - 110, { size: fitSize('ВСЁ ДЕЛАЕМ', 150, W * .9, 'mid'), kind: 'mid' }, t, W_.vsyo, b);
   word('ПОД КЛЮЧ', CX, TY + 70, { size: fitSize('ПОД КЛЮЧ', 230, W * .92) }, t, W_.pod, b);
 }
