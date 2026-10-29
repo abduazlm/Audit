@@ -60,7 +60,7 @@ window.prepare = async t => {
   const i = Math.min(376, Math.floor(t * FPS + 1e-6) + 1), jobs = [];
   if (i !== srcIdx) { srcIdx = i; srcImg.src = `.frames-src/f${String(i).padStart(4, '0')}.jpg`; jobs.push(srcImg.decode().catch(() => { srcIdx = -1; })); }
   const k = sceneAt(t)[2];
-  if (k !== 'take' && k !== 'numbers' && i !== cutIdx) { cutIdx = i; cutImg.src = `.frames-cut/f${String(i).padStart(4, '0')}.webp`; jobs.push(cutImg.decode().catch(() => { cutIdx = -1; })); }
+  if (((k !== 'take' && k !== 'numbers') || t < SC[1][0]) && i !== cutIdx) { cutIdx = i; cutImg.src = `.frames-cut/f${String(i).padStart(4, '0')}.webp`; jobs.push(cutImg.decode().catch(() => { cutIdx = -1; })); }
   await Promise.all(jobs);
 };
 const ok = im => im.complete && im.naturalWidth > 0;
@@ -174,7 +174,15 @@ function textBand(a = .55) {
 // ---------- scenes ----------
 const TY = 1330;                                                          // text baseline over the chest
 function scene1(t) {                                                      // «Нас часто спрашивают, боимся ли мы…»
-  drawSrc(0, 0, W, H, 1 + t * .01); textBand();
+  drawSrc(0, 0, W, H, 1 + t * .01);
+  // headline «REELS 10 за 100 000 тг.» sits behind the actor from the very first frame (works as the cover)
+  const tg = ctx.createLinearGradient(0, 80, 0, 620);
+  tg.addColorStop(0, 'rgba(0,0,0,0)'); tg.addColorStop(.3, 'rgba(0,0,0,.5)'); tg.addColorStop(.75, 'rgba(0,0,0,.5)'); tg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = tg; ctx.fillRect(0, 80, W, 540);
+  word('REELS', CX - 125, 315, { size: 210, kind: 'mid' }, t, -1, 1.75);
+  word('10', CX + 330, 315, { size: 210 }, t, -1, 1.75);
+  word('за 100 000 тг.', CX, 405, { size: 88, kind: 'serif' }, t, -1, 1.75);
+  drawCut(1 + t * .01); textBand();                                    // actor in front of the headline
   word('Нас часто', CX - 120, TY - 92, { size: 78, kind: 'serif' }, t, W_.nas, W_.sprash + .3);
   word('СПРАШИВАЮТ', CX, TY, { size: fitSize('СПРАШИВАЮТ', 190, W * .92) }, t, W_.sprash, W_.boimsya);
   word('боимся ли мы', CX + 40, TY - 30, { size: 92, kind: 'serif' }, t, W_.boimsya, 2.02);
