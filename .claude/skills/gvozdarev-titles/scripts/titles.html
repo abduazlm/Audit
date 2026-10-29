@@ -1,0 +1,260 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:transparent;overflow:hidden;width:2160px;height:1920px}
+#back,#frontbox{position:absolute;top:0;width:1080px;height:1920px;overflow:hidden}#back{left:0}#frontbox{left:1080px}</style>
+</head><body><div id="root"></div>
+<!-- Движок анимированных заголовков. Холст 2160×1920: левая половина — слой ЗА человеком, правая — слой ПЕРЕД ним (строки на груди).
+     Python вызывает  await setup(cfg)  и потом  seek(t)  для каждого кадра (t — секунды от начала заголовка). -->
+<script>
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const CX = document.createElement('canvas').getContext('2d');
+const $ = id => document.getElementById(id);
+// ── плавности
+const cl = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const prog = (t, a, d) => cl((t - a) / d);
+const eo3 = u => 1 - Math.pow(1 - u, 3), eio = u => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+const expo = u => u >= 1 ? 1 : 1 - Math.pow(2, -10 * u), p1o = u => 1 - (1 - u) * (1 - u), p2i = u => u * u * u;
+const back = (u, s = 1.7) => { u = u - 1; return u * u * ((s + 1) * u + s) + 1 };
+const spring = (u, k = 9, d = 5.2) => u <= 0 ? 0 : 1 - Math.exp(-d * u) * Math.cos(k * u);
+// ── измерение по «чернилам» (реальные границы букв, а не кегль)
+const fnt = (o, fs) => `${o.style || 'normal'} ${o.weight || 400} ${fs}px "${o.family}"`;
+function ink(o, fs, text) {
+  CX.font = fnt(o, fs); CX.letterSpacing = ((o.ls || 0) * fs) + 'px'; const m = CX.measureText(text ?? o.text);
+  return { l: -m.actualBoundingBoxLeft, r: m.actualBoundingBoxRight, a: m.actualBoundingBoxAscent, d: m.actualBoundingBoxDescent, adv: m.width };
+}
+function apply(el, o, fs, x, y) {
+  el.setAttribute('font-family', o.family); el.setAttribute('font-weight', o.weight || 400);
+  el.setAttribute('font-style', o.style || 'normal'); el.setAttribute('font-size', fs.toFixed(3));
+  el.setAttribute('letter-spacing', ((o.ls || 0) * fs).toFixed(3)); el.setAttribute('x', x.toFixed(2)); el.setAttribute('y', y.toFixed(2)); el.textContent = o.text;
+}
+function place(el, o) {
+  const fs = o.fs; const m = ink(o, fs); let x;
+  if (o.left != null) x = o.left - m.l; else if (o.right != null) x = o.right - m.r; else x = o.cx - (m.l + m.r) / 2;
+  apply(el, o, fs, x, o.y); return { fs, x, left: x + m.l, right: x + m.r, top: o.y - m.a, bottom: o.y + m.d };
+}
+function letters(g, o, fs, x, y, fill) {      // слово по буквам, трекинг сохраняется
+  const out = []; CX.font = fnt(o, fs); CX.letterSpacing = ((o.ls || 0) * fs) + 'px';
+  [...o.text].forEach((ch, i) => {
+    const px = CX.measureText([...o.text].slice(0, i).join('')).width;
+    const e = document.createElementNS(NS, 'text'); apply(e, { ...o, text: ch }, fs, x + px, y); e.setAttribute('fill', fill); g.appendChild(e); out.push({ e, x: x + px, y });
+  });
+  return out;
+}
+function clipRect(id, x, y, w, h) { const r = $(id); r.setAttribute('x', x); r.setAttribute('y', y); r.setAttribute('width', w); r.setAttribute('height', h); }
+
+// ── шрифты: Python подставляет @font-face с семействами TScript / TSans / TSerif / TCond (или системные)
+const F = { script: 'TScript', sans: 'TSans', serif: 'TSerif', cond: 'TCond' };
+
+window.setup = async function (c) {
+  await Promise.all([`700 40px "${F.sans}"`, `500 40px "${F.sans}"`, `italic 700 40px "${F.sans}"`, `40px "${F.script}"`,
+    `italic 700 40px "${F.serif}"`, `700 40px "${F.cond}"`, `900 40px "${F.cond}"`].map(f => document.fonts.load(f, 'АБВабв ABCabc 0123')));
+  const S = { archive, button, grain }[c.style];
+  if (!S) throw new Error('нет стиля ' + c.style);
+  $('root').innerHTML = '';
+  window.seek = S(c);
+  window.seek(c.preview ?? 0);
+  return true;
+};
+
+// ════════════════════ T2 «Дизайн архив»: каллиграфическая заглавная + гротеск, стрелка, ®, рукописная буква во 2-й строке
+function archive(c) {
+  $('root').innerHTML = `<svg xmlns="${NS}" viewBox="0 0 2160 1920" width="2160" height="1920" id="sv">
+<defs><clipPath id="c1"><rect id="c1r"/></clipPath><clipPath id="c2"><rect id="c2r"/></clipPath><clipPath id="cl"><rect id="clr"/></clipPath>
+<clipPath id="cb3"><rect id="cb3r"/></clipPath>
+<mask id="ko" maskUnits="userSpaceOnUse"><rect x="-500" y="-500" width="3000" height="3000" fill="#fff"/><text id="vk" fill="#000" stroke="#000" stroke-width="5" stroke-linejoin="round"/></mask></defs>
+<g id="lockA"><g id="lock"><g id="under" mask="url(#ko)"><text id="D" stroke-linejoin="round"/>
+ <g clip-path="url(#c1)"><g id="l1"/></g><g clip-path="url(#c2)"><g id="l2"/></g><rect id="sq"/>
+ <g clip-path="url(#cl)"><text id="lab"/></g>
+ <path id="aline" fill="none" stroke-width="3.6"/><path id="ahead" fill="none" stroke-width="3.6" stroke-linejoin="miter"/>
+ <g id="reg"><circle id="regc" fill="none" stroke-width="3"/><text id="regr"/></g></g>
+ <text id="v" stroke-linejoin="round"/></g></g>
+<g transform="translate(1080 0)"><g id="front"><text id="b1"/><text id="b2"/><g clip-path="url(#cb3)"><g id="b3"/></g></g></g></svg>`;
+  const INK = c.ink || '#FFFFFF', FRONT = c.front || '#F6F6F6';
+  const TOP = c.top ?? 300, BW = c.w ?? 770, T0 = c.T0 ?? 0, T1 = c.T1 ?? 4, TB = c.TB ?? 99, TC = c.TC ?? 99;
+  const TX = { cap: c.cap, l1: c.l1 || '', l2a: c.l2a || '', sc: c.sc || '', l2b: c.l2b || '', lab: c.lab || '', b1: c.b1 || '', b2: c.b2 || '', b3: c.b3 || '' };
+  const B1Y = c.b1y ?? 1290, B3Y = c.b3y ?? (B1Y + 62);
+  const HN = { family: F.sans, weight: 700 }, SC = { family: F.script, weight: 400 };
+  const L = {};
+  // плотные строки как в рефе; если у 2-й строки «й/ё» или у 1-й хвосты (р, у, д…) — чуть разводим, иначе буквы слипаются
+  const Y2 = 430 + (c.gap2 ?? Math.max(/[йЙёЁ]/.test(TX.l2a + TX.sc + TX.l2b) ? 24 : 0, /[руфдщцРУФДЩЦ]/.test(TX.l1) ? 30 : 0));
+  // заглавная каллиграфия — в габарит 63..293 × 153..352 (координаты исходной раскладки)
+  const Dm = ink(SC, 100, TX.cap);
+  const Dfs = 100 * (352 - 153) / (Dm.a + Dm.d), Dsx = Math.min(1, (293 - 63) / ((Dm.r - Dm.l) * Dfs / 100));
+  apply($('D'), { ...SC, text: TX.cap }, Dfs, 0, 0);
+  L.Dtr = `translate(${63 - Dm.l * Dfs / 100 * Dsx} ${153 + Dm.a * Dfs / 100}) scale(${Dsx} 1)`;
+  const Dright = 63 + (Dm.r - Dm.l) * Dfs / 100 * Dsx;
+  // строка 1
+  const fs1 = 146, sp = c.tracking ?? -0.06;
+  const m1 = ink({ ...HN, ls: sp }, fs1, TX.l1);
+  const x1 = Math.max(236, Dright - 40) - m1.l;
+  L.l1 = letters($('l1'), { ...HN, text: TX.l1, ls: sp }, fs1, x1, 348, INK); const r1 = x1 + m1.r;
+  // строка 2: начало + рукописная буква + конец
+  const fs2 = fs1 * .88;
+  const ma = ink({ ...HN, ls: sp }, fs2, TX.l2a);
+  L.l2a = letters($('l2'), { ...HN, text: TX.l2a, ls: sp }, fs2, 167 - ma.l, Y2, INK); let r2 = 167 - ma.l + ma.r;
+  L.l2b = [];
+  if (TX.sc) {
+    // рукописная буква высотой со строчные гротеска (огромная «залезает наверх» — плохо)
+    const vm = ink(SC, 100, TX.sc), xh = ink(HN, fs2, 'х').a, om = ink(SC, 100, 'о');
+    const vfs = 100 * xh * 1.04 / om.a, gap = fs2 * .03;
+    const vx = r2 + gap - vm.l * vfs / 100; apply($('v'), { ...SC, text: TX.sc }, vfs, vx, Y2); apply($('vk'), { ...SC, text: TX.sc }, vfs, vx, Y2);
+    const vr = vx + vm.r * vfs / 100;
+    const mb = ink({ ...HN, ls: sp }, fs2, TX.l2b);
+    L.l2b = letters($('l2'), { ...HN, text: TX.l2b, ls: sp }, fs2, vr + fs2 * .03 - mb.l, Y2, INK); r2 = vr + fs2 * .03 - mb.l + mb.r;
+  } else if (TX.l2b) {
+    const mb = ink({ ...HN, ls: sp }, fs2, TX.l2b);
+    L.l2b = letters($('l2'), { ...HN, text: TX.l2b, ls: sp }, fs2, r2 + fs2 * .02 - mb.l, Y2, INK); r2 = r2 + fs2 * .02 - mb.l + mb.r;
+  }
+  // ® после 2-й строки, правый край блока
+  const regx = r2 + 19, right = Math.max(regx + 15, r1 + 60, 560);
+  $('regc').setAttribute('cx', regx); $('regc').setAttribute('cy', Y2 - 20); $('regc').setAttribute('r', 14.5);
+  place($('regr'), { ...HN, text: 'R', fs: 14, cx: regx, y: Y2 - 15 });
+  $('reg').style.transformOrigin = `${regx}px ${Y2 - 20}px`;
+  // ярлык: подпись ← квадрат → стрелка до правого края. Над «й/ё» подпись поднимаем
+  const LABY = /[йЙёЁ]/.test(TX.l1) ? 243 : 257, AY = 250 + LABY - 257;
+  const lab = place($('lab'), { ...HN, text: TX.lab || ' ', fs: 15.2, ls: 0.016, right: r1 - 3, y: LABY });
+  const sqx = r1 + 7, sqw = 27, sqh = 20;
+  $('sq').setAttribute('x', sqx); $('sq').setAttribute('y', 237 + LABY - 257); $('sq').setAttribute('width', sqw); $('sq').setAttribute('height', sqh);
+  L.a0 = sqx + sqw + 9; L.a1 = right - 2; L.ay = AY; L.lab = lab;
+  clipRect('c1r', -200, 150, 1400, 348 + fs1 * .05 - 150); clipRect('c2r', -200, 300, 1400, Y2 - 300 + fs2 * .3);
+  clipRect('clr', lab.left - 4, LABY - 27, Math.max(1, sqx - lab.left + 2), 40);
+  ['D', 'sq', 'lab', 'regr', 'v'].forEach(i => $(i).setAttribute('fill', INK));
+  ['aline', 'ahead', 'regc', 'D', 'v'].forEach(i => $(i).setAttribute('stroke', INK));
+  // в кадр: по центру, верх = TOP, ширина = BW
+  const bl = 63, bt = 153, br = right; const s = BW / (br - bl);
+  $('lock').setAttribute('transform', `translate(${540 - (bl + br) / 2 * s} ${TOP - bt * s}) scale(${s})`);
+  // строки на груди (поверх человека)
+  ['b1', 'b2'].forEach(i => $(i).setAttribute('fill', FRONT));
+  place($('b1'), { family: F.sans, weight: 500, text: TX.b1, fs: 21, ls: -0.04, cx: 540, y: B1Y });
+  place($('b2'), { family: F.sans, weight: 500, text: TX.b2, fs: 12.6, ls: 0, cx: 540, y: B1Y + 17 });
+  L.b3 = []; L.b3fs = 60;
+  if (TX.b3) {
+    const b3m = ink({ ...HN, ls: -0.04 }, 100, TX.b3); const b3fs = Math.min(64, 100 * Math.min(640, BW * .78) / (b3m.r - b3m.l));
+    const b3x = 540 - (b3m.l + b3m.r) / 2 * b3fs / 100;
+    L.b3 = letters($('b3'), { ...HN, text: TX.b3, ls: -0.04 }, b3fs, b3x, B3Y + b3fs * .714, FRONT); L.b3fs = b3fs;
+    clipRect('cb3r', 0, B3Y - 30, 1080, b3fs * .714 + 34);
+  }
+  return function seek(t) {
+    const u = t - T0, oe = eio(prog(t, T1, .45));                  // уход: всё уплывает вверх в размытие
+    const D = $('D'); D.setAttribute('transform', L.Dtr);           // заглавная пишется контуром → заливка
+    const dp = prog(u, 0, .85), df = prog(u, .45, .5);
+    D.setAttribute('stroke-dasharray', '2600'); D.setAttribute('stroke-dashoffset', (2600 * (1 - eo3(dp))).toFixed(1));
+    D.setAttribute('stroke-width', (2.3 + (1 - df) * .6).toFixed(2)); D.setAttribute('fill-opacity', eo3(df).toFixed(3)); D.style.opacity = u < 0 ? 0 : 1;
+    L.l1.forEach((o, i) => { const p = spring(prog(u, .12 + i * .055, 1.1) * 1.6); o.e.setAttribute('y', (o.y + (1 - p) * 150).toFixed(2)); });
+    L.l2a.concat(L.l2b).forEach((o, i) => { const p = spring(prog(u, .30 + i * .05, 1.1) * 1.6); o.e.setAttribute('y', (o.y + (1 - p) * 140).toFixed(2)); });
+    const vp = prog(u, .55, .8), vf = prog(u, .9, .45);           // рукописная буква пишется, вырез вокруг неё — вместе с ней
+    [$('v'), $('vk')].forEach(e => { e.setAttribute('stroke-dasharray', '2400'); e.setAttribute('stroke-dashoffset', (2400 * (1 - eo3(vp))).toFixed(1)); });
+    $('v').setAttribute('fill-opacity', eo3(vf).toFixed(3)); $('v').setAttribute('stroke-width', '1.5');
+    $('vk').setAttribute('fill-opacity', eo3(vf).toFixed(3)); $('v').style.opacity = $('vk').style.opacity = (vp > 0 && TX.sc) ? 1 : 0;
+    const sq = $('sq'), qp = prog(u, .42, .5);                     // квадрат выпрыгивает → стрелка вправо, подпись влево
+    sq.style.transformBox = 'fill-box'; sq.style.transformOrigin = 'center'; sq.style.transform = `scale(${Math.max(0, back(qp, 2.2)).toFixed(3)})`;
+    const ap = expo(prog(u, .62, .75)), hp = eo3(prog(u, 1.05, .35)), hk = 26 * hp;
+    const nud = Math.sin(Math.PI * prog(t, TC, .5)) * 10 * (1 - prog(t, TC + .5, .01));   // на призыве стрелка толкается вперёд
+    const hx = L.a1 + nud;
+    $('aline').setAttribute('d', ap > 0 ? `M${L.a0} ${L.ay} L${(L.a0 + (hx - L.a0) * ap).toFixed(2)} ${L.ay}` : '');
+    $('ahead').setAttribute('d', hp > 0 ? `M${(hx - hk).toFixed(2)} ${(L.ay - hk).toFixed(2)} L${hx.toFixed(2)} ${L.ay} L${(hx - hk).toFixed(2)} ${(L.ay + hk).toFixed(2)}` : '');
+    const lp = expo(prog(u, .62, .7)); $('lab').setAttribute('transform', `translate(${((1 - lp) * (L.lab.right - L.lab.left + 12)).toFixed(2)} 0)`);
+    const rp = prog(u, 1.15, .6); $('reg').style.transform = `rotate(${(-200 * (1 - eo3(rp))).toFixed(1)}deg) scale(${back(rp, 2).toFixed(3)})`; $('reg').style.opacity = rp > 0 ? 1 : 0;
+    const p1 = eo3(prog(t, TB, .55)); $('b1').style.opacity = p1; $('b1').setAttribute('transform', `translate(0 ${((1 - p1) * 14).toFixed(2)})`);
+    const p2 = eo3(prog(t, TB + .12, .55)); $('b2').style.opacity = p2; $('b2').setAttribute('transform', `translate(0 ${((1 - p2) * 10).toFixed(2)})`);
+    L.b3.forEach((o, i) => { const p = spring(prog(t, TC + i * .028, 1) * 1.6); o.e.setAttribute('y', (o.y + (1 - p) * L.b3fs * 1.1).toFixed(2)); });
+    const life = 1 + prog(u, 0, 6) * .025;                           // живой дрейф
+    const sv = $('sv'); sv.style.opacity = 1 - oe; sv.style.filter = oe > 0 ? `blur(${(oe * 14).toFixed(1)}px)` : 'none';
+    $('lockA').style.transformOrigin = '540px 450px'; $('lockA').style.transform = `translateY(${(-oe * 120).toFixed(1)}px) scale(${life.toFixed(4)})`;
+    $('front').style.transform = `translateY(${(oe * 60).toFixed(1)}px)`;
+  };
+}
+
+// ════════════════════ T3 «Пуговка»: контурное слово + антиквенная заглавная, маленький овал-пуговка сцепляет строки, DIN-строки печатаются
+function button(c) {
+  $('root').innerHTML = `<svg xmlns="${NS}" viewBox="0 0 2160 1920" width="2160" height="1920" id="sv">
+<defs><mask id="ko" maskUnits="userSpaceOnUse"><rect x="-500" y="-500" width="3000" height="3000" fill="#fff"/><ellipse id="elk" fill="#000" stroke="#000"/></mask>
+<clipPath id="c2"><rect id="c2r"/></clipPath></defs>
+<g id="lockA"><g id="lock"><g mask="url(#ko)"><text id="l1" fill="none" stroke-linejoin="miter"/><g clip-path="url(#c2)"><text id="P"/><g id="l2"/></g></g>
+ <g id="eg"><ellipse id="ell"/><text id="vse"/></g></g></g>
+<g transform="translate(1080 0)"><g id="front"><g id="f1"/><g id="f2"/></g></g></svg>`;
+  const INK = c.ink || '#FFFFFF', FRONT = c.front || '#F6F6F6', ON = c.on || '#141414';
+  const TOP = c.top ?? 310, BW = c.w ?? 780, MAXH = c.maxh ?? 345;
+  const T0 = c.T0 ?? 0, TR = c.TR ?? .36, TE = c.TE ?? .64, T1 = c.T1 ?? 4, TB = c.TB ?? 99, TC = c.TC ?? 99;
+  const TX = { l1: c.l1, e: c.e || '', cap: c.cap, l2: c.l2 || '', f1: c.f1 || '', f2: c.f2 || '' };
+  const FY = c.fy ?? 1300;
+  const SANS = { family: F.sans, weight: 700, style: 'italic' }, SERIF = { family: F.serif, weight: 700, style: 'italic' }, DIN = { family: F.cond, weight: 700 };
+  const L = {};
+  const fs = 100 * 88 / ink(SANS, 100, 'В').a, sp = c.tracking ?? -0.03, Pfs = 100 * 87 / ink(SERIF, 100, 'П').a;
+  const Pm = ink(SERIF, Pfs, TX.cap), m2 = ink({ ...SANS, ls: sp }, fs, TX.l2);
+  const x2 = 167; apply($('P'), { ...SERIF, text: TX.cap }, Pfs, x2 - Pm.l, 276); $('P').setAttribute('fill', INK);
+  const l2x = x2 + (Pm.r - Pm.l) - fs * (c.kern ?? .07) - m2.l;
+  L.l2 = letters($('l2'), { ...SANS, text: TX.l2, ls: sp }, fs, l2x, 276, INK); const r2 = TX.l2 ? l2x + m2.r : x2 + (Pm.r - Pm.l);
+  const m1 = ink({ ...SANS, ls: sp }, fs, TX.l1); const c2 = (x2 + r2) / 2; const l1x = c2 - 21 - (m1.l + m1.r) / 2;
+  apply($('l1'), { ...SANS, text: TX.l1, ls: sp }, fs, l1x, 208); $('l1').setAttribute('stroke', INK); $('l1').setAttribute('stroke-width', '3.4');
+  // пуговка: под центром 1-й строки, на её базовой линии — сцепляет оба слова
+  const vm = ink(SERIF, 100, TX.e || 'о');
+  const vfs = Math.min(100 * 18 / ink(SERIF, 100, 'в').a, 100 * 100 / Math.max(1, vm.r - vm.l));
+  const vw = (vm.r - vm.l) * vfs / 100, rx = Math.max(34, vw / 2 + 15), ry = 20;
+  const cx = l1x + (m1.l + m1.r) / 2 - 6, cy = 205;
+  [$('ell'), $('elk')].forEach(e => { e.setAttribute('cx', cx); e.setAttribute('cy', cy); e.setAttribute('rx', rx); e.setAttribute('ry', ry); });
+  $('ell').setAttribute('fill', INK); $('elk').setAttribute('stroke-width', '4.4');
+  place($('vse'), { ...SERIF, text: TX.e, fs: vfs, ls: -0.01, cx: cx - 1, y: cy + vm.a * vfs / 100 / 2 - 1 }); $('vse').setAttribute('fill', ON);
+  $('eg').style.transformBox = 'view-box'; $('eg').style.transformOrigin = `${cx}px ${cy}px`;
+  const hasE = !!TX.e; if (!hasE) { $('eg').style.display = 'none'; $('elk').setAttribute('rx', 0); }
+  clipRect('c2r', -300, 120, 1600, 276 + fs * .3 - 120);
+  const bl = Math.min(x2, l1x + m1.l), br = Math.max(r2, l1x + m1.r), bt = 208 - 88, bb = 276 + fs * .22;
+  const s = Math.min(BW / (br - bl), MAXH / (bb - bt));
+  $('lock').setAttribute('transform', `translate(${540 - (bl + br) / 2 * s} ${TOP - bt * s}) scale(${s})`);
+  // DIN-строки на груди, по центру
+  L.f1 = letters($('f1'), { ...DIN, text: TX.f1, ls: .2 }, 19, 0, FY, FRONT); L.f2 = letters($('f2'), { ...DIN, text: TX.f2, ls: .14 }, 36, 0, FY + 48, FRONT);
+  [[L.f1, 19, .2, TX.f1], [L.f2, 36, .14, TX.f2]].forEach(([arr, f, ls, tx]) => { if (!tx) return; const m = ink({ ...DIN, ls }, f, tx); const dx = 540 - (m.l + m.r) / 2; arr.forEach(o => { o.x += dx; o.e.setAttribute('x', o.x.toFixed(2)) }); });
+  const rx0 = rx, ry0 = ry;
+  return function seek(t) {
+    const oe = eio(prog(t, T1, .45));
+    const dp = prog(t, T0, .8), l1 = $('l1');                     // 1-я строка: контур рисуется, слово въезжает слева
+    l1.setAttribute('stroke-dasharray', '1400'); l1.setAttribute('stroke-dashoffset', (1400 * (1 - eo3(dp))).toFixed(1));
+    l1.style.opacity = t < T0 ? 0 : 1; l1.setAttribute('transform', `translate(${(-(1 - expo(dp)) * 26).toFixed(2)} 0)`);
+    if (hasE) {                                                    // пуговка выпрыгивает последней, на призыве подпрыгивает
+      const ep = prog(t, TE, .55), bump = Math.sin(Math.PI * prog(t, TC, .45)) * .08, k = Math.max(0, back(ep, 2.1)) * (1 + bump);
+      $('eg').style.transform = `scale(${k.toFixed(3)}) rotate(${(-8 * (1 - eo3(ep)) + bump * 30).toFixed(2)}deg)`;
+      $('elk').setAttribute('rx', (rx0 * k).toFixed(2)); $('elk').setAttribute('ry', (ry0 * k).toFixed(2));
+      const vp = eo3(prog(t, TE + .12, .4)); $('vse').style.opacity = vp; $('vse').setAttribute('transform', `translate(0 ${((1 - vp) * 10).toFixed(2)})`);
+    }
+    const pp = spring(prog(t, TR, 1.1) * 1.6); $('P').setAttribute('transform', `translate(0 ${(-(1 - pp) * 120).toFixed(2)})`); $('P').style.opacity = t < TR ? 0 : 1;
+    L.l2.forEach((o, i) => { const p = spring(prog(t, TR + .08 + i * .04, 1.1) * 1.6); o.e.setAttribute('y', (o.y + (1 - p) * 110).toFixed(2)); });
+    const typ = (arr, t0, cps) => arr.forEach((o, i) => { const p = prog(t, t0 + i / cps, .12); o.e.style.opacity = p; o.e.setAttribute('y', (o.y + (1 - eo3(p)) * 6).toFixed(2)); });
+    typ(L.f1, TB, 48); typ(L.f2, TC, 30);
+    const life = 1 + prog(t, T0, 6) * .025;
+    $('lockA').style.transformOrigin = '540px 450px'; $('lockA').style.transform = `translateY(${(-oe * 120).toFixed(1)}px) scale(${life.toFixed(4)})`;
+    $('front').style.transform = `translateY(${(oe * 60).toFixed(1)}px)`;
+    const sv = $('sv'); sv.style.opacity = 1 - oe; sv.style.filter = oe > 0 ? `blur(${(oe * 14).toFixed(1)}px)` : 'none';
+  };
+}
+
+// ════════════════════ Слово из зерна: буквы по очереди собираются из зернистой пыли, у части краёв остаётся россыпь, уход — снова в пыль
+function grain(c) {
+  $('root').innerHTML = `<div id="back"></div><div id="frontbox"></div>`;
+  const word = [...c.word], y = c.y ?? 430, font = c.font === 'sans' ? { family: F.sans, weight: 800, ls: -.03 } : { family: F.cond, weight: 900, ls: .01 };
+  const m = ink(font, 100, c.word); let fs = c.size ?? 300; fs = Math.min(fs, 100 * (c.maxw ?? 1000) / Math.max(1, m.r - m.l));
+  const T0 = c.T0 ?? 0, TOUT = c.TOUT ?? (c.T1 ?? 3) - (word.length - 1) * .04;
+  const wrap = document.createElement('div'); $('back').appendChild(wrap);
+  wrap.style.cssText = `position:absolute;left:0;right:0;top:${y - fs * .5}px;text-align:center;white-space:nowrap;perspective:900px`;
+  const L = word.map((ch, i) => {
+    const s = document.createElement('span'); const id = 'gw' + i;
+    s.innerHTML = `<svg width="0" height="0" style="position:absolute"><filter id="${id}" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur class="b" in="SourceGraphic" stdDeviation="22" result="bl"/><feTurbulence type="fractalNoise" baseFrequency=".95" numOctaves="1" seed="${i + 3}" result="n"/>
+      <feDisplacementMap class="d" in="bl" in2="n" scale="80" xChannelSelector="R" yChannelSelector="G"/></filter></svg>${ch === ' ' ? '&nbsp;' : ch}`;
+    s.style.cssText = `display:inline-block;font:${font.weight} ${fs}px/1 "${font.family}";letter-spacing:${font.ls}em;color:${c.ink || '#f2f2f2'};filter:url(#${id});opacity:0;transform-origin:50% 100%`;
+    wrap.appendChild(s);
+    return { s, b: s.querySelector('.b'), d: s.querySelector('.d'), rest: [3, 0, 0, 2, 0, 4][i % 6], t0: T0 + i * .06, t1: TOUT + (word.length - 1 - i) * .04 };
+  });
+  return function seek(t) {
+    L.forEach(o => {
+      const a = expo(prog(t, o.t0, .7)), mv = expo(prog(t, o.t0, .95)), op = p1o(prog(t, o.t0, .25)), q = p2i(prog(t, o.t1, .45));
+      const blur = 22 + (o.rest - 22) * a + (24 - (22 + (o.rest - 22) * a)) * q;
+      const disp = 80 + ((o.rest ? 26 : 0) - 80) * a; const d2 = disp + (90 - disp) * q;
+      o.b.setAttribute('stdDeviation', blur.toFixed(2)); o.d.setAttribute('scale', d2.toFixed(2));
+      o.s.style.opacity = (op * (1 - q)).toFixed(3);
+      const yy = fs * .28 * (1 - mv) - fs * .18 * q, rx = -75 * (1 - mv) + 40 * q, sc = .82 + .18 * mv;
+      o.s.style.transform = `translateY(${yy.toFixed(2)}px) rotateX(${rx.toFixed(2)}deg) scale(${sc.toFixed(4)})`;
+    });
+  };
+}
+</script></body></html>
