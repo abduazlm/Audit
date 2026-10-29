@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEE Offer Reel</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<style>
+  html, body { margin: 0; background: #000; }
+  body.capture canvas { display: block; }
+</style>
+</head>
+<body class="capture">
+<canvas id="c"></canvas>
+<script>
+// ------------------------------------------------------------------------------------------
+// «10 рилс-видео — 100 000 ₸» — kinetic-type reel on the user's own take (assets/source.mp4).
+// Style follows the reference: one or two words at a time, heavy red-orange grotesk with glow
+// for key words, white italic serif for linking words, white heavy for secondary words;
+// scenes switch between the plain take, a cut-out on black grid, a cut-out on white,
+// a numbers card and a fire-glow cut-out. Deterministic: renderFrame(t).
+// ------------------------------------------------------------------------------------------
+const W = 1080, H = 1920, CX = W / 2, FPS = 25;
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; cv.style.width = W + 'px';
+const ctx = cv.getContext('2d');
+const RED = '#ff3a1c', WHITE = '#ffffff';
+const HEAVY = '"Inter Tight", Arial Black, sans-serif', SERIF = '"Playfair Display", Georgia, serif';
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = x => 1 - Math.pow(1 - x, 3);
+const eInOut = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const eBack = x => { const c1 = 1.70158, c3 = c1 + 1; return x <= 0 ? 0 : 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const hash = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+const font = (w, s, f, it = '') => `${it} ${w} ${Math.round(s)}px ${f}`;
+function rr(x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+// ---------- word cues (Whisper word timestamps on the source, seconds) ----------
+const W_ = {
+  nas: 0.0, chasto: 0.62, sprash: 0.9, boimsya: 1.5, li: 1.72, my: 1.86, konk: 2.0,
+  da: 4.44, net: 4.54, ne: 4.74, boimsya2: 4.84, potomu: 5.6, chto: 5.72, ten: 5.96, rils: 6.22, video: 6.54,
+  u: 6.84, nas2: 6.86, stoit: 7.14, sto: 7.4, tysyach: 7.86, tenge: 8.22,
+  syomka: 9.18, scenariy: 9.68, montazh: 10.54, dazhe: 11.08, studiya: 11.2,
+  vsyo: 11.76, eto: 11.9, vhodit: 12.1, v: 12.34, stoimost: 12.58,
+  zhmi: 13.0, knopku: 13.3, podrobnee: 13.68, i: 14.28, zakazyvay: 14.6
+};
+// scenes: [start, end, kind]
+const SC = [
+  [0.0, 2.0, 'take'], [2.0, 4.42, 'grid'], [4.42, 5.55, 'white'], [5.55, 9.0, 'numbers'],
+  [9.0, 11.72, 'fire'], [11.72, 12.95, 'take'], [12.95, 15.04, 'take']
+];
+const DURATION = 15.04;
+
+// ---------- frames: the take and its cut-out (RGBA webp), loaded per captured frame ----------
+const srcImg = new Image(), cutImg = new Image(); let srcIdx = -1, cutIdx = -1;
+const sceneAt = t => SC.find(([a, b]) => t >= a && t < b) || SC[SC.length - 1];
+window.prepare = async t => {
+  const i = Math.min(376, Math.floor(t * FPS + 1e-6) + 1), jobs = [];
+  if (i !== srcIdx) { srcIdx = i; srcImg.src = `.frames-src/f${String(i).padStart(4, '0')}.jpg`; jobs.push(srcImg.decode().catch(() => { srcIdx = -1; })); }
+  const k = sceneAt(t)[2];
+  if (k !== 'take' && k !== 'numbers' && i !== cutIdx) { cutIdx = i; cutImg.src = `.frames-cut/f${String(i).padStart(4, '0')}.webp`; jobs.push(cutImg.decode().catch(() => { cutIdx = -1; })); }
+  await Promise.all(jobs);
+};
+const ok = im => im.complete && im.naturalWidth > 0;
+function drawSrc(x = 0, y = 0, w = W, h = H, zoom = 1) {
+  if (!ok(srcImg)) return;
+  ctx.drawImage(srcImg, x + w / 2 - w * zoom / 2, y + h / 2 - h * zoom / 2, w * zoom, h * zoom);
+}
+
+// ---------- type ----------
+// pop-in: scale 1.25→1 with a short blur, like the reference; quick fade-out
+function word(text, x, y, opt, t, a, b) {
+  const kin = prog(t, a, a + .18), kout = prog(t, b - .12, b);
+  if (kin <= 0 || kout >= 1) return 0;
+  const { size, kind = 'big', color, align = 'center', rot = 0 } = opt;
+  const k = eOut(kin);
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(rot); ctx.scale(lerp(1.25, 1, k) * lerp(1, .96, kout), lerp(1.25, 1, k) * lerp(1, .96, kout));
+  ctx.globalAlpha = k * (1 - kout);
+  if (kin < 1) ctx.filter = `blur(${(1 - k) * 10}px)`;
+  ctx.textAlign = align; ctx.textBaseline = 'alphabetic';
+  if (kind === 'serif') { ctx.font = font(500, size, SERIF, 'italic'); ctx.letterSpacing = '0px'; }
+  else { ctx.font = font(kind === 'mid' ? 800 : 900, size, HEAVY); ctx.letterSpacing = `${-size * .045}px`; }
+  const col = color || (kind === 'big' ? RED : WHITE);
+  if (kind === 'big' && !opt.flat) {                                     // glow, as in the reference
+    ctx.shadowColor = col; ctx.shadowBlur = size * .35; ctx.fillStyle = col; ctx.fillText(text, 0, 0);
+    ctx.shadowBlur = size * .1;
+  } else { ctx.shadowColor = opt.color && opt.color !== WHITE ? 'rgba(0,0,0,0)' : 'rgba(0,0,0,.75)'; ctx.shadowBlur = 26; }
+  ctx.fillStyle = col; ctx.fillText(text, 0, 0);
+  const w = ctx.measureText(text).width;
+  ctx.restore();
+  return w;
+}
+// largest size ≤ max that fits the width
+function fitSize(text, max, maxW, kind = 'big') {
+  ctx.save(); ctx.font = kind === 'serif' ? font(500, max, SERIF, 'italic') : font(900, max, HEAVY);
+  ctx.letterSpacing = kind === 'serif' ? '0px' : `${-max * .045}px`;
+  const w = ctx.measureText(text).width; ctx.restore();
+  return w > maxW ? max * maxW / w : max;
+}
+
+// ---------- backgrounds ----------
+function gridBg(t) {
+  ctx.fillStyle = '#050505'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 2;
+  const s = 120, off = (t * 12) % s;
+  for (let x = -s; x < W + s; x += s) { ctx.beginPath(); ctx.moveTo(x + off, 0); ctx.lineTo(x + off, H); ctx.stroke(); }
+  for (let y = -s; y < H + s; y += s) { ctx.beginPath(); ctx.moveTo(0, y + off); ctx.lineTo(W, y + off); ctx.stroke(); }
+  const g = ctx.createRadialGradient(CX, H * .62, 0, CX, H * .62, 900);
+  g.addColorStop(0, 'rgba(255,58,28,.22)'); g.addColorStop(1, 'rgba(255,58,28,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
+function whiteBg(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#f7f5f2'); g.addColorStop(1, '#e9e5e0');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // soft leaf-like shadows drifting, like the reference's white scene
+  ctx.save(); ctx.globalAlpha = .07; ctx.fillStyle = '#000';
+  for (let i = 0; i < 7; i++) {
+    ctx.save(); ctx.translate(120 + i * 150 + Math.sin(t + i) * 20, 120 + hash(i) * 400); ctx.rotate(.6 + i * .3);
+    ctx.beginPath(); ctx.ellipse(0, 0, 40, 260, 0, 0, 7); ctx.fill(); ctx.restore();
+  }
+  ctx.restore();
+}
+function fireBg(t) {
+  ctx.fillStyle = '#0a0302'; ctx.fillRect(0, 0, W, H);
+  // layered glowing smoke blobs + embers (procedural «explosion» behind the cut-out)
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 26; i++) {
+    const a = hash(i) * 6.28, r = 180 + hash(i + 3) * 420 + Math.sin(t * 1.3 + i) * 30;
+    const x = CX + Math.cos(a) * r * .9, y = H * .42 + Math.sin(a) * r * .7 - (t * 25 * hash(i + 5)) % 160;
+    const rad = 160 + hash(i + 7) * 260;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
+    const hot = hash(i + 11);
+    g.addColorStop(0, hot > .6 ? 'rgba(255,190,90,.28)' : 'rgba(255,90,30,.22)'); g.addColorStop(1, 'rgba(120,20,0,0)');
+    ctx.fillStyle = g; ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+  }
+  for (let i = 0; i < 70; i++) {                                         // embers rising
+    const x = hash(i + 20) * W + Math.sin(t * 2 + i) * 20;
+    const y = ((hash(i + 40) * H - t * (60 + hash(i + 60) * 160)) % H + H) % H;
+    ctx.fillStyle = `rgba(255,${140 + hash(i) * 100 | 0},60,${.5 + hash(i + 2) * .5})`;
+    ctx.fillRect(x, y, 3 + hash(i + 9) * 4, 3 + hash(i + 9) * 4);
+  }
+  ctx.restore();
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(0, 0, W, H);
+}
+// cut-out of the speaker (falls back to the plain take if a cut frame is missing)
+function drawCut(zoom = 1, dy = 0) {
+  const im = ok(cutImg) ? cutImg : null;
+  if (!im) return drawSrc();
+  ctx.drawImage(im, CX - W * zoom / 2, H / 2 - H * zoom / 2 + dy, W * zoom, H * zoom);
+}
+// warm light-leak flash between scenes (the reference's orange washes)
+function leak(t) {
+  for (const [a] of SC.slice(1)) {
+    const k = prog(t, a - .12, a + .3);
+    if (k <= 0 || k >= 1) continue;
+    const amp = Math.sin(Math.PI * k);
+    ctx.save(); ctx.globalCompositeOperation = 'screen';
+    const g = ctx.createRadialGradient(W * (.2 + .6 * hash(a)), H * .45, 0, W * .5, H * .5, H * .8);
+    g.addColorStop(0, `rgba(255,170,90,${.85 * amp})`); g.addColorStop(.5, `rgba(255,70,40,${.45 * amp})`); g.addColorStop(1, 'rgba(255,40,40,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+}
+
+// soft dark band behind the text zone on the plain take: the orange wall and cream sweater kill contrast
+function textBand(a = .55) {
+  const g = ctx.createLinearGradient(0, 950, 0, 1750);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(.35, `rgba(0,0,0,${a})`); g.addColorStop(.75, `rgba(0,0,0,${a})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 950, W, 800);
+}
+
+// ---------- scenes ----------
+const TY = 1330;                                                          // text baseline over the chest
+function scene1(t) {                                                      // «Нас часто спрашивают, боимся ли мы…»
+  drawSrc(0, 0, W, H, 1 + t * .01); textBand();
+  word('Нас часто', CX - 120, TY - 120, { size: 78, kind: 'serif' }, t, W_.nas, W_.sprash + .3);
+  word('СПРАШИВАЮТ', CX, TY, { size: fitSize('СПРАШИВАЮТ', 190, W * .92) }, t, W_.sprash, W_.boimsya);
+  word('боимся ли мы', CX + 40, TY - 30, { size: 92, kind: 'serif' }, t, W_.boimsya, 2.02);
+}
+function sceneGrid(t) {                                                   // «…конкуренции?» on black grid
+  const [a] = SC[1];
+  gridBg(t);
+  const s = fitSize('КОНКУРЕНЦИИ', 200, W * .94);
+  drawCut(lerp(1.0, 1.06, prog(t, a, 4.42)));
+  const band = ctx.createLinearGradient(0, 1100, 0, 1700); band.addColorStop(0, 'rgba(0,0,0,0)'); band.addColorStop(.5, 'rgba(0,0,0,.55)'); band.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = band; ctx.fillRect(0, 1100, W, 600);
+  word('боимся ли мы', CX - 150, 1290, { size: 84, kind: 'serif' }, t, a, 4.4);
+  word('КОНКУРЕНЦИИ', CX, 1460, { size: s }, t, W_.konk, 4.4);
+  word('?', CX + 360, 1690, { size: 300, rot: .12 }, t, 2.75, 4.4);
+}
+function sceneWhite(t) {                                                  // «Да нет, не боимся»
+  whiteBg(t); drawCut(1.02);
+  word('Да нет,', CX - 160, 1180, { size: 100, kind: 'serif', color: RED }, t, W_.da - .02, 5.55);
+  word('НЕ БОИМСЯ', CX, 1340, { size: fitSize('НЕ БОИМСЯ', 210, W * .92), flat: true }, t, W_.ne, 5.55);
+}
+function sceneNumbers(t) {                                                // «потому что 10 рилс-видео у нас стоит 100 000 ₸»
+  gridBg(t);
+  // the take plays in a rounded card, like the reference's laptop B-roll
+  const cw = 760, ch = 520, cx = CX - cw / 2, cy = 330 + (1 - eOut(prog(t, 5.55, 5.9))) * 60;
+  ctx.save(); ctx.globalAlpha = eOut(prog(t, 5.55, 5.85));
+  ctx.shadowColor = 'rgba(255,58,28,.35)'; ctx.shadowBlur = 60; rr(cx, cy, cw, ch, 36); ctx.fillStyle = '#111'; ctx.fill(); ctx.shadowBlur = 0;
+  rr(cx, cy, cw, ch, 36); ctx.clip();
+  if (ok(srcImg)) { const s = cw / W; ctx.drawImage(srcImg, 0, H * .12, W, ch / s, cx, cy, cw, ch); }
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 2; rr(cx, cy, cw, ch, 36); ctx.stroke();
+  // phase 1: 10 РИЛС-ВИДЕО
+  word('потому что', CX - 170, 1060, { size: 80, kind: 'serif' }, t, W_.potomu, W_.u);
+  word('10', CX, 1400, { size: 420 }, t, W_.ten, W_.u);
+  word('РИЛС-ВИДЕО', CX, 1540, { size: fitSize('РИЛС-ВИДЕО', 150, W * .9, 'mid'), kind: 'mid' }, t, W_.rils, W_.u);
+  // phase 2: у нас стоит 100 000 ₸
+  word('у нас стоит', CX - 150, 1060, { size: 80, kind: 'serif' }, t, W_.u, 9.0);
+  word('100 000', CX, 1360, { size: fitSize('100 000', 300, W * .92) }, t, W_.sto, 9.0);
+  word('ТЕНГЕ', CX, 1520, { size: 150, kind: 'mid' }, t, W_.tenge, 9.0);
+}
+function sceneFire(t) {                                                   // «съёмка, сценарий, монтаж, даже студия»
+  fireBg(t); drawCut(1.03, 40);
+  const items = [['СЪЁМКА', W_.syomka], ['СЦЕНАРИЙ', W_.scenariy], ['МОНТАЖ', W_.montazh]];
+  const s = fitSize('СЦЕНАРИЙ', 150, W * .86);
+  items.forEach(([w, at], i) => word(w, CX, 1060 + i * s * .92, { size: s }, t, at, 11.72));
+  word('даже', CX - 210, 1060 + 3 * s * .92 - 10, { size: 84, kind: 'serif' }, t, W_.dazhe, 11.72);
+  word('СТУДИЯ', CX + 60, 1060 + 3 * s * .92 + 110, { size: s, kind: 'mid' }, t, W_.studiya, 11.72);
+}
+function sceneIncluded(t) {                                               // «Всё это входит в стоимость»
+  drawSrc(0, 0, W, H, 1.04); textBand();
+  word('всё это входит', CX - 60, TY - 140, { size: 84, kind: 'serif' }, t, W_.vsyo, 12.95);
+  word('В СТОИМОСТЬ', CX, TY, { size: fitSize('В СТОИМОСТЬ', 190, W * .92), kind: 'mid' }, t, W_.v, 12.95);
+  const u = eInOut(prog(t, W_.stoimost, W_.stoimost + .35));            // red underline swipe
+  if (u > 0 && t < 12.95) { ctx.fillStyle = RED; ctx.shadowColor = RED; ctx.shadowBlur = 20; ctx.fillRect(CX - 420, TY + 30, 840 * u, 14); ctx.shadowBlur = 0; }
+}
+function sceneCta(t) {                                                    // «Жми кнопку подробнее и заказывай»
+  drawSrc(0, 0, W, H, 1.04 + (t - 12.95) * .015); textBand();
+  word('жми кнопку', CX - 130, TY - 170, { size: 88, kind: 'serif' }, t, W_.zhmi, 15.2);
+  const kb = eBack(prog(t, W_.podrobnee - .05, W_.podrobnee + .35));
+  if (kb > 0) {
+    const tap = Math.sin(Math.PI * prog(t, W_.podrobnee + .45, W_.podrobnee + .7));
+    const bw = 720, bh = 170, s = kb * (1 - .06 * tap);
+    ctx.save(); ctx.translate(CX, TY - 30); ctx.scale(s, s);
+    ctx.shadowColor = RED; ctx.shadowBlur = 50; rr(-bw / 2, -bh / 2, bw, bh, bh / 2); ctx.fillStyle = RED; ctx.fill(); ctx.shadowBlur = 0;
+    ctx.fillStyle = WHITE; ctx.font = font(900, 84, HEAVY); ctx.letterSpacing = '-3px'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('ПОДРОБНЕЕ', 0, 6); ctx.restore();
+    const rp = prog(t, W_.podrobnee + .45, W_.podrobnee + 1.0);           // tap ripple
+    if (rp > 0 && rp < 1) { ctx.strokeStyle = `rgba(255,255,255,${1 - rp})`; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(CX + 220, TY - 30, 30 + rp * 140, 0, 7); ctx.stroke(); }
+  }
+  word('и заказывай', CX + 90, TY + 150, { size: 88, kind: 'serif' }, t, W_.i, 15.2);
+}
+
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none'; ctx.letterSpacing = '0px';
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  if (t < SC[1][0]) scene1(t);
+  else if (t < SC[2][0]) sceneGrid(t);
+  else if (t < SC[3][0]) sceneWhite(t);
+  else if (t < SC[4][0]) sceneNumbers(t);
+  else if (t < SC[5][0]) sceneFire(t);
+  else if (t < SC[6][0]) sceneIncluded(t);
+  else sceneCta(t);
+  leak(t);
+  const f = Math.max(1 - prog(t, 0, .15), prog(t, DURATION - .25, DURATION));
+  if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f})`; ctx.fillRect(0, 0, W, H); }
+}
+window.DURATION = DURATION; window.renderFrame = renderFrame;
+window.READY = (async () => {
+  await Promise.all([document.fonts.load(font(900, 60, HEAVY), 'АБВ 10'), document.fonts.load(font(800, 60, HEAVY), 'АБВ'),
+                     document.fonts.load(font(500, 60, SERIF, 'italic'), 'Абв абв')]);
+  return true;
+})();
+</script>
+</body>
+</html>
