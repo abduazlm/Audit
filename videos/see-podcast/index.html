@@ -199,7 +199,7 @@ function question(t, lead, big, at, bigAt, end) {
 function scene1(t) {                                                      // «Вообще, наш самый популярный продукт —»
   drawSrc(0, 0, W, H, 1 + t * .01); textBand();
   headline(t);                                                          // the head sits below it, nothing to hide behind
-  word('наш самый', CX - 140, TY - 104, { size: 84, kind: 'serif' }, t, W_.nash, SC[1][0]);
+  word('наш самый', CX - 140, TY - 122, { size: 84, kind: 'serif' }, t, W_.nash, SC[1][0]);
   word('ПОПУЛЯРНЫЙ', CX, TY, { size: fitSize('ПОПУЛЯРНЫЙ', 200, W * .92) }, t, W_.popular, SC[1][0]);
   word('продукт', CX + 200, TY + 100, { size: 84, kind: 'serif' }, t, W_.produkt, SC[1][0]);
 }
