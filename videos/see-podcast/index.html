@@ -24,8 +24,7 @@ const W = 1080, H = 1920, CX = W / 2, FPS = 25;
 const cv = document.getElementById('c'); cv.width = W; cv.height = H; cv.style.width = W + 'px';
 const ctx = cv.getContext('2d');
 const RED = '#ff3a1c', WHITE = '#ffffff';
-const HEAVY = 'Manrope, "Inter Tight", Arial Black, sans-serif';         // free stand-in for GT Eesti Pro Display Bold
-const SERIF = '"Playfair Display", Georgia, serif';
+const HEAVY = '"Inter Tight", Arial Black, sans-serif', SERIF = '"Playfair Display", Georgia, serif';
 
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -85,7 +84,7 @@ function word(text, x, y, opt, t, a, b) {
   if (kin < 1) ctx.filter = `blur(${(1 - k) * 10}px)`;
   ctx.textAlign = align; ctx.textBaseline = 'alphabetic';
   if (kind === 'serif') { ctx.font = font(500, size, SERIF, 'italic'); ctx.letterSpacing = '0px'; }
-  else { ctx.font = font(800, size, HEAVY); ctx.letterSpacing = `${-size * .035}px`; }
+  else { ctx.font = font(kind === 'mid' ? 800 : 900, size, HEAVY); ctx.letterSpacing = `${-size * .045}px`; }
   const col = color || (kind === 'big' ? RED : WHITE);
   if (kind === 'big' && !opt.flat) {                                     // glow, as in the reference
     ctx.shadowColor = 'rgba(255,58,28,.45)'; ctx.shadowBlur = size * .16; ctx.fillStyle = col; ctx.fillText(text, 0, 0);
@@ -98,8 +97,8 @@ function word(text, x, y, opt, t, a, b) {
 }
 // largest size ≤ max that fits the width
 function fitSize(text, max, maxW, kind = 'big') {
-  ctx.save(); ctx.font = kind === 'serif' ? font(500, max, SERIF, 'italic') : font(800, max, HEAVY);
-  ctx.letterSpacing = kind === 'serif' ? '0px' : `${-max * .035}px`;
+  ctx.save(); ctx.font = kind === 'serif' ? font(500, max, SERIF, 'italic') : font(900, max, HEAVY);
+  ctx.letterSpacing = kind === 'serif' ? '0px' : `${-max * .045}px`;
   const w = ctx.measureText(text).width; ctx.restore();
   return w > maxW ? max * maxW / w : max;
 }
@@ -200,7 +199,7 @@ function question(t, lead, big, at, bigAt, end) {
 function scene1(t) {                                                      // «Вообще, наш самый популярный продукт —»
   drawSrc(0, 0, W, H, 1 + t * .01); textBand();
   headline(t);                                                          // the head sits below it, nothing to hide behind
-  word('наш самый', CX - 140, TY - 135, { size: 84, kind: 'serif' }, t, W_.nash, SC[1][0]);
+  word('наш самый', CX - 140, TY - 104, { size: 84, kind: 'serif' }, t, W_.nash, SC[1][0]);
   word('ПОПУЛЯРНЫЙ', CX, TY, { size: fitSize('ПОПУЛЯРНЫЙ', 200, W * .92) }, t, W_.popular, SC[1][0]);
   word('продукт', CX + 200, TY + 100, { size: 84, kind: 'serif' }, t, W_.produkt, SC[1][0]);
 }
@@ -227,7 +226,7 @@ function sceneFire(t) {                                                   // «�
   const [, b] = SC[4];
   fireBg(t); drawCut(1.03, 40);
   const s = fitSize('МОНТИРУЕМ', 160, W * .88);
-  word('пишем', CX - 250, 1080 - s * 1.0, { size: 88, kind: 'serif' }, t, W_.pishem, b);
+  word('пишем', CX - 250, 1080 - s * .92, { size: 88, kind: 'serif' }, t, W_.pishem, b);
   [['СЦЕНАРИЙ', W_.scenariy], ['СНИМАЕМ', W_.snimaem, 'mid'], ['МОНТИРУЕМ', W_.montiruem]]   // «СНИМАЕМ» in white
     .forEach(([w, at, kind = 'big'], i) => word(w, CX, 1080 + i * s * .82, { size: s, kind }, t, at, b));
 }
@@ -249,7 +248,7 @@ function sceneCta(t) {                                                    // «�
     const bw = 720, bh = 170, s = kb * (1 - .06 * tap);
     ctx.save(); ctx.translate(CX, TY - 30); ctx.scale(s, s);
     ctx.shadowColor = 'rgba(255,58,28,.45)'; ctx.shadowBlur = 24; rr(-bw / 2, -bh / 2, bw, bh, bh / 2); ctx.fillStyle = RED; ctx.fill(); ctx.shadowBlur = 0;
-    ctx.fillStyle = WHITE; ctx.font = font(800, 84, HEAVY); ctx.letterSpacing = '-3px'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = WHITE; ctx.font = font(900, 84, HEAVY); ctx.letterSpacing = '-3px'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('ПОДРОБНЕЕ', 0, 6); ctx.restore();
     const rp = prog(t, W_.podrobnee + .45, W_.podrobnee + 1.0);           // tap ripple
     if (rp > 0 && rp < 1) { ctx.strokeStyle = `rgba(255,255,255,${1 - rp})`; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(CX + 220, TY - 30, 30 + rp * 140, 0, 7); ctx.stroke(); }
@@ -275,7 +274,7 @@ function renderFrame(t) {
 }
 window.DURATION = DURATION; window.renderFrame = renderFrame;
 window.READY = (async () => {
-  await Promise.all([document.fonts.load(font(800, 60, HEAVY), 'АБВ 10'), document.fonts.load(font(800, 60, HEAVY), 'АБВ'),
+  await Promise.all([document.fonts.load(font(900, 60, HEAVY), 'АБВ 10'), document.fonts.load(font(800, 60, HEAVY), 'АБВ'),
                      document.fonts.load(font(500, 60, SERIF, 'italic'), 'Абв абв')]);
   return true;
 })();
