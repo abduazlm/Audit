@@ -65,3 +65,63 @@ def test_missing_key(monkeypatch):
     monkeypatch.delenv("PERPLEXITY_API_KEY", raising=False)
     with pytest.raises(ps.SearchError, match="PERPLEXITY_API_KEY"):
         ps.search("x")
+
+
+class RaisingClient:
+    def __init__(self, exc):
+        self.search = SimpleNamespace(create=self._create)
+        self._exc = exc
+
+    def _create(self, **kwargs):
+        raise self._exc
+
+
+def _status_error(cls, status):
+    import httpx
+
+    request = httpx.Request("POST", "https://api.perplexity.ai/search")
+    response = httpx.Response(status, request=request)
+    return cls("boom", response=response, body=None)
+
+
+@pytest.mark.parametrize(
+    ("exc", "match"),
+    [
+        (_status_error(ps.perplexity.AuthenticationError, 401), "401"),
+        (_status_error(ps.perplexity.RateLimitError, 429), "429"),
+        (_status_error(ps.perplexity.InternalServerError, 500), "500"),
+    ],
+)
+def test_api_errors_wrapped(exc, match):
+    with pytest.raises(ps.SearchError, match=match):
+        ps.search("x", client=RaisingClient(exc))
+
+
+def test_connection_error_wrapped():
+    import httpx
+
+    exc = ps.perplexity.APIConnectionError(
+        request=httpx.Request("POST", "https://api.perplexity.ai/search")
+    )
+    with pytest.raises(ps.SearchError, match="could not reach"):
+        ps.search("x", client=RaisingClient(exc))
+
+
+def test_cli_missing_key_exits_1(monkeypatch, capsys):
+    monkeypatch.delenv("PERPLEXITY_API_KEY", raising=False)
+    assert ps.main(["test query", "-n", "3"]) == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "PERPLEXITY_API_KEY is not set" in captured.err
+
+
+def test_cli_prints_json(monkeypatch, capsys):
+    client = FakeClient([_page("https://a"), _page("https://a")])
+    monkeypatch.setattr(ps, "_make_client", lambda max_retries: client)
+    assert ps.main(["q", "-n", "3", "--domain", "example.com"]) == 0
+    import json
+
+    out = json.loads(capsys.readouterr().out)
+    assert [r["url"] for r in out] == ["https://a"]
+    assert client.calls[0]["search_domain_filter"] == ["example.com"]
+    assert client.calls[0]["max_results"] == 3

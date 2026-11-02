@@ -1,1 +1,1 @@
-perplexityai
+perplexityai>=0.46,<1
