@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apple 1997 Case Reel</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<style>html, body { margin: 0; background: #0c0e14; } canvas { display: block; }</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// ------------------------------------------------------------------------------------------
+// «Маркетинговые кейсы», ролик 2: Apple, 1997 — как выжили (assets/vo.wav, Piper «Руслан»).
+// Same series style as videos/mcd-monopoly: flat vector on dark, yellow = key words, red = threat,
+// one phrase of ≤4 words per scene, label plates, numbers on screen, constant motion.
+// No real logos or portraits: a plain apple shape, generic silhouettes. Deterministic: renderFrame(t).
+// ------------------------------------------------------------------------------------------
+const W = 1080, H = 1920, CX = W / 2;
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; cv.style.width = W + 'px';
+const ctx = cv.getContext('2d');
+const BG = '#0c0e14', BG2 = '#161a24', YEL = '#ffcc1a', RED = '#ff3b30', WHITE = '#ffffff', GREY = '#8a90a0', GREEN = '#2ecc71';
+const F = 'Montserrat, Arial Black, sans-serif';
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = x => 1 - Math.pow(1 - x, 3);
+const eInOut = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const eBack = x => { const c1 = 1.70158, c3 = c1 + 1; return x <= 0 ? 0 : 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const pop = (t, a, d = .35) => eBack(prog(t, a, a + d));
+const hash = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+const font = (w, s) => `${w} ${Math.round(s)}px ${F}`;
+function rr(x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+// ---------- timing: scene starts = VO clip starts (0.7 s gap between scenes) ----------
+const VO = [0.5, 7.59, 17.06, 23.0, 28.25, 39.97, 48.27, 59.04, 67.17];
+const DURATION = 77.6;
+const SC = VO.map((s, i) => [i ? s - .3 : 0, i < VO.length - 1 ? VO[i + 1] - .3 : DURATION]);
+const K = {
+  y97: 1.66, ocenkam: 3.72, mesyacev: 6.28,
+  teryala: 8.04, sotni: 8.48, desyatki: 10.46, putali: 11.92, nikto: 13.74,
+  vernulsya: 17.96, dzhobs: 18.52, vygnali: 21.74,
+  zhdali: 23.16, dobavit: 24.1, obratnoe: 26.08,
+  doske: 30.2, dva: 30.98, prof: 31.8, polz: 32.8, nastol: 34.48, noutbuk: 35.84, chetyre: 36.72, ostalnoe: 38.0, zakryl: 38.84,
+  deneg: 40.1, konkurentu: 42.82, ms: 43.84, n150: 45.18,
+  reklama: 49.04, lyudi: 51.38, mir: 53.06, tehniku: 55.36, pokupaet: 57.6,
+  god: 59.32, imac: 60.3, igrushka: 62.96, korobki: 64.28, pribyl: 66.04,
+  ideya: 67.64, ne_dobav: 69.7, ubiray: 70.62, naydi: 71.42, dengi: 72.46, obyasnyaet: 72.98, rezh: 74.4
+};
+
+// ---------- text ----------
+function title(lines, t, a, b, y = 330) {                                // big scene phrase, ≤4 words, yellow for key words
+  const k = eOut(prog(t, a, a + .35)), ko = prog(t, b - .2, b);
+  if (k <= 0 || ko >= 1) return;
+  ctx.save(); ctx.globalAlpha = k * (1 - ko); ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  lines.forEach(([text, col, size = 96], i) => {
+    const d = eOut(prog(t, a + i * .12, a + i * .12 + .4));
+    let s = size; ctx.font = font(900, s); ctx.letterSpacing = `${-s * .02}px`;
+    const w = ctx.measureText(text).width; if (w > W * .88) { s *= W * .88 / w; ctx.font = font(900, s); }
+    ctx.fillStyle = col || WHITE; ctx.globalAlpha = k * (1 - ko) * d;
+    ctx.fillText(text, CX, y + i * s * 1.08 + (1 - d) * 30);
+    y += 0;
+  });
+  ctx.restore();
+}
+function plate(text, x, y, t, a, b = 1e9, o = {}) {                       // label plate: «схема», «12 лет», «$24 млн»
+  const k = pop(t, a, .4), ko = prog(t, b - .2, b);
+  if (k <= 0 || ko >= 1) return;
+  const { col = YEL, ink = BG, size = 44, rot = 0 } = o;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(k, k); ctx.globalAlpha = 1 - ko;
+  ctx.font = font(900, size); ctx.letterSpacing = '1px';
+  const w = ctx.measureText(text).width + size * 1.1, h = size * 1.7;
+  ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 20; rr(-w / 2, -h / 2, w, h, 14); ctx.fillStyle = col; ctx.fill(); ctx.shadowBlur = 0;
+  ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 0, size * .06);
+  ctx.restore();
+}
+
+// ---------- background: dark, slow drifting grid + vignette, so no frame is ever still ----------
+function bg(t) {
+  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(255,255,255,.035)'; ctx.lineWidth = 2;
+  const s = 90, off = (t * 10) % s;
+  for (let x = -s; x < W + s; x += s) { ctx.beginPath(); ctx.moveTo(x + off, 0); ctx.lineTo(x + off, H); ctx.stroke(); }
+  for (let y = -s; y < H + s; y += s) { ctx.beginPath(); ctx.moveTo(0, y + off * .6); ctx.lineTo(W, y + off * .6); ctx.stroke(); }
+  for (let i = 0; i < 30; i++) {                                         // dust
+    const x = (hash(i) * W + t * (6 + hash(i + 3) * 10)) % W, y = (hash(i + 7) * H - t * (10 + hash(i + 5) * 20) % H + H) % H;
+    ctx.fillStyle = `rgba(255,204,26,${.05 + .08 * hash(i + 2)})`; ctx.beginPath(); ctx.arc(x, y, 2 + 3 * hash(i + 4), 0, 7); ctx.fill();
+  }
+  const g = ctx.createRadialGradient(CX, H * .5, H * .25, CX, H * .5, H * .8);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.6)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
+function chrome(t, n) {
+  ctx.save(); ctx.globalAlpha = prog(t, .2, .6);
+  ctx.textBaseline = 'alphabetic'; ctx.font = font(800, 26); ctx.letterSpacing = '4px';
+  ctx.fillStyle = GREY; ctx.textAlign = 'left'; ctx.fillText('МАРКЕТИНГОВЫЕ КЕЙСЫ', 70, 190);
+  ctx.textAlign = 'right'; ctx.fillStyle = YEL; ctx.fillText(`${String(n).padStart(2, '0')} / ${SC.length}`, W - 70, 190);
+  const p = t / DURATION;                                                // thin progress line
+  ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(70, 212, W - 140, 4); ctx.fillStyle = YEL; ctx.fillRect(70, 212, (W - 140) * p, 4);
+  ctx.restore();
+}
+
+// ---------- props ----------
+function person(x, y, s, o = {}) {                                        // flat silhouette; o.col body colour, o.badge, o.hat
+  const { col = '#3a4152', head = '#4a5266', badge = false, bob = 0, hold } = o;
+  ctx.save(); ctx.translate(x, y + bob); ctx.scale(s, s);
+  rr(-70, 40, 140, 200, 60); ctx.fillStyle = col; ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -20, 58, 0, 7); ctx.fillStyle = head; ctx.fill();
+  if (badge) { ctx.fillStyle = YEL; ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 12 : 26; ctx.lineTo(-30 + Math.cos(a) * r, 100 + Math.sin(a) * r); } ctx.closePath(); ctx.fill(); }
+  if (hold === 'ticket') { ctx.save(); ctx.translate(70, 120); ctx.rotate(-.2); rr(-40, -26, 80, 52, 6); ctx.fillStyle = WHITE; ctx.fill(); ctx.fillStyle = YEL; ctx.fillRect(-40, -26, 80, 16); ctx.restore(); }
+  if (hold === 'check') { ctx.save(); ctx.translate(70, 110); ctx.rotate(-.15); rr(-70, -30, 140, 60, 6); ctx.fillStyle = GREEN; ctx.fill(); ctx.fillStyle = WHITE; ctx.font = font(900, 26); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('$$$', 0, 2); ctx.restore(); }
+  if (hold === 'env') { ctx.save(); ctx.translate(70, 120); rr(-44, -30, 88, 60, 6); ctx.fillStyle = '#e9d9b0'; ctx.fill(); ctx.strokeStyle = '#b89c5a'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-44, -30); ctx.lineTo(0, 4); ctx.lineTo(44, -30); ctx.stroke(); ctx.restore(); }
+  ctx.restore();
+}
+function arrow(x1, y1, x2, y2, k, col = YEL, w = 8) {
+  if (k <= 0) return;
+  const x = lerp(x1, x2, k), y = lerp(y1, y2, k), a = Math.atan2(y2 - y1, x2 - x1);
+  ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * 18, y + Math.sin(a) * 18); ctx.lineTo(x + Math.cos(a + 2.4) * 22, y + Math.sin(a + 2.4) * 22); ctx.lineTo(x + Math.cos(a - 2.4) * 22, y + Math.sin(a - 2.4) * 22); ctx.fill();
+}
+function qmark(x, y, s, t, a) {
+  const k = pop(t, a, .45); if (k <= 0) return;
+  ctx.save(); ctx.translate(x, y + Math.sin(t * 4) * 8); ctx.scale(k * s, k * s);
+  ctx.shadowColor = 'rgba(255,59,48,.6)'; ctx.shadowBlur = 30; ctx.fillStyle = RED; ctx.font = font(900, 160); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', 0, 0); ctx.restore();
+}
+function money(n) { return '$' + Math.round(n).toLocaleString('ru-RU').replace(/ /g, ' '); }
+
+function apple(x, y, s, t, crack = 0) {                                   // plain apple shape (not a logo) that cracks
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = '#c9ced8';
+  ctx.beginPath(); ctx.moveTo(0, -90);
+  ctx.bezierCurveTo(60, -140, 170, -110, 160, 10); ctx.bezierCurveTo(150, 120, 80, 170, 30, 150);
+  ctx.quadraticCurveTo(0, 140, -30, 150); ctx.bezierCurveTo(-80, 170, -150, 120, -160, 10); ctx.bezierCurveTo(-170, -110, -60, -140, 0, -90); ctx.fill();
+  ctx.fillStyle = GREEN; ctx.beginPath(); ctx.ellipse(40, -150, 22, 50, .7, 0, 7); ctx.fill();
+  if (crack > 0) {                                                       // red crack zig-zag drawn top → bottom
+    const P = [[0, -90], [-20, -40], [15, 0], [-15, 50], [10, 100], [-5, 150]], n = crack * (P.length - 1);
+    ctx.strokeStyle = BG; ctx.lineWidth = 16; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(...P[0]);
+    for (let i = 1; i <= Math.floor(n); i++) ctx.lineTo(...P[i]);
+    const i = Math.floor(n), f = n - i; if (i < P.length - 1) ctx.lineTo(lerp(P[i][0], P[i + 1][0], f), lerp(P[i][1], P[i + 1][1], f)); ctx.stroke();
+    ctx.strokeStyle = RED; ctx.lineWidth = 5; ctx.stroke();
+  }
+  ctx.restore();
+}
+function computer(x, y, s, col, o = {}) {                                 // generic beige / coloured desktop box with screen
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.rotate(o.rot || 0);
+  rr(-90, -80, 180, 140, 14); ctx.fillStyle = col; ctx.fill();
+  rr(-70, -62, 140, 96, 8); ctx.fillStyle = o.on ? '#5fb3ff' : '#1d2230'; ctx.fill();
+  rr(-40, 60, 80, 20, 4); ctx.fillStyle = col; ctx.fill(); rr(-80, 78, 160, 14, 6); ctx.fill();
+  if (o.label) { ctx.fillStyle = BG; ctx.font = font(900, 18); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(o.label, 0, 46); }
+  ctx.restore();
+}
+function laptop(x, y, s, col) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  rr(-80, -70, 160, 100, 10); ctx.fillStyle = col; ctx.fill(); rr(-66, -58, 132, 76, 6); ctx.fillStyle = '#1d2230'; ctx.fill();
+  ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(-95, 34); ctx.lineTo(95, 34); ctx.lineTo(80, 52); ctx.lineTo(-80, 52); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function imac(x, y, s, t, col) {                                         // round translucent all-in-one
+  ctx.save(); ctx.translate(x, y + Math.sin(t * 2) * 6); ctx.scale(s, s);
+  ctx.fillStyle = col; ctx.globalAlpha *= .9;
+  ctx.beginPath(); ctx.moveTo(-150, -130); ctx.quadraticCurveTo(0, -170, 150, -130); ctx.quadraticCurveTo(190, 20, 120, 130); ctx.lineTo(-120, 130); ctx.quadraticCurveTo(-190, 20, -150, -130); ctx.fill();
+  ctx.globalAlpha /= .9; rr(-110, -110, 220, 160, 16); ctx.fillStyle = '#1d2230'; ctx.fill();
+  const g = ctx.createLinearGradient(-110, -110, 110, 50); g.addColorStop(0, 'rgba(95,179,255,.9)'); g.addColorStop(1, 'rgba(46,204,113,.7)'); ctx.fillStyle = g; rr(-100, -100, 200, 140, 12); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.ellipse(-60, -125, 50, 10, -.1, 0, 7); ctx.fill();
+  ctx.fillStyle = col; rr(-40, 130, 80, 40, 8); ctx.fill();
+  ctx.restore();
+}
+function check(x, y, s, k, col = GREEN) { if (k <= 0) return; ctx.save(); ctx.translate(x, y); ctx.scale(s * k, s * k);
+  ctx.beginPath(); ctx.arc(0, 0, 34, 0, 7); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = WHITE; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(-14, 1); ctx.lineTo(-4, 12); ctx.lineTo(15, -11); ctx.stroke(); ctx.restore(); }
+function xmark(x, y, s, k) { if (k <= 0) return; ctx.save(); ctx.translate(x, y); ctx.scale(s * k, s * k);
+  ctx.beginPath(); ctx.arc(0, 0, 34, 0, 7); ctx.fillStyle = RED; ctx.fill(); ctx.strokeStyle = WHITE; ctx.lineWidth = 8; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-13, -13); ctx.lineTo(13, 13); ctx.moveTo(13, -13); ctx.lineTo(-13, 13); ctx.stroke(); ctx.restore(); }
+
+// ---------- scenes ----------
+function s1(t) {                                                          // 90 days to bankruptcy
+  const [a, b] = SC[0];
+  const k = eOut(prog(t, a, a + .8));
+  ctx.save(); ctx.globalAlpha = k; apple(CX, 1000, 1.7, t, eInOut(prog(t, K.ocenkam, K.ocenkam + 1.4))); ctx.restore();
+  // countdown timer: 90 days ticking down a little, seconds flicker
+  const kt = pop(t, K.ocenkam + .2, .45);
+  if (kt > 0) { ctx.save(); ctx.translate(CX, 1480); ctx.scale(kt, kt);
+    rr(-280, -90, 560, 180, 30); ctx.fillStyle = RED; ctx.fill();
+    const d = 90 - Math.floor(prog(t, K.ocenkam + .5, b) * 3), sec = 59 - Math.floor(t * 10) % 60;
+    ctx.fillStyle = WHITE; ctx.font = font(900, 92); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(`${d} ДНЕЙ`, 0, -8);
+    ctx.font = font(800, 28); ctx.fillText(`00:${String(sec).padStart(2, '0')}`, 0, 62); ctx.restore(); }
+  plate('1997', 220, 640, t, K.y97, b, { size: 56 });
+  title([['90 ДНЕЙ', RED, 140], ['ДО БАНКРОТСТВА', WHITE, 92]], t, a, b, 400);
+}
+function s2(t) {                                                          // huge losses, dozens of confusing products
+  const [a, b] = SC[1];
+  const names = ['PERFORMA 5200', 'QUADRA 630', 'POWER 7600', 'LC 580', 'PERFORMA 6400', 'NEWTON', 'CENTRIS 650', 'POWER 4400', 'PIPPIN', 'QUADRA 840', 'PERFORMA 640', 'POWERBOOK 190'];
+  const cols = ['#d8cfb8', '#c9c2ad', '#bfb8a3', '#e0d8c2'];
+  names.forEach((nm, i) => {
+    const r = Math.floor(i / 4), c = i % 4, k = pop(t, K.desyatki - .4 + i * .08, .3); if (k <= 0) return;
+    const shake = t > K.putali ? Math.sin(t * 20 + i) * 3 : 0;
+    computer(170 + c * 245 + shake, 880 + r * 220, .95 * k, cols[i % 4], { label: nm, rot: (hash(i) - .5) * .12 });
+  });
+  // red chart diving down on the right of the title zone
+  const kc = eInOut(prog(t, K.teryala, K.sotni + 1.5));
+  if (kc > 0) { const P = [[640, 560], [720, 600], [780, 590], [860, 680], [940, 720]]; const n = kc * 4, i = Math.floor(n), f = n - i;
+    ctx.strokeStyle = RED; ctx.lineWidth = 10; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(...P[0]); for (let j = 1; j <= i; j++) ctx.lineTo(...P[j]);
+    if (i < 4) ctx.lineTo(lerp(P[i][0], P[i + 1][0], f), lerp(P[i][1], P[i + 1][1], f)); ctx.stroke(); if (kc > .97) arrow(860, 680, 960, 728, 1, RED, 10); }
+  plate('−$ СОТНИ МЛН', 280, 640, t, K.sotni, b, { col: RED, ink: WHITE, size: 44 });
+  qmark(CX, 1620, .9, t, K.nikto + .2);
+  title([['ОГРОМНЫЕ', WHITE, 110], ['УБЫТКИ', RED, 120]], t, a, b, 420);
+}
+function s3(t) {                                                          // the return
+  const [a, b] = SC[2];
+  // building with a lit door; silhouette in a black turtleneck walks in from the left
+  ctx.save(); ctx.fillStyle = '#1a1f2b'; rr(560, 700, 420, 900, 20); ctx.fill();
+  for (let r = 0; r < 6; r++) for (let c = 0; c < 3; c++) { ctx.fillStyle = hash(r * 3 + c + Math.floor(t * 1.5)) > .4 ? 'rgba(255,204,26,.6)' : 'rgba(255,255,255,.08)'; rr(600 + c * 130, 760 + r * 120, 90, 70, 8); ctx.fill(); }
+  const door = eOut(prog(t, K.vernulsya - .3, K.vernulsya + .5)); ctx.fillStyle = `rgba(255,204,26,${.9 * door})`; rr(700, 1460, 140, 140, 8); ctx.fill(); ctx.restore();
+  const walk = eInOut(prog(t, a + .2, K.dzhobs + 1.2)), x = lerp(120, 560, walk);
+  person(x, 1340, 1.05, { col: '#0b0b0f', head: '#2b2f3a', bob: -Math.abs(Math.sin(t * 7)) * 10 * (walk < 1 ? 1 : .2) });
+  plate('КОГДА-ТО ВЫГНАЛИ', 300, 1720, t, K.vygnali - .4, b, { col: RED, ink: WHITE, size: 38 });
+  plate('СТИВ ДЖОБС', 300, 1080, t, K.dzhobs, b, { size: 48 });
+  title([['ВОЗВРАЩЕНИЕ', YEL, 120]], t, a, b, 470);
+}
+function s4(t) {                                                          // everyone expected more, he did the opposite
+  const [a, b] = SC[3];
+  // a row of «+» ideas flying in, then an arrow sweeps left and crosses them out
+  for (let i = 0; i < 5; i++) {
+    const k = pop(t, K.dobavit - .4 + i * .1, .35); if (k <= 0) continue;
+    const x = 160 + i * 190, y = 1050 + Math.sin(t * 3 + i) * 12, gone = prog(t, K.obratnoe + i * .06, K.obratnoe + .4 + i * .06);
+    ctx.save(); ctx.translate(x, y); ctx.scale(k * (1 - gone * .6), k * (1 - gone * .6)); ctx.globalAlpha = 1 - gone * .7;
+    ctx.beginPath(); ctx.arc(0, 0, 70, 0, 7); ctx.fillStyle = GREEN; ctx.fill(); ctx.fillStyle = WHITE; ctx.fillRect(-30, -8, 60, 16); ctx.fillRect(-8, -30, 16, 60); ctx.restore();
+    xmark(x + 50, y - 50, 1, pop(t, K.obratnoe + .1 + i * .08, .3));
+  }
+  arrow(980, 1300, 120, 1300, eInOut(prog(t, K.obratnoe - .2, K.obratnoe + .5)), RED, 14);
+  plate('+ НОВЫЕ ИДЕИ', CX, 820, t, K.dobavit, K.obratnoe, { col: GREEN, ink: WHITE, size: 44 });
+  plate('НАОБОРОТ', CX, 1500, t, K.obratnoe, b, { col: RED, ink: WHITE, size: 64 });
+  qmark(CX, 700, 1, t, a + .2);
+  title([['ЧТО ДЕЛАТЬ?', WHITE, 120]], t, a, b, 470);
+}
+function s5(t) {                                                          // 2×2 grid on a whiteboard, the rest disappears
+  const [a, b] = SC[4];
+  // whiteboard
+  ctx.save(); rr(110, 640, 860, 860, 24); ctx.fillStyle = '#f2f3f5'; ctx.fill(); ctx.strokeStyle = '#c9ced8'; ctx.lineWidth = 10; ctx.stroke(); ctx.restore();
+  // products crowding the board fade out on «закрыл»
+  const gone = eInOut(prog(t, K.ostalnoe, K.zakryl + .4));
+  for (let i = 0; i < 14; i++) { const a2 = hash(i) * 6.28, r = 470 + hash(i + 2) * 80; ctx.save(); ctx.globalAlpha = (1 - gone) * clamp(pop(t, a + i * .04, .3));
+    computer(CX + Math.cos(a2) * r, 1070 + Math.sin(a2) * r * .85 + gone * 300, .55 * (1 - gone * .5), ['#d8cfb8', '#c9c2ad', '#bfb8a3'][i % 3], { rot: gone * (hash(i) - .5) * 2 }); ctx.restore(); }
+  // the grid lines draw themselves
+  const g1 = eInOut(prog(t, K.dva - .3, K.dva + .3)), g2 = eInOut(prog(t, K.dva, K.dva + .6));
+  ctx.strokeStyle = BG; ctx.lineWidth = 10; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(CX, 760); ctx.lineTo(CX, 760 + 640 * g1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(200, 1070); ctx.lineTo(200 + 680 * g2, 1070); ctx.stroke();
+  // axis labels
+  const lab = (s, x, y, at, rot = 0) => { const k = eOut(prog(t, at, at + .3)); if (k <= 0) return; ctx.save(); ctx.globalAlpha = k; ctx.translate(x, y); ctx.rotate(rot); ctx.fillStyle = RED; ctx.font = font(900, 34); ctx.textAlign = 'center'; ctx.fillText(s, 0, 0); ctx.restore(); };
+  lab('ПРО', 330, 730, K.prof); lab('ДЛЯ ВСЕХ', 750, 730, K.polz);
+  lab('НАСТОЛЬНЫЙ', 150, 920, K.nastol, -Math.PI / 2); lab('НОУТБУК', 150, 1230, K.noutbuk, -Math.PI / 2);
+  // four products pop into the cells
+  const cells = [[330, 900, 'pc', '#2f6fdf'], [750, 900, 'pc', '#ff8a3d'], [330, 1240, 'lap', '#2f6fdf'], [750, 1240, 'lap', '#ff8a3d']];
+  cells.forEach(([x, y, k2, col], i) => { const k = pop(t, K.chetyre - .2 + i * .15, .35); if (k <= 0) return;
+    if (k2 === 'pc') computer(x, y, 1.05 * k, col, { on: true }); else laptop(x, y, 1.2 * k, col); });
+  plate('4 ПРОДУКТА', CX, 1600, t, K.chetyre, b, { size: 56 });
+  title([['ЧЕТЫРЕ', WHITE, 110], ['ПРОДУКТА', YEL, 120]], t, a, b, 420);
+}
+function s6(t) {                                                          // $150M from the main competitor
+  const [a, b] = SC[5];
+  const meet = eInOut(prog(t, K.konkurentu - .6, K.konkurentu + .4));
+  person(lerp(160, 380, meet), 1150, 1.1, { col: '#0b0b0f', head: '#2b2f3a', bob: Math.sin(t * 3) * 5 });
+  person(lerp(920, 700, meet), 1150, 1.1, { col: '#2f6fdf', head: '#3c5a8c', bob: Math.sin(t * 3 + 1) * 5 });
+  if (meet > .95) { const sh = Math.sin(t * 12) * 8; ctx.fillStyle = '#c99a6b'; rr(CX - 70, 1250 + sh, 140, 50, 24); ctx.fill(); }   // handshake
+  ctx.save(); ctx.fillStyle = WHITE; ctx.font = font(900, 32); ctx.textAlign = 'center'; ctx.globalAlpha = meet;
+  ctx.fillText('APPLE', lerp(160, 380, meet), 1460); ctx.fillText('MICROSOFT', lerp(920, 700, meet), 1460); ctx.restore();
+  plate('НЕТ ДЕНЕГ', CX, 780, t, K.deneg, K.ms, { col: RED, ink: WHITE, size: 50 });
+  // the $150M counter
+  const mk = eOut(prog(t, K.n150 - .2, K.n150 + 1.2));
+  if (mk > 0) { ctx.save(); ctx.textAlign = 'center'; ctx.font = font(900, 130); ctx.fillStyle = YEL; ctx.shadowColor = 'rgba(255,204,26,.4)'; ctx.shadowBlur = 30;
+    ctx.fillText(money(150000000 * mk), CX, 820); ctx.restore(); }
+  plate('$150 МЛН', CX, 1620, t, K.n150, b, { size: 64 });
+  title([['ДЕНЬГИ', WHITE, 110], ['ОТ КОНКУРЕНТА', YEL, 96]], t, a, b, 420);
+}
+function s7(t) {                                                          // Think Different: people, not products
+  const [a, b] = SC[6];
+  // greyscale silhouettes stepping into a light one by one
+  for (let i = 0; i < 5; i++) {
+    const k = eOut(prog(t, K.lyudi - .3 + i * .25, K.lyudi + .2 + i * .25)); if (k <= 0) continue;
+    const x = 150 + i * 195, y = 1130 + (i % 2) * 70;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 200); g.addColorStop(0, `rgba(255,255,255,${.12 * k})`); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = g; ctx.fillRect(x - 200, y - 200, 400, 400);
+    ctx.save(); ctx.globalAlpha = k; person(x, y, .85, { col: ['#e6e6e6', '#bdbdbd', '#d0d0d0', '#a8a8a8', '#dedede'][i], head: ['#cfcfcf', '#9e9e9e', '#b8b8b8', '#8f8f8f', '#c7c7c7'][i], bob: Math.sin(t * 2 + i) * 6 }); ctx.restore();
+  }
+  // a crossed-out product icon at the start
+  const kp = pop(t, a + .3, .35), kx = prog(t, K.reklama + .6, K.reklama + 1.2);
+  if (kp > 0 && t < K.lyudi + .2) { ctx.save(); ctx.globalAlpha = 1 - prog(t, K.lyudi - .2, K.lyudi + .2); computer(CX, 1150, 1.4 * kp, '#d8cfb8'); ctx.restore(); xmark(CX + 110, 1050, 1.5, kx * (1 - prog(t, K.lyudi - .2, K.lyudi + .2))); }
+  plate('0 ПРОДУКТОВ', CX, 800, t, K.reklama + .4, K.lyudi, { col: RED, ink: WHITE, size: 44 });
+  plate('ПРО ПОКУПАТЕЛЯ, НЕ ПРО ТЕХНИКУ', CX, 1580, t, K.tehniku, b, { size: 34 });
+  title([['Think', WHITE, 140], ['Different', YEL, 140]], t, a, b, 430);
+}
+function s8(t) {                                                          // iMac & profit
+  const [a, b] = SC[7];
+  const cols = ['#2ec4b6', '#ff6b6b', '#ffcc1a', '#a26bff', '#6bcBff'];
+  const c = cols[Math.floor(t * 1.2) % cols.length];
+  imac(CX, 1030, 1.6 * pop(t, K.imac - .3, .5), t, c);
+  [-1, 1].forEach((sx, i) => { const k = pop(t, K.igrushka + i * .2, .4); if (k > 0) imac(CX + sx * 330, 1250, .55 * k, t + i, cols[(i * 2 + 1) % 5]); });
+  plate('ИЗ КОРОБКИ', 260, 1560, t, K.korobki - .3, b, { col: WHITE, size: 40 });
+  // green profit chart + plate
+  const kc = eInOut(prog(t, K.pribyl - .3, K.pribyl + .8));
+  if (kc > 0) { ctx.strokeStyle = GREEN; ctx.lineWidth = 12; ctx.beginPath(); ctx.moveTo(620, 1620); ctx.lineTo(620 + 330 * kc, 1620 - 160 * kc); ctx.stroke(); if (kc > .97) arrow(860, 1504, 960, 1450, 1, GREEN, 12); }
+  plate('ПРИБЫЛЬ', 780, 1700, t, K.pribyl, b, { col: GREEN, ink: WHITE, size: 50 });
+  title([['ЧЕРЕЗ ГОД:', WHITE, 100], ['iMAC', YEL, 150]], t, a, b, 420);
+}
+function s9(t) {                                                          // the takeaway checklist
+  const [a, b] = SC[8];
+  const items = [['ЧТО ПРИНОСИТ ДЕНЬГИ', K.dengi - .4, 'ok'], ['ЧТО ОБЪЯСНЯЕТ БРЕНД', K.obyasnyaet, 'ok'], ['ОСТАЛЬНОЕ — УБРАТЬ', K.rezh - .2, 'cut']];
+  items.forEach(([s, at, kind], i) => {
+    const k = eOut(prog(t, at, at + .4)); if (k <= 0) return;
+    const y = 1000 + i * 190;
+    ctx.save(); ctx.globalAlpha = k; ctx.translate((1 - k) * 60, 0);
+    rr(110, y - 75, 860, 150, 24); ctx.fillStyle = BG2; ctx.fill(); ctx.strokeStyle = kind === 'cut' ? RED : 'rgba(255,204,26,.5)'; ctx.lineWidth = 4; ctx.stroke();
+    ctx.fillStyle = YEL; ctx.font = font(900, 56); ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(String(i + 1), 150, y + 2);
+    ctx.fillStyle = WHITE; ctx.font = font(900, 44); ctx.fillText(s, 230, y + 2); ctx.restore();
+    if (kind === 'cut') xmark(900, y, 1.1, pop(t, at + .3, .3)); else check(900, y, 1.1, pop(t, at + .3, .3));
+  });
+  // «не добавляй / убирай»: a minus pulsing
+  plate('НЕ ДОБАВЛЯЙ', 300, 760, t, K.ne_dobav, b, { col: WHITE, size: 40 });
+  plate('УБИРАЙ', 780, 760, t, K.ubiray, b, { col: RED, ink: WHITE, size: 56, rot: Math.sin(t * 3) * .03 });
+  title([['ЧТО ВЗЯТЬ', WHITE, 110], ['СЕБЕ', YEL, 130]], t, a, b, 420);
+}
+const SCENES = [s1, s2, s3, s4, s5, s6, s7, s8, s9];
+
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none'; ctx.letterSpacing = '0px'; ctx.setLineDash([]);
+  bg(t);
+  let i = SC.findIndex(([a, b]) => t >= a && t < b); if (i < 0) i = SC.length - 1;
+  const [a] = SC[i], kin = eOut(prog(t, a, a + .35));
+  ctx.save(); if (i) { ctx.globalAlpha = kin; ctx.translate(CX, H / 2); const z = lerp(1.06, 1, kin); ctx.scale(z, z); ctx.translate(-CX, -H / 2); }
+  SCENES[i](t); ctx.restore();
+  chrome(t, i + 1);
+  for (const [s] of SC.slice(1)) { const k = prog(t, s - .08, s + .2); if (k > 0 && k < 1) { ctx.fillStyle = `rgba(255,204,26,${.12 * Math.sin(Math.PI * k)})`; ctx.fillRect(0, 0, W, H); } }
+  const f = Math.max(1 - prog(t, 0, .2), prog(t, DURATION - .5, DURATION));
+  if (f > 0) { ctx.fillStyle = `rgba(12,14,20,${f})`; ctx.fillRect(0, 0, W, H); }
+}
+window.DURATION = DURATION; window.renderFrame = renderFrame; window.prepare = async () => {};
+window.READY = (async () => { await Promise.all([document.fonts.load(font(900, 60), 'АБВ $1'), document.fonts.load(font(800, 60), 'АБВ')]); return true; })();
+</script>
+</body>
+</html>
