@@ -36,21 +36,21 @@ function rr(x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx
   ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
 // ---------- timing: scene starts = VO clip starts ----------
-const VO = [0.5, 6.09, 14.31, 26.36, 34.78, 42.13, 51.0, 56.35, 64.39, 72.15, 83.22];
-const DURATION = 93.46;
+const VO = [0.5, 7.46, 15.76, 28.58, 36.78, 44.34, 54.54, 60.04, 68.38, 75.8, 86.4];
+const DURATION = 97.4;
 const SC = VO.map((s, i) => [i ? s - .3 : 0, i < VO.length - 1 ? VO[i + 1] - .3 : DURATION]);
 const K = {
-  idealno: 2.62, slabost: 4.18, lyudi: 4.9,
-  posrednik: 6.62, viper: 9.44, rasskazal: 11.68, policii: 12.92,
-  pochta: 16.7, federal: 18.24, fbr: 19.24, final: 20.62, mcd: 22.5, millioner: 24.9,
-  soglasilsya: 27.2, akciyu: 29.04, agenty: 30.86, spiski: 32.96,
-  zametili: 35.28, priza: 39.64, domov: 40.14,
-  mafiozi: 43.48, narko: 44.92, strip: 46.24, rodstv: 47.58, glavnye: 49.44,
-  y2001: 51.08, fbr2: 52.32, dzhekobsona: 53.72, semerykh: 55.04,
-  syomochnaya: 57.94, chek: 60.4, million3: 60.74, agenty2: 62.02,
-  priznal: 64.98, n37: 66.48, tyurma: 67.96, vsego: 68.78, n51: 69.8,
-  million4: 72.96, bolnica: 75.78, anonimno: 77.3, fragmenty: 79.76, vyplatil: 81.46,
-  vyvod: 83.14, sistema: 84.14, chelovek: 85.8, chem: 86.64, dorozhe: 88.8, proveryay: 89.42
+  idealno: 2.4, slabost: 4.64, lyudi: 5.86,
+  posrednik: 8.02, viper: 10.92, rasskazal: 13.6, policii: 14.56,
+  pochta: 17.88, federal: 19.34, fbr: 20.56, final: 22.16, mcd: 24.36, millioner: 27.06,
+  soglasilsya: 29.5, akciyu: 31.26, agenty: 32.82, spiski: 35.12,
+  zametili: 37.38, priza: 41.46, domov: 41.9,
+  mafiozi: 45.78, narko: 47.44, strip: 49.04, rodstv: 50.44, glavnye: 52.66,
+  y2001: 54.98, fbr2: 56.32, dzhekobsona: 57.78, semerykh: 59.06,
+  syomochnaya: 61.54, chek: 64.08, million3: 64.54, agenty2: 66.18,
+  priznal: 69.06, n37: 70.62, tyurma: 71.76, vsego: 72.84, n51: 73.62,
+  million4: 76.44, bolnica: 78.62, anonimno: 80.36, fragmenty: 82.34, vyplatil: 84.3,
+  vyvod: 86.4, sistema: 88.36, chelovek: 90.18, chem: 91.22, dorozhe: 93.38, proveryay: 94.44
 };
 
 // ---------- text ----------

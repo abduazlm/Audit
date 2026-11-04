@@ -3,7 +3,7 @@ import subprocess, numpy as np
 
 SR = 48000
 SPEED = 1.1                                # whole reel plays 10 % faster (video is rendered at t*SPEED, audio is atempo'd)
-DUR = 93.46
+DUR = 97.4
 rng = np.random.default_rng(7)
 L = np.zeros(int(SR * DUR)); R = np.zeros_like(L)
 
@@ -82,17 +82,17 @@ def shutter():
 def norm(x): return x / (np.max(np.abs(x)) + 1e-9)
 
 # ---- timeline (keep in sync with VO / K in index.html) ----
-VO = [0.5, 6.09, 14.31, 26.36, 34.78, 42.13, 51.0, 56.35, 64.39, 72.15, 83.22]
+VO = [0.5, 7.46, 15.76, 28.58, 36.78, 44.34, 54.54, 60.04, 68.38, 75.8, 86.4]
 for at in VO[1:]: place(norm(whoosh(.45)), at - .45, .12)       # scene changes
-for tt in (4.9, 9.44, 11.68, 19.24, 22.5, 30.86, 40.14, 43.48, 44.92, 46.24, 47.58, 52.32, 66.48, 69.8, 77.3):   # plates / key words
+for tt in (5.86, 10.92, 13.6, 20.56, 24.36, 32.82, 41.9, 45.78, 47.44, 49.04, 50.44, 56.32, 70.62, 73.62, 80.36):   # plates / key words
     place(norm(pop(600 + 70 * (tt % 5))), tt, .07)
-place(norm(glitch(.4)), 4.18, .1)                         # the weak spot
-place(norm(thump()), 12.92, .3)                           # the tip reaches the police
-place(norm(ding(1318)), 60.74, .12); place(norm(ding(1760)), 60.82, .08)   # $1 000 000 cheque
-place(norm(glitch(.5)), 62.02, .12)                       # crew turns into agents
-place(norm(thump()), 67.96, .35)                          # bars close
-place(norm(shimmer(1.6)), 81.46, .25)                     # prize paid
-for i, tt in enumerate((84.44, 86.04, 88.2)): place(norm(tick(2200 + 300 * i)), tt, .1)   # checklist
+place(norm(glitch(.4)), 4.64, .1)                         # the weak spot
+place(norm(thump()), 14.56, .3)                           # the tip reaches the police
+place(norm(ding(1318)), 64.54, .12); place(norm(ding(1760)), 64.62, .08)   # $1 000 000 cheque
+place(norm(glitch(.5)), 66.18, .12)                       # crew turns into agents
+place(norm(thump()), 71.76, .35)                          # bars close
+place(norm(shimmer(1.6)), 84.3, .25)                      # prize paid
+for i, tt in enumerate((88.66, 90.62, 92.78)): place(norm(tick(2200 + 300 * i)), tt, .1)   # checklist
 sfx = np.stack([L, R], 1)
 sfx /= max(1.0, np.max(np.abs(sfx)) / .9)
 sfx[-int(.6 * SR):] *= np.linspace(1, 0, int(.6 * SR))[:, None]
