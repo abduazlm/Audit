@@ -11,7 +11,7 @@
 <canvas id="c"></canvas>
 <script>
 // ------------------------------------------------------------------------------------------
-// «Маркетинговые кейсы», ролик 2: Apple, 1997 — как выжили (assets/vo.wav, Piper «Руслан»).
+// «Маркетинговые кейсы», ролик 2: Apple, 1997 — как выжили (assets/vo.wav, ElevenLabs «Artspace»).
 // Same series style as videos/mcd-monopoly: flat vector on dark, yellow = key words, red = threat,
 // one phrase of ≤4 words per scene, label plates, numbers on screen, constant motion.
 // No real logos or portraits: a plain apple shape, generic silhouettes. Deterministic: renderFrame(t).
@@ -34,20 +34,20 @@ const font = (w, s) => `${w} ${Math.round(s)}px ${F}`;
 function rr(x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y);
   ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
-// ---------- timing: scene starts = VO clip starts (0.7 s gap between scenes) ----------
-const VO = [0.5, 7.59, 17.06, 23.0, 28.25, 39.97, 48.27, 59.04, 67.17];
-const DURATION = 77.6;
+// ---------- timing: scene starts = VO clip starts  ----------
+const VO = [0.5, 6.98, 15.46, 20.78, 24.94, 36.66, 43.74, 53.32, 61.16];
+const DURATION = 71.0;
 const SC = VO.map((s, i) => [i ? s - .3 : 0, i < VO.length - 1 ? VO[i + 1] - .3 : DURATION]);
 const K = {
-  y97: 1.66, ocenkam: 3.72, mesyacev: 6.28,
-  teryala: 8.04, sotni: 8.48, desyatki: 10.46, putali: 11.92, nikto: 13.74,
-  vernulsya: 17.96, dzhobs: 18.52, vygnali: 21.74,
-  zhdali: 23.16, dobavit: 24.1, obratnoe: 26.08,
-  doske: 30.2, dva: 30.98, prof: 31.8, polz: 32.8, nastol: 34.48, noutbuk: 35.84, chetyre: 36.72, ostalnoe: 38.0, zakryl: 38.84,
-  deneg: 40.1, konkurentu: 42.82, ms: 43.84, n150: 45.18,
-  reklama: 49.04, lyudi: 51.38, mir: 53.06, tehniku: 55.36, pokupaet: 57.6,
-  god: 59.32, imac: 60.3, igrushka: 62.96, korobki: 64.28, pribyl: 66.04,
-  ideya: 67.64, ne_dobav: 69.7, ubiray: 70.62, naydi: 71.42, dengi: 72.46, obyasnyaet: 72.98, rezh: 74.4
+  y97: 1.5, ocenkam: 3.94, mesyacev: 6.16,
+  teryala: 7.42, sotni: 7.78, desyatki: 9.56, putali: 10.84, nikto: 12.56,
+  vernulsya: 16.42, dzhobs: 17.02, vygnali: 19.72,
+  zhdali: 20.94, dobavit: 21.58, obratnoe: 23.7,
+  doske: 26.88, dva: 27.62, prof: 28.28, polz: 29.8, nastol: 31.14, noutbuk: 32.7, chetyre: 33.56, ostalnoe: 34.94, zakryl: 35.82,
+  deneg: 36.92, konkurentu: 39.26, ms: 40.24, n150: 41.6,
+  reklama: 44.46, lyudi: 46.78, mir: 48.26, tehniku: 50.28, pokupaet: 51.96,
+  god: 53.74, imac: 54.46, igrushka: 56.94, korobki: 58.26, pribyl: 60.16,
+  ideya: 61.64, ne_dobav: 63.78, ubiray: 64.66, naydi: 65.68, dengi: 66.76, obyasnyaet: 67.56, rezh: 68.86
 };
 
 // ---------- text ----------

@@ -3,7 +3,7 @@ through the crisis, switches to a major progression at the turnaround (iMac, 58.
 import numpy as np, wave
 
 SR = 48000
-DUR = 77.6
+DUR = 71.0
 BPM = 96; BEAT = 60 / BPM; BAR = 4 * BEAT
 START = 0.3                               # groove starts with the voice
 T0 = START - BAR                          # one soft pickup bar before the video starts
@@ -67,8 +67,8 @@ def pluck(m):
 # Am – F – Dm – E, one chord per bar (minor, suspense)
 PROG = [([57, 60, 64, 69], 45), ([53, 57, 60, 65], 41), ([50, 53, 57, 62], 38), ([52, 56, 59, 64], 40)]
 ARP = [[69, 72, 76, 72], [65, 69, 72, 69], [62, 65, 69, 65], [64, 68, 71, 68]]
-END = 75.9                                # final chord
-TURN = 58.7                               # iMac: minor → major
+END = 69.9                                # final chord
+TURN = 53.0                               # iMac: minor → major
 MAJ = [([60, 64, 67, 72], 48), ([55, 59, 62, 67], 43), ([57, 60, 64, 69], 45), ([53, 57, 60, 65], 41)]
 MAJ_ARP = [[72, 76, 79, 76], [67, 71, 74, 71], [69, 72, 76, 72], [65, 69, 72, 69]]
 def marimba(m):

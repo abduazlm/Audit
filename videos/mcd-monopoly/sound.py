@@ -2,7 +2,7 @@
 import subprocess, numpy as np
 
 SR = 48000
-DUR = 90.6
+DUR = 90.4
 rng = np.random.default_rng(7)
 L = np.zeros(int(SR * DUR)); R = np.zeros_like(L)
 
@@ -81,16 +81,16 @@ def shutter():
 def norm(x): return x / (np.max(np.abs(x)) + 1e-9)
 
 # ---- timeline (keep in sync with VO / K in index.html) ----
-VO = [0.5, 5.95, 16.81, 24.45, 35.84, 42.58, 50.0, 60.88, 70.21, 77.17, 84.34]
+VO = [0.5, 6.01, 18.07, 24.95, 35.79, 43.33, 51.19, 61.39, 71.11, 77.79, 85.15]
 for at in VO[1:]: place(norm(whoosh(.45)), at - .45, .12)       # scene changes
-for tt in (2.22, 6.3, 13.2, 18.46, 28.74, 30.52, 40.34, 44.38, 57.32, 61.32, 62.46, 64.78, 71.3, 75.6, 80.96):   # plates / key words
+for tt in (2.31, 6.29, 13.77, 19.89, 28.53, 30.33, 41.27, 44.81, 57.51, 61.93, 63.13, 65.83, 71.91, 76.33, 82.07):   # plates / key words
     place(norm(pop(600 + 70 * (tt % 5))), tt, .07)
-place(norm(ding(1318)), 15.1, .12); place(norm(ding(1760)), 15.18, .08)   # $1 000 000
-place(norm(thump()), 45.6, .3)                            # red «?» over the guard
-place(norm(glitch(.4)), 47.6, .1)
-place(norm(riser(1.4)), 71.6, .06); place(norm(shimmer(1.6)), 72.9, .25)   # money counter
-place(norm(glitch(.6)), 84.3, .14); place(norm(glitch(.5)), 86.0, .14)     # cliffhanger glitches
-place(norm(thump()), 87.7, .35)
+place(norm(ding(1318)), 16.6, .12); place(norm(ding(1760)), 16.68, .08)   # $1 000 000
+place(norm(thump()), 46.1, .3)                            # red «?» over the guard
+place(norm(glitch(.4)), 48.4, .1)
+place(norm(riser(1.4)), 72.2, .06); place(norm(shimmer(1.6)), 73.5, .25)   # money counter
+place(norm(glitch(.6)), 85.15, .14); place(norm(glitch(.5)), 86.8, .14)    # cliffhanger glitches
+place(norm(thump()), 88.35, .35)
 sfx = np.stack([L, R], 1)
 sfx /= max(1.0, np.max(np.abs(sfx)) / .9)
 sfx[-int(.6 * SR):] *= np.linspace(1, 0, int(.6 * SR))[:, None]

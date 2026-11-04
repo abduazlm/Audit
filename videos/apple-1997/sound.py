@@ -2,7 +2,7 @@
 import subprocess, numpy as np
 
 SR = 48000
-DUR = 77.6
+DUR = 71.0
 rng = np.random.default_rng(7)
 L = np.zeros(int(SR * DUR)); R = np.zeros_like(L)
 
@@ -81,16 +81,16 @@ def shutter():
 def norm(x): return x / (np.max(np.abs(x)) + 1e-9)
 
 # ---- timeline (keep in sync with VO / K in index.html) ----
-VO = [0.5, 7.59, 17.06, 23.0, 28.25, 39.97, 48.27, 59.04, 67.17]
+VO = [0.5, 6.98, 15.46, 20.78, 24.94, 36.66, 43.74, 53.32, 61.16]
 for at in VO[1:]: place(norm(whoosh(.45)), at - .45, .12)       # scene changes
-for tt in (1.66, 8.48, 18.52, 26.08, 31.0, 36.72, 37.0, 37.3, 37.6, 45.18, 53.06, 60.3, 66.04, 70.62):   # plates / key words
+for tt in (1.5, 7.78, 17.02, 23.7, 31.14, 33.56, 33.9, 34.2, 34.5, 41.6, 48.26, 54.46, 60.16, 64.66):   # plates / key words
     place(norm(pop(600 + 70 * (tt % 5))), tt, .07)
-place(norm(glitch(.5)), 3.9, .1)                          # the apple cracks
-for i in range(5): place(norm(tick(1500)), 26.15 + i * .08, .1)   # ideas crossed out
-place(norm(whoosh(.8, False)), 38.0, .1)                  # the rest of the line-up disappears
-place(norm(riser(1.2)), 44.0, .06); place(norm(ding(1318)), 45.2, .12); place(norm(ding(1760)), 45.28, .08)   # $150M
-place(norm(shimmer(1.4)), 60.3, .25)                      # iMac
-for i in range(3): place(norm(tick(2200 + 300 * i)), 72.0 + i * 1.0, .1)   # checklist
+place(norm(glitch(.5)), 3.94, .1)                         # the apple cracks
+for i in range(5): place(norm(tick(1500)), 23.75 + i * .08, .1)   # ideas crossed out
+place(norm(whoosh(.8, False)), 34.94, .1)                 # the rest of the line-up disappears
+place(norm(riser(1.2)), 40.4, .06); place(norm(ding(1318)), 41.6, .12); place(norm(ding(1760)), 41.68, .08)   # $150M
+place(norm(shimmer(1.4)), 54.46, .25)                     # iMac
+for i, tt in enumerate((67.0, 67.8, 69.0)): place(norm(tick(2200 + 300 * i)), tt, .1)   # checklist
 sfx = np.stack([L, R], 1)
 sfx /= max(1.0, np.max(np.abs(sfx)) / .9)
 sfx[-int(.6 * SR):] *= np.linspace(1, 0, int(.6 * SR))[:, None]
