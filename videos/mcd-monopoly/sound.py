@@ -2,6 +2,7 @@
 import subprocess, numpy as np
 
 SR = 48000
+SPEED = 1.1                                # whole reel plays 10 % faster (video is rendered at t*SPEED, audio is atempo'd)
 DUR = 90.4
 rng = np.random.default_rng(7)
 L = np.zeros(int(SR * DUR)); R = np.zeros_like(L)
@@ -105,8 +106,8 @@ subprocess.run(['ffmpeg', '-y', '-loglevel', 'error',
     '-filter_complex',
     f'[1:a]aresample={SR},highpass=f=80,acompressor=threshold=-20dB:ratio=3:attack=5:release=120,'
     'pan=stereo|c0=c0|c1=c0,volume=1.6,asplit[vo][key];'
-    '[2]volume=0.28[mus];'
-    '[mus][key]sidechaincompress=threshold=0.015:ratio=8:attack=15:release=400:makeup=1[duck];'
-    '[0]volume=0.9[fx];[vo][fx][duck]amix=inputs=3:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11,'
-    f'atrim=0:{DUR}[out]', '-map', '[out]', '-ar', str(SR), 'assets/soundtrack.wav'], check=True)
+    '[2]acompressor=threshold=-24dB:ratio=3:attack=30:release=400,volume=0.26[mus];'      # even music, no pumping
+    '[mus][key]sidechaincompress=threshold=0.04:ratio=2.5:attack=60:release=1200:makeup=1[duck];'   # gentle, slow duck
+    f'[0]volume=0.9[fx];[vo][fx][duck]amix=inputs=3:normalize=0,atempo={SPEED},loudnorm=I=-14:TP=-1.5:LRA=11,'
+    f'atrim=0:{DUR / SPEED:.3f}[out]', '-map', '[out]', '-ar', str(SR), 'assets/soundtrack.wav'], check=True)
 print('assets/soundtrack.wav')
