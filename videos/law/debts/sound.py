@@ -2,7 +2,7 @@
 import subprocess, numpy as np
 
 SR = 48000
-SPEED = 1.1                                # whole reel plays 10 % faster (video is rendered at t*SPEED, audio is atempo'd)
+SPEED = 1.2                                # whole reel plays 20 % faster (video is rendered at t*SPEED, audio is atempo'd)
 DUR = 73.2
 rng = np.random.default_rng(7)
 L = np.zeros(int(SR * DUR)); R = np.zeros_like(L)

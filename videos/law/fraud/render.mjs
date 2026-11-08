@@ -6,7 +6,7 @@ import http from 'http'; import fs from 'fs'; import path from 'path';
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PW_PATH || 'playwright');
 const root = path.dirname(new URL(import.meta.url).pathname);
-const out = process.argv[2] || 'fraud-9x16.mp4', FPS = 25, SPEED = Number(process.env.SPEED || 1.1);   // SPEED: whole reel plays faster; animation time = frame time * SPEED
+const out = process.argv[2] || 'fraud-9x16.mp4', FPS = 25, SPEED = Number(process.env.SPEED || 1.2);   // SPEED: whole reel plays faster; animation time = frame time * SPEED
 const types = { '.html': 'text/html', '.css': 'text/css', '.woff2': 'font/woff2', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.png': 'image/png', '.ttf': 'font/ttf' };
 const server = http.createServer((q, r) => { const f = path.join(root, decodeURIComponent(q.url.split('?')[0]));
   fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); return r.end(); } r.writeHead(200, { 'Content-Type': types[path.extname(f)] || 'application/octet-stream' }); r.end(d); }); }).listen(0);
