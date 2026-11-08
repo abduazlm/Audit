@@ -255,20 +255,20 @@ function cta(t, a, b, sub, tap) {
   title([['БЕСПЛАТНАЯ', YEL, 120], ['КОНСУЛЬТАЦИЯ', WHITE, 100]], t, a, b + 1, 470);
 }
 
-// «Восстановление платёжеспособности: долги по графику до 5 лет» — timing from assets/vo-timing.json (Piper «Руслан»)
-const VO = [0.5, 7.17, 14.57, 22.61, 32.12, 37.06, 44.16, 51.18, 58.59];
-const DURATION = 67.09;
+// «Восстановление платёжеспособности: долги по графику до 5 лет» — timing: Whisper word starts on assets/vo.wav (ElevenLabs «Artspace», 0.5 s lead)
+const VO = [0.5, 9.1, 16.96, 25.26, 35.74, 41.38, 48.16, 56.13, 64.66];
+const DURATION = 73.2;
 const SC = VO.map((s, i) => [i ? s - .3 : 0, i < VO.length - 1 ? VO[i + 1] - .3 : DURATION]);
 const K = {
-  kredity: .6, mikro: 1.26, kollektory: 2.5, kom: 4.66, nechem: 6.02,
-  vyhod: 7.3, zakon: 10.02,
-  tri: 15.48, vnesud: 16.58, sud: 18.1, vosst: 19.64,
-  rassrochka: 25.14, n5: 27.86, ne_bankr: 29.06, grafiku: 31.0,
-  uslovie: 32.5, dohod: 33.48, platit: 35.4,
-  reshenie: 37.26, plan: 39.3, srok: 42.98,
-  primer: 44.06, n125: 46.08, rassr2: 49.04, n5b: 49.88,
-  kreditory: 51.28, otkazat: 53.42, podgotovit: 55.46,
-  ponyat: 58.94, zayavku: 61.94, konsult: 63.2, schitaem: 64.32
+  kredity: .5, mikro: 1.54, kollektory: 3.06, kom: 5.8, nechem: 7.6,
+  vyhod: 9.46, zakon: 12.26,
+  tri: 17.96, vnesud: 19.18, sud: 20.84, vosst: 22.5,
+  rassrochka: 28.0, n5: 30.7, ne_bankr: 32.02, grafiku: 34.34,
+  uslovie: 36.36, dohod: 37.74, platit: 39.46,
+  reshenie: 41.76, plan: 43.7, srok: 46.76,
+  primer: 48.16, n125: 50.7, rassr2: 53.92, n5b: 54.7,
+  kreditory: 56.52, otkazat: 59.0, podgotovit: 61.44,
+  ponyat: 65.04, zayavku: 68.02, konsult: 69.18, schitaem: 70.4
 };
 const LABEL = 'ЮРИДИЧЕСКАЯ ПОМОЩЬ';
 

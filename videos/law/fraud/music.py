@@ -3,7 +3,7 @@ muted plucks, soft kick, snaps, shaker. Drops to a low drone under the cliffhang
 import numpy as np, wave
 
 SR = 48000
-DUR = 61.41
+DUR = 70.3
 BPM = 96; BEAT = 60 / BPM; BAR = 4 * BEAT
 START = 0.3                               # groove starts with the voice
 T0 = START - BAR                          # one soft pickup bar before the video starts
@@ -67,7 +67,7 @@ def pluck(m):
 # Am – F – Dm – E, one chord per bar (minor, suspense)
 PROG = [([57, 60, 64, 69], 45), ([53, 57, 60, 65], 41), ([50, 53, 57, 62], 38), ([52, 56, 59, 64], 40)]
 ARP = [[69, 72, 76, 72], [65, 69, 72, 69], [62, 65, 69, 65], [64, 68, 71, 68]]
-END = 53.55                                # cliffhanger: groove stops, low drone
+END = 62.5                                # cliffhanger: groove stops, low drone
 def marimba(m):
     n = at(.5); f = midi(m); t = np.arange(n) / SR
     return (np.sin(2 * np.pi * f * t) + .25 * np.sin(2 * np.pi * f * 4 * t) * np.exp(-t / .03)) * env(n, .002, .16)

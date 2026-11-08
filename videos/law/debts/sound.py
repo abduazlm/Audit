@@ -3,7 +3,7 @@ import subprocess, numpy as np
 
 SR = 48000
 SPEED = 1.1                                # whole reel plays 10 % faster (video is rendered at t*SPEED, audio is atempo'd)
-DUR = 67.09
+DUR = 73.2
 rng = np.random.default_rng(7)
 L = np.zeros(int(SR * DUR)); R = np.zeros_like(L)
 
@@ -82,14 +82,14 @@ def shutter():
 def norm(x): return x / (np.max(np.abs(x)) + 1e-9)
 
 # ---- timeline (keep in sync with VO / K in scenes.js) ----
-VO = [0.5, 7.17, 14.57, 22.61, 32.12, 37.06, 44.16, 51.18, 58.59]
+VO = [0.5, 9.1, 16.96, 25.26, 35.74, 41.38, 48.16, 56.13, 64.66]
 for at in VO[1:]: place(norm(whoosh(.45)), at - .45, .12)       # scene changes
-for tt in (0.6, 1.26, 2.5, 4.66, 10.02, 16.58, 18.1, 27.86, 29.06, 33.48, 39.3, 49.04, 51.28, 53.42, 55.46):   # key words / plates
+for tt in (0.5, 1.54, 3.06, 5.8, 12.26, 19.18, 20.84, 30.7, 32.02, 37.74, 43.7, 53.92, 56.52, 59.0, 61.44):   # key words / plates
     place(norm(pop(600 + 70 * (tt % 5))), tt, .07)
-place(norm(shimmer(1.2)), 19.9, .2)                       # the third path lights up
-place(norm(thump()), 37.26, .35)                          # gavel
-place(norm(ding(1318)), 46.6, .12); place(norm(ding(1760)), 46.68, .08)   # 12.5M counter
-place(norm(pop(880)), 58.99, .12); place(norm(tick(3000)), 63.2, .2)   # button + tap
+place(norm(shimmer(1.2)), 22.8, .2)                       # the third path lights up
+place(norm(thump()), 41.76, .35)                          # gavel
+place(norm(ding(1318)), 51.2, .12); place(norm(ding(1760)), 51.28, .08)   # 12.5M counter
+place(norm(pop(880)), 65.06, .12); place(norm(tick(3000)), 69.18, .2)   # button + tap
 sfx = np.stack([L, R], 1)
 sfx /= max(1.0, np.max(np.abs(sfx)) / .9)
 sfx[-int(.6 * SR):] *= np.linspace(1, 0, int(.6 * SR))[:, None]

@@ -3,7 +3,7 @@ import subprocess, numpy as np
 
 SR = 48000
 SPEED = 1.1                                # whole reel plays 10 % faster (video is rendered at t*SPEED, audio is atempo'd)
-DUR = 61.41
+DUR = 70.3
 rng = np.random.default_rng(7)
 L = np.zeros(int(SR * DUR)); R = np.zeros_like(L)
 
@@ -82,14 +82,14 @@ def shutter():
 def norm(x): return x / (np.max(np.abs(x)) + 1e-9)
 
 # ---- timeline (keep in sync with VO / K in scenes.js) ----
-VO = [0.5, 4.3, 12.58, 19.31, 25.9, 31.99, 39.49, 46.06, 53.79]
+VO = [0.5, 6.0, 16.22, 24.14, 31.78, 38.66, 47.68, 54.06, 62.74]
 for at in VO[1:]: place(norm(whoosh(.45)), at - .45, .12)       # scene changes
-for tt in (1.22, 4.26, 6.34, 8.2, 10.0, 14.3, 16.24, 22.36, 27.46, 34.18, 35.34, 35.76, 36.18, 43.22, 47.84, 48.98, 50.46):   # key words / plates
+for tt in (1.4, 6.0, 8.24, 10.26, 12.32, 18.14, 20.46, 27.42, 33.86, 41.54, 42.96, 43.64, 44.42, 51.72, 56.4, 57.6, 59.34):   # key words / plates
     place(norm(pop(600 + 70 * (tt % 5))), tt, .07)
-place(norm(glitch(.5)), 2.6, .1); place(norm(thump()), 3.3, .3)   # balance hits zero
-place(norm(thump()), 29.26, .3)                           # stamp
-place(norm(shimmer(1.2)), 44.0, .2)                       # form accepted
-place(norm(pop(880)), 54.2, .12); place(norm(tick(3000)), 57.24, .2)   # button + tap
+place(norm(glitch(.5)), 3.4, .1); place(norm(thump()), 4.3, .3)   # balance hits zero
+place(norm(thump()), 35.6, .3)                            # stamp
+place(norm(shimmer(1.2)), 52.5, .2)                       # form accepted
+place(norm(pop(880)), 63.14, .12); place(norm(tick(3000)), 66.1, .2)   # button + tap
 sfx = np.stack([L, R], 1)
 sfx /= max(1.0, np.max(np.abs(sfx)) / .9)
 sfx[-int(.6 * SR):] *= np.linspace(1, 0, int(.6 * SR))[:, None]
