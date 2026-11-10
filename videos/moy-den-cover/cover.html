@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>Мой день — обложка</title>
+<style>
+@font-face{font-family:M;font-weight:900;src:url(assets/montserrat-cyrillic-900-normal.woff2);unicode-range:U+0400-04FF}
+@font-face{font-family:M;font-weight:900;src:url(assets/montserrat-latin-900-normal.woff2)}
+@font-face{font-family:M;font-weight:800;src:url(assets/montserrat-cyrillic-800-normal.woff2);unicode-range:U+0400-04FF}
+@font-face{font-family:M;font-weight:800;src:url(assets/montserrat-latin-800-normal.woff2)}
+@font-face{font-family:S;src:url(assets/GreatVibes-Regular.ttf)}
+html,body{margin:0}
+/* Cover for the «Мой день» reel: same look as the video (green, yellow 09:00, script, cut-out). */
+.c{position:relative;width:1080px;height:1920px;overflow:hidden;background:#0d3d2f;font-family:M,sans-serif}
+.c.wide{width:1440px;height:1080px}
+.stripes{position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,0) 0 150px,rgba(255,255,255,.035) 150px 300px)}
+.glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 55%,rgba(237,186,78,.22),rgba(237,186,78,0) 60%)}
+.small{position:absolute;left:70px;top:250px;color:#fff;font-weight:800;font-size:54px;letter-spacing:1px}
+.time{position:absolute;left:0;right:0;top:270px;text-align:center;color:#edba4e;font-weight:900;font-size:345px;letter-spacing:-18px;line-height:1}
+.person{position:absolute;left:50%;bottom:-40px;height:1250px;transform:translateX(-30%);filter:drop-shadow(0 30px 50px rgba(0,0,0,.45))}
+.script{position:absolute;left:36px;top:650px;color:#edba4e;font-family:S;font-size:215px;line-height:1;transform:rotate(-7deg);text-shadow:0 8px 24px rgba(0,0,0,.45)}
+.note{position:absolute;left:50px;top:1330px;width:560px;background:#f3f1ea;border-radius:34px;padding:26px 30px;box-shadow:0 24px 50px rgba(0,0,0,.4);transform:rotate(-3deg)}
+.note .r{display:flex;justify-content:space-between;color:#7d8a84;font-weight:800;font-size:30px}
+.note .t{color:#0d3d2f;font-weight:900;font-size:60px;margin-top:6px}
+.stamp{position:absolute;right:60px;top:1500px;background:#a20404;color:#fff;font-weight:900;font-size:76px;padding:14px 34px;transform:rotate(-8deg);box-shadow:0 16px 30px rgba(0,0,0,.4)}
+.logo{position:absolute;left:50%;bottom:150px;width:330px;transform:translateX(-50%);filter:drop-shadow(0 4px 12px rgba(0,0,0,.6))}
+.fade{position:absolute;left:0;right:0;bottom:0;height:420px;background:linear-gradient(rgba(13,61,47,0),#0b2e24 75%)}
+/* 4:3 variant (the video's own frame) */
+.wide .small{left:60px;top:50px;font-size:46px}
+.wide .time{top:60px;font-size:470px;letter-spacing:-26px;text-align:left;left:40px}
+.wide .person{height:1000px;left:auto;right:40px;bottom:-60px;transform:none}
+.wide .script{left:70px;top:480px;font-size:230px}
+.wide .note{left:60px;top:780px;width:520px}
+.wide .stamp{right:auto;left:640px;top:880px;font-size:64px}
+.wide .logo{left:auto;right:60px;bottom:40px;width:260px;transform:none}
+.wide .fade{display:none}
+</style></head><body>
+<div class="c" id="tall"><div class="stripes"></div><div class="glow"></div>
+  <div class="small">вот так выглядит</div><div class="time">09:00</div>
+  <div class="script">мой день</div>
+  <img class="person" src="assets/person.png"><div class="fade"></div>
+  <div class="note"><div class="r"><span>клиент</span><span>09:00</span></div><div class="t">Нужен ролик.</div></div>
+  <div class="stamp">вчера</div>
+  <img class="logo" src="assets/logo.png"></div>
+<div class="c wide" id="wide"><div class="stripes"></div><div class="glow"></div>
+  <div class="small">вот так выглядит</div><div class="time">09:00</div>
+  <img class="person" src="assets/person.png">
+  <div class="script">мой день</div>
+  <div class="note"><div class="r"><span>клиент</span><span>09:00</span></div><div class="t">Нужен ролик.</div></div>
+  <div class="stamp">вчера</div>
+  <img class="logo" src="assets/logo.png"></div>
+</body></html>
