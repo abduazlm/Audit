@@ -3,7 +3,7 @@ import subprocess, numpy as np
 
 SR = 48000
 SPEED = 1.1                                # whole reel plays 10 % faster
-DUR = 58.6
+DUR = 61.8
 rng = np.random.default_rng(7)
 L = np.zeros(int(SR * DUR)); R = np.zeros_like(L)
 
@@ -82,17 +82,17 @@ def shutter():
 def norm(x): return x / (np.max(np.abs(x)) + 1e-9)
 
 # ---- timeline (keep in sync with VO / K in scenes.js) ----
-VO = [0.5, 5.34, 14.68, 17.78, 24.0, 28.92, 37.08, 39.86, 49.74]
+VO = [0.5, 5.76, 15.86, 19.08, 25.52, 30.84, 38.98, 41.94, 52.46]
 for at in VO[1:]: place(norm(whoosh(.45)), at - .45, .12)       # scene changes
-for tt in (1.2, 7.08, 8.66, 13.16, 18.54, 21.92, 27.0, 27.72, 33.94, 35.28, 43.16, 43.66, 52.0, 56.0):   # plates
+for tt in (1.34, 7.68, 9.32, 14.24, 19.78, 23.36, 28.56, 29.24, 35.76, 37.12, 45.48, 45.98, 54.8, 58.68):   # plates
     place(norm(pop(600 + 70 * (tt % 5))), tt, .07)
-place(norm(thump()), 8.7, .25)                              # bone on bone
-place(norm(riser(1.0)), 15.4, .06)                          # the robot enters
-for i in range(6): place(norm(tick(1800 + 150 * i)), 18.0 + i * .22, .05)   # CT slices
-place(norm(tick(1200)), 34.2, .2)                           # held at the boundary
-place(norm(shimmer(1.4)), 38.4, .25)                        # implant in place
-place(norm(ding(1318)), 51.4, .12); place(norm(ding(1760)), 51.48, .08)     # offer
-place(norm(pop(880)), 54.2, .12); place(norm(tick(3000)), 55.26, .2)       # button + tap
+place(norm(thump()), 9.36, .25)                             # bone on bone
+place(norm(riser(1.0)), 16.6, .06)                          # the robot enters
+for i in range(6): place(norm(tick(1800 + 150 * i)), 19.3 + i * .22, .05)   # CT slices
+place(norm(tick(1200)), 36.0, .2)                           # held at the boundary
+place(norm(shimmer(1.4)), 40.3, .25)                        # implant in place
+place(norm(ding(1318)), 54.2, .12); place(norm(ding(1760)), 54.28, .08)     # offer
+place(norm(pop(880)), 57.1, .12); place(norm(tick(3000)), 58.2, .2)        # button + tap
 sfx = np.stack([L, R], 1)
 sfx /= max(1.0, np.max(np.abs(sfx)) / .9)
 sfx[-int(.6 * SR):] *= np.linspace(1, 0, int(.6 * SR))[:, None]

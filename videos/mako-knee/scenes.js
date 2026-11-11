@@ -1,20 +1,20 @@
 // «Эндопротезирование колена на роботе Mako» — для dr_bulat_ (Булат Искаков, травматолог-ортопед, Астана).
-// Timing: Whisper word starts on assets/vo.wav (ElevenLabs «Artspace», 0.5 s lead). Facts on screen come from the
+// Timing: Whisper word starts on assets/vo.wav (ElevenLabs «Maxim — Premium Baritone», 0.5 s lead). Facts on screen come from the
 // client's own post (20 лет, 10 000+ операций, −200 000 ₸ до 1 декабря); the Mako description is generic:
 // CT-based 3D plan, the surgeon guides the arm, the system keeps the tool inside the planned boundary.
-const VO = [0.5, 5.34, 14.68, 17.78, 24.0, 28.92, 37.08, 39.86, 49.74];
-const DURATION = 58.6;
+const VO = [0.5, 5.76, 15.86, 19.08, 25.52, 30.84, 38.98, 41.94, 52.46];
+const DURATION = 61.8;
 const SC = VO.map((s, i) => [i ? s - .3 : 0, i < VO.length - 1 ? VO[i + 1] - .3 : DURATION]);
 const K = {
-  shag: 1.8, vnutri: 4.3,
-  hryash: 6.04, ischez: 7.58, kost: 8.66, lechenie: 10.6, endo: 13.36,
-  robot: 16.36,
-  snimki: 18.54, model: 21.62,
-  plan: 25.48, razmer: 27.0, polozh: 27.72,
-  rukoy: 30.24, sistema: 32.5, granicy: 34.14, tkani: 35.78,
-  tochno: 37.96,
-  bulat: 41.86, travm: 43.16, n20: 44.6, n10k: 46.64,
-  skidka: 50.76, n200: 51.4, zapis: 54.36, ssylka: 56.14
+  shag: 1.94, vnutri: 4.54,
+  hryash: 6.52, ischez: 8.18, kost: 9.32, lechenie: 11.56, endo: 14.44,
+  robot: 17.58,
+  snimki: 19.78, model: 23.06,
+  plan: 27.0, razmer: 28.56, polozh: 29.24,
+  rukoy: 31.84, sistema: 34.34, granicy: 35.96, tkani: 37.62,
+  tochno: 39.88,
+  bulat: 44.12, travm: 45.48, n20: 47.2, n10k: 49.18,
+  skidka: 53.5, n200: 54.2, zapis: 57.3, ssylka: 58.88
 };
 const LABEL = 'ЭНДОПРОТЕЗИРОВАНИЕ НА MAKO';
 const BONE = '#efe6d2', BONE2 = '#d6c9ad', CART = '#9fd8ff', METAL1 = '#f2f4f7', METAL2 = '#7d8794', SAFE = '#35e08a';
