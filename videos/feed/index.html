@@ -1,0 +1,177 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Infinite Feed Reel</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// «Почему лента не заканчивается» — бесконечная прокрутка (Аза Раскин, 2006), переменная награда, первая секунда. Deterministic: renderFrame(t), t = seconds of assets/vo.wav.
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const W = 1080, H = 1920, CX = W / 2;
+const DURATION = 80.6;
+const SUBS = [{"a": 0.0, "b": 1.6, "w": [[0.0, 0.66, "ТЫ"], [0.66, 1.02, "СЕЙЧАС"], [1.02, 1.6, "ЛИСТАЕШЬ"]]}, {"a": 1.6, "b": 2.1, "w": [[1.6, 2.1, "ЛЕНТУ."]]}, {"a": 2.86, "b": 3.66, "w": [[2.86, 3.2, "ПАЛЕЦ"], [3.2, 3.66, "ВВЕРХ,"]]}, {"a": 3.94, "b": 4.62, "w": [[3.94, 4.24, "НОВЫЙ"], [4.24, 4.62, "РОЛИК."]]}, {"a": 5.02, "b": 5.6, "w": [[5.02, 5.26, "ЕЩЁ"], [5.26, 5.6, "РАЗ,"]]}, {"a": 5.9, "b": 6.48, "w": [[5.9, 6.12, "ЕЩЁ"], [6.12, 6.48, "ОДИН."]]}, {"a": 6.94, "b": 7.5, "w": [[6.94, 7.14, "И"], [7.14, 7.28, "У"], [7.28, 7.5, "НЕЁ"]]}, {"a": 7.5, "b": 8.5, "w": [[7.5, 7.96, "НЕТ"], [7.96, 8.5, "КОНЦА."]]}, {"a": 9.2, "b": 10.04, "w": [[9.2, 9.6, "РАНЬШЕ"], [9.6, 9.84, "У"], [9.84, 10.04, "ЛЮБОЙ"]]}, {"a": 10.04, "b": 11.1, "w": [[10.04, 10.56, "СТРАНИЦЫ"], [10.56, 10.82, "БЫЛ"], [10.82, 11.1, "НИЗ."]]}, {"a": 11.54, "b": 12.12, "w": [[11.54, 11.64, "ТЫ"], [11.64, 12.0, "ДОХОДИЛ"], [12.0, 12.12, "ДО"]]}, {"a": 12.12, "b": 12.54, "w": [[12.12, 12.54, "КОНЦА,"]]}, {"a": 12.82, "b": 13.82, "w": [[12.82, 13.04, "ВИДЕЛ"], [13.04, 13.5, "КНОПКУ"], [13.5, 13.82, "ДАЛЬШЕ,"]]}, {"a": 14.48, "b": 14.74, "w": [[14.48, 14.5, "И"], [14.5, 14.6, "В"], [14.6, 14.74, "ЭТОТ"]]}, {"a": 14.74, "b": 16.28, "w": [[14.74, 14.98, "МОМЕНТ"], [14.98, 15.42, "РЕШАЛ"], [15.42, 16.28, "ПРОДОЛЖАТЬ"]]}, {"a": 16.28, "b": 17.12, "w": [[16.28, 16.68, "ИЛИ"], [16.68, 17.12, "ХВАТИТ."]]}, {"a": 17.56, "b": 18.98, "w": [[17.56, 17.74, "В"], [17.74, 18.34, "2006"], [18.34, 18.98, "ГОДУ"]]}, {"a": 18.98, "b": 20.58, "w": [[18.98, 19.7, "ПРОГРАММИСТ"], [19.7, 20.04, "АЗА"], [20.04, 20.58, "РАСКИН"]]}, {"a": 20.58, "b": 21.6, "w": [[20.58, 20.92, "УБРАЛ"], [20.92, 21.16, "ЭТУ"], [21.16, 21.6, "КНОПКУ."]]}, {"a": 21.98, "b": 23.32, "w": [[21.98, 22.46, "СТРАНИЦА"], [22.46, 22.74, "СТАЛА"], [22.74, 23.32, "ПОДГРУЖАТЬСЯ"]]}, {"a": 23.32, "b": 23.74, "w": [[23.32, 23.74, "САМА,"]]}, {"a": 24.36, "b": 24.96, "w": [[24.36, 24.44, "ОН"], [24.44, 24.72, "ХОТЕЛ"], [24.72, 24.96, "СДЕЛАТЬ"]]}, {"a": 24.96, "b": 25.66, "w": [[24.96, 25.66, "УДОБНЕЕ."]]}, {"a": 26.1, "b": 26.8, "w": [[26.1, 26.32, "НО"], [26.32, 26.6, "ВМЕСТЕ"], [26.6, 26.8, "С"]]}, {"a": 26.8, "b": 28.04, "w": [[26.8, 27.26, "КНОПКОЙ"], [27.26, 27.68, "ИСЧЕЗ"], [27.68, 28.04, "МОМЕНТ,"]]}, {"a": 28.2, "b": 29.4, "w": [[28.2, 28.38, "КОГДА"], [28.38, 28.76, "МОЗГ"], [28.76, 29.4, "СПРАШИВАЕТ"]]}, {"a": 29.72, "b": 31.12, "w": [[29.72, 30.1, "А"], [30.1, 30.34, "МОЖЕТ"], [30.34, 31.12, "ХВАТИТ?"]]}, {"a": 31.58, "b": 32.7, "w": [[31.58, 31.86, "ТАК ЖЕ"], [31.86, 32.36, "УСТРОЕН"], [32.36, 32.7, "ИГРОВОЙ"]]}, {"a": 32.7, "b": 33.14, "w": [[32.7, 33.14, "АВТОМАТ."]]}, {"a": 33.48, "b": 34.34, "w": [[33.48, 33.64, "ТЫ"], [33.64, 33.94, "ТЯНЕШЬ"], [33.94, 34.34, "РЫЧАГ"]]}, {"a": 34.34, "b": 35.08, "w": [[34.34, 34.6, "И"], [34.6, 34.72, "НЕ"], [34.72, 35.08, "ЗНАЕШЬ,"]]}, {"a": 35.18, "b": 35.78, "w": [[35.18, 35.36, "ЧТО"], [35.36, 35.78, "ВЫПАДЕТ."]]}, {"a": 36.22, "b": 37.04, "w": [[36.22, 36.64, "СКУЧНЫЙ"], [36.64, 37.04, "РОЛИК,"]]}, {"a": 37.36, "b": 37.86, "w": [[37.36, 37.86, "СКУЧНЫЙ,"]]}, {"a": 38.34, "b": 39.14, "w": [[38.34, 38.44, "И"], [38.44, 38.7, "ВДРУГ"], [38.7, 39.14, "ТОТ"]]}, {"a": 39.14, "b": 39.6, "w": [[39.14, 39.6, "САМЫЙ."]]}, {"a": 40.02, "b": 41.34, "w": [[40.02, 40.46, "МОЗГ"], [40.46, 40.74, "ЖДЁТ"], [40.74, 41.34, "СЛЕДУЮЩЕЙ"]]}, {"a": 41.34, "b": 41.86, "w": [[41.34, 41.86, "НАГРАДЫ,"]]}, {"a": 42.06, "b": 43.12, "w": [[42.06, 42.16, "И"], [42.16, 42.58, "ПАЛЕЦ"], [42.58, 43.12, "ЛИСТАЕТ"]]}, {"a": 43.12, "b": 43.5, "w": [[43.12, 43.5, "ДАЛЬШЕ."]]}, {"a": 44.0, "b": 45.16, "w": [[44.0, 44.52, "СОЦСЕТИ"], [44.52, 44.72, "ЭТО"], [44.72, 45.16, "ПОНЯЛИ."]]}, {"a": 45.54, "b": 46.16, "w": [[45.54, 45.68, "ЧЕМ"], [45.68, 45.98, "ДОЛЬШЕ"], [45.98, 46.16, "ТЫ"]]}, {"a": 46.16, "b": 46.72, "w": [[46.16, 46.72, "ЛИСТАЕШЬ,"]]}, {"a": 46.92, "b": 47.9, "w": [[46.92, 47.0, "ТЕМ"], [47.0, 47.36, "БОЛЬШЕ"], [47.36, 47.9, "РЕКЛАМЫ"]]}, {"a": 47.9, "b": 48.26, "w": [[47.9, 48.26, "ВИДИШЬ."]]}, {"a": 48.68, "b": 49.9, "w": [[48.68, 49.02, "ТВОЁ"], [49.02, 49.36, "ВРЕМЯ"]]}, {"a": 49.9, "b": 50.62, "w": [[49.9, 49.92, "ЭТО"], [49.92, 50.2, "ИХ"], [50.2, 50.62, "ТОВАР."]]}, {"a": 51.04, "b": 51.82, "w": [[51.04, 51.18, "А"], [51.18, 51.4, "САМ"], [51.4, 51.82, "РАСКИН"]]}, {"a": 51.82, "b": 52.54, "w": [[51.82, 52.04, "ПОТОМ"], [52.04, 52.54, "ПРИЗНАЛСЯ,"]]}, {"a": 52.62, "b": 53.32, "w": [[52.62, 52.8, "ЧТО"], [52.8, 53.32, "ЖАЛЕЕТ."]]}, {"a": 53.7, "b": 54.38, "w": [[53.7, 53.84, "ПО"], [53.84, 53.96, "ЕГО"], [53.96, 54.38, "СЛОВАМ,"]]}, {"a": 54.5, "b": 55.84, "w": [[54.5, 55.1, "БЕСКОНЕЧНАЯ"], [55.1, 55.42, "ЛЕНТА"], [55.42, 55.84, "КАЖДЫЙ"]]}, {"a": 55.84, "b": 57.08, "w": [[55.84, 56.26, "ДЕНЬ"], [56.26, 56.7, "СЪЕДАЕТ"], [56.7, 57.08, "ВРЕМЯ,"]]}, {"a": 57.4, "b": 58.68, "w": [[57.4, 57.82, "РАВНОЕ"], [57.82, 58.44, "СОТНЯМ"], [58.44, 58.68, "ТЫСЯЧ"]]}, {"a": 58.68, "b": 60.02, "w": [[58.68, 59.52, "ЧЕЛОВЕЧЕСКИХ"], [59.52, 60.02, "ЖИЗНЕЙ."]]}, {"a": 60.36, "b": 61.36, "w": [[60.36, 60.76, "ПОЭТОМУ"], [60.76, 60.98, "В"], [60.98, 61.36, "РЕКЛАМЕ"]]}, {"a": 61.36, "b": 62.54, "w": [[61.36, 61.6, "СЕГОДНЯ"], [61.6, 62.04, "ВСЁ"], [62.04, 62.54, "РЕШАЕТ"]]}, {"a": 62.54, "b": 63.52, "w": [[62.54, 62.98, "ПЕРВАЯ"], [62.98, 63.52, "СЕКУНДА."]]}, {"a": 63.96, "b": 64.66, "w": [[63.96, 64.32, "ИМЕННО"], [64.32, 64.44, "В"], [64.44, 64.66, "НЕЁ"]]}, {"a": 64.66, "b": 66.26, "w": [[64.66, 65.14, "ПАЛЕЦ"], [65.14, 65.68, "РЕШАЕТ"], [65.68, 66.26, "ЛИСТАТЬ"]]}, {"a": 66.26, "b": 67.74, "w": [[66.26, 66.64, "ДАЛЬШЕ"], [66.64, 67.08, "ИЛИ"], [67.08, 67.74, "ОСТАНОВИТЬСЯ."]]}, {"a": 68.26, "b": 69.62, "w": [[68.26, 68.66, "САМОЕ"], [68.66, 69.16, "СМЕШНОЕ"]]}, {"a": 69.62, "b": 70.52, "w": [[69.62, 69.9, "ЭТОТ"], [69.9, 70.32, "РОЛИК"], [70.32, 70.52, "ТЫ"]]}, {"a": 70.52, "b": 71.34, "w": [[70.52, 70.86, "ТОЖЕ"], [70.86, 71.24, "НАШЁЛ"], [71.24, 71.34, "В"]]}, {"a": 71.34, "b": 72.42, "w": [[71.34, 72.0, "БЕСКОНЕЧНОЙ"], [72.0, 72.42, "ЛЕНТЕ."]]}, {"a": 72.8, "b": 73.36, "w": [[72.8, 73.08, "ПРОВЕРЬ"], [73.08, 73.36, "САМ,"]]}, {"a": 73.76, "b": 74.58, "w": [[73.76, 74.06, "ОТКРОЙ"], [74.06, 74.14, "В"], [74.14, 74.58, "НАСТРОЙКАХ"]]}, {"a": 74.58, "b": 75.9, "w": [[74.58, 75.08, "ТЕЛЕФОНА"], [75.08, 75.6, "ЭКРАННОЕ"], [75.6, 75.9, "ВРЕМЯ"]]}, {"a": 75.9, "b": 76.86, "w": [[75.9, 76.38, "И"], [76.38, 76.86, "ПОСМОТРИ,"]]}, {"a": 76.96, "b": 77.9, "w": [[76.96, 77.24, "СКОЛЬКО"], [77.24, 77.68, "ЧАСОВ"], [77.68, 77.9, "ТЫ"]]}, {"a": 77.9, "b": 78.94, "w": [[77.9, 78.38, "ПРОЛИСТАЛ"], [78.38, 78.52, "ЗА"], [78.52, 78.94, "НЕДЕЛЮ."]]}];
+// SEE Group brand: paper, institutional green, gold, carmine accent
+const C = { bg: '#F7F5F0', bg2: '#efebe1', neon: '#1f8a5b', cyan: '#104434', amber: '#C2902F', yel: '#A37E2D', red: '#A20404', cream: '#104434', ink: '#F7F5F0', dim: 'rgba(16,68,52,.22)', sun: '#FDC854', green: '#104434' };
+const F = 'Montserrat, Arial Black, sans-serif', U = 'Unbounded, Montserrat, sans-serif';
+const font = (w, s, f = F) => `${w} ${Math.round(s)}px ${f}`;
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = p => 1 - Math.pow(1 - p, 3), eInOut = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const eBack = p => { const c = 1.7; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+const pop = (t, a, d = .35) => eBack(prog(t, a, a + d));
+const hash = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function circ(x, y, r, col) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); }
+function ell(x, y, rx, ry, col, rot = 0) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); }
+function txt(s, x, y, size, col, o = {}) {
+  ctx.save(); ctx.font = font(o.w || 900, size, o.f || F); ctx.textAlign = o.align || 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = col;
+  if (o.ls) ctx.letterSpacing = o.ls + 'px'; if (o.shadow) { ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 20; }
+  ctx.fillText(s, x, y); ctx.restore();
+}
+function label(s, x, y, t, a, col = C.yel, ink = C.ink, size = 34) {   // pop-in plate
+  const k = pop(t, a); if (k <= 0) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(k, k); ctx.font = font(900, size); const w = ctx.measureText(s).width + 36;
+  rr(-w / 2, -size * .8, w, size * 1.6, 12); ctx.fillStyle = col; ctx.fill(); txt(s, 0, 2, size, ink); ctx.restore();
+}
+
+const logoImg = new Image(); logoImg.src = 'assets/logo.png';
+function glow(col, b = 30) { ctx.shadowColor = 'rgba(16,68,52,.22)'; ctx.shadowBlur = b * .6; ctx.shadowOffsetY = 6; }   // brand look: soft paper shadow instead of neon glow
+function noGlow() { ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0; }
+function bg(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, C.bg2); g.addColorStop(1, C.bg); ctx.fillStyle = g; ctx.fillRect(-300, -300, W + 600, H + 600);
+  ctx.fillStyle = 'rgba(16,68,52,.07)'; for (let x = 0; x < W; x += 60) for (let y = 0; y < H; y += 60) ctx.fillRect(x, y, 3, 3);
+}
+function phone(x, y, s, t, draw) {                                 // brand phone frame; draw() paints the screen in local coords (-200..200, -400..400)
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); glow(C.green, 40); rr(-230, -440, 460, 880, 60); ctx.fillStyle = C.green; ctx.fill(); noGlow();
+  ctx.save(); rr(-205, -410, 410, 820, 40); ctx.clip(); ctx.fillStyle = C.bg; ctx.fillRect(-205, -410, 410, 820); draw && draw(); ctx.restore();
+  rr(-50, -428, 100, 14, 7); ctx.fillStyle = '#0a2e23'; ctx.fill(); ctx.restore();
+}
+const CARD_COLS = ['#C2902F', '#104434', '#FDC854', '#A20404', '#1f8a5b', '#A37E2D'];
+function card(i, y, o = {}) {                                        // one feed post
+  rr(-185, y, 370, 300, 22); ctx.fillStyle = o.ad ? '#FDC854' : 'rgba(16,68,52,.08)'; ctx.fill();
+  rr(-165, y + 20, 330, 200, 14); ctx.fillStyle = CARD_COLS[((i % 6) + 6) % 6]; ctx.fill();
+  if (o.ad) { rr(-165, y + 236, 140, 40, 10); ctx.fillStyle = C.red; ctx.fill(); txt('РЕКЛАМА', -95, y + 257, 22, C.bg); }
+  else { rr(-165, y + 240, 220, 18, 9); ctx.fillStyle = 'rgba(16,68,52,.25)'; ctx.fill(); rr(-165, y + 268, 150, 14, 7); ctx.fill(); }
+  ctx.strokeStyle = C.bg; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(-20, y + 95); ctx.lineTo(25, y + 120); ctx.lineTo(-20, y + 145); ctx.closePath(); ctx.stroke();
+}
+function feed(off, o = {}) { const k0 = Math.floor(off / 320); for (let k = k0 - 2; k < k0 + 4; k++) card(k, -400 + k * 320 - off, { ad: o.ads && ((k % 3) + 3) % 3 === 2 }); }
+function finger(x, y, s = 1) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); glow(C.green, 20); ctx.fillStyle = '#e8c9a8'; rr(-34, -60, 68, 170, 34); ctx.fill(); noGlow(); rr(-22, -48, 44, 40, 14); ctx.fillStyle = '#f3dcc4'; ctx.fill(); ctx.restore(); }
+const SWIPES = [2.9, 5.0, 5.9, 6.8, 7.4, 7.9, 8.3];
+function scrollOff(t, list) { let off = 0; list.forEach(a => off += 320 * eInOut(prog(t, a, a + .45))); return off; }
+
+const SHOTS = [[0, 9.0, sA], [9.0, 17.4, sB], [17.4, 25.9, sC], [25.9, 31.4, sD], [31.4, 43.8, sE], [43.8, 50.9, sF], [50.9, 60.2, sG], [60.2, 68.1, sH], [68.1, 72.6, sI], [72.6, DURATION, sJ]];
+function sA(t) {                                                     // you are scrolling right now
+  bg(t); const off = scrollOff(t, SWIPES) + Math.max(0, t - 8.3) * 900;
+  phone(CX, 1090, 1.12, t, () => feed(off));
+  const sw = SWIPES.find(a => t >= a - .2 && t < a + .5); if (sw !== undefined) { const p = prog(t, sw - .2, sw + .45); finger(CX + 110, lerp(1400, 980, eInOut(p)), 1.0); }
+  if (t > 7.9) { const k = pop(t, 7.96, .4); ctx.save(); ctx.translate(CX, 420); ctx.scale(k, k); txt('∞', 0, -10, 170, C.yel, { f: U, w: 800 }); ctx.restore(); label('НЕТ КОНЦА', CX, 535, t, 8.0, C.red, C.bg, 44); }
+  else label('ТЫ СЕЙЧАС ЛИСТАЕШЬ', CX, 380, t, .6, C.green, C.bg, 44);
+}
+function sB(t) {                                                     // the old internet: a page had a bottom
+  bg(t); phone(CX, 960, 1.1, t, () => {
+    for (let i = 0; i < 3; i++) { rr(-175, -380 + i * 170, 350, 140, 14); ctx.fillStyle = 'rgba(16,68,52,.1)'; ctx.fill(); rr(-155, -360 + i * 170, 220, 18, 9); ctx.fillStyle = 'rgba(16,68,52,.3)'; ctx.fill(); rr(-155, -330 + i * 170, 290, 14, 7); ctx.fill(); rr(-155, -305 + i * 170, 250, 14, 7); ctx.fill(); }
+    ctx.strokeStyle = 'rgba(16,68,52,.35)'; ctx.setLineDash([12, 10]); ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-180, 150); ctx.lineTo(180, 150); ctx.stroke(); ctx.setLineDash([]);
+    txt('КОНЕЦ СТРАНИЦЫ', 0, 190, 26, 'rgba(16,68,52,.5)');
+    const k = pop(t, 13.0); ctx.save(); ctx.translate(0, 280); ctx.scale(k, k); glow(C.green, 20); rr(-150, -45, 300, 90, 45); ctx.fillStyle = C.green; ctx.fill(); noGlow(); txt('ДАЛЬШЕ →', 0, 3, 36, C.bg); ctx.restore(); });
+  label('РАНЬШЕ У СТРАНИЦЫ БЫЛ НИЗ', CX, 380, t, 9.3, C.green, C.bg, 40);
+  if (t > 15.3) { label('ПРОДОЛЖИТЬ?', 310, 1530, t, 15.4, C.green, C.bg, 40); label('ХВАТИТ', 790, 1530, t, 16.6, C.red, C.bg, 40); }
+}
+function sC(t) {                                                     // 2006: Aza Raskin removes the button
+  bg(t); const k = pop(t, 17.8, .45); ctx.save(); ctx.translate(CX, 470); ctx.scale(k, k); glow(C.yel, 30);
+  const g = ctx.createLinearGradient(0, -150, 0, 20); g.addColorStop(0, '#FDC854'); g.addColorStop(1, '#A37E2D'); ctx.font = font(800, 210, U); ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = g; ctx.fillText('2006', 0, 60); noGlow(); ctx.restore();
+  label('АЗА РАСКИН · ПРОГРАММИСТ', CX, 600, t, 19.7, C.green, C.bg, 38);
+  const off = Math.max(0, t - 22) * 260;
+  phone(CX, 1180, .95, t, () => { feed(off); if (t < 22) { const k2 = 1 - prog(t, 20.6, 21.2); ctx.save(); ctx.globalAlpha = k2; ctx.translate(0, 280); rr(-150, -45, 300, 90, 45); ctx.fillStyle = C.green; ctx.fill(); txt('ДАЛЬШЕ →', 0, 3, 36, C.bg); ctx.restore();
+      if (t > 20.6) { ctx.strokeStyle = C.red; ctx.lineWidth = 12; ctx.beginPath(); ctx.moveTo(-170, 230); ctx.lineTo(170, 330); ctx.moveTo(170, 230); ctx.lineTo(-170, 330); ctx.stroke(); } } });
+  if (t > 24.4) label('ХОТЕЛ УДОБНЕЕ', CX, 1680 - 140, t, 24.4, C.yel, C.bg, 40);
+}
+function sD(t) {                                                     // the "maybe enough?" moment disappears
+  bg(t); const fade = prog(t, 29.8, 31.2);
+  ctx.save(); ctx.translate(CX, 1050); glow(C.green, 30); ell(0, 0, 230, 180, '#e9c3c0'); noGlow(); ctx.strokeStyle = '#c9938f'; ctx.lineWidth = 10;
+  for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(-120 + i * 60, -20 + (i % 2) * 40, 50, .3, 2.6); ctx.stroke(); } ctx.restore();
+  ctx.save(); ctx.globalAlpha = 1 - fade; const k = pop(t, 29.4, .4); ctx.translate(CX + 150, 700); ctx.scale(k, k); rr(-300, -110, 600, 200, 40); ctx.fillStyle = C.bg; ctx.fill(); ctx.strokeStyle = C.green; ctx.lineWidth = 8; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-160, 85); ctx.lineTo(-210, 170); ctx.lineTo(-90, 88); ctx.fill(); txt('А МОЖЕТ, ХВАТИТ?', 0, -8, 50, C.green, { f: U, w: 800 }); ctx.restore();
+  if (t > 30.6) label('ЭТОТ МОМЕНТ ИСЧЕЗ', CX, 400, t, 30.6, C.red, C.bg, 44); else label('ВМЕСТЕ С КНОПКОЙ', CX, 400, t, 26.2, C.green, C.bg, 44);
+}
+function sE(t) {                                                     // slot machine = variable reward
+  bg(t); ctx.save(); ctx.translate(CX, 1050); glow(C.green, 40); rr(-380, -420, 760, 820, 60); ctx.fillStyle = C.green; ctx.fill(); noGlow();
+  rr(-320, -330, 640, 260, 30); ctx.fillStyle = C.bg; ctx.fill();
+  const stops = [[36.2, 0], [37.3, 0], [38.6, 1]];
+  for (let r = 0; r < 3; r++) { const x = -210 + r * 210; ctx.save(); rr(x - 90, -310, 180, 220, 20); ctx.clip();
+    const spinning = t > 33.8 && !(stops.some(([a]) => t > a) && t > stops[Math.min(r, 2)][0] - (2 - r) * .0);
+    const win = t > 38.6, sym = win ? 1 : 0;
+    if (t > 33.8 && t < stops[r][0] + (win ? 0 : 0) && !win) { const off = (t * 1800 + r * 80) % 220; for (let k = -1; k < 2; k++) { rr(x - 60, -260 + k * 220 + off - 110, 120, 120, 20); ctx.fillStyle = CARD_COLS[(k + r + 6) % 6]; ctx.fill(); } }
+    else { rr(x - 60, -260, 120, 120, 20); ctx.fillStyle = win ? '#FDC854' : 'rgba(16,68,52,.25)'; ctx.fill(); if (win) txt('★', x, -198, 80, C.red); else txt('…', x, -205, 70, C.green); }
+    ctx.restore(); }
+  ctx.strokeStyle = C.yel; ctx.lineWidth = 18; ctx.lineCap = 'round'; const pull = eInOut(prog(t, 33.6, 34.2)) - eInOut(prog(t, 34.4, 35));
+  ctx.beginPath(); ctx.moveTo(380, -100); ctx.lineTo(470, -100 - 220 * (1 - pull)); ctx.stroke(); circ(470, -100 - 220 * (1 - pull), 40, C.red);
+  rr(-260, 40, 520, 120, 30); ctx.fillStyle = '#0a2e23'; ctx.fill();
+  const lab = t > 38.6 ? 'ТОТ САМЫЙ!' : t > 36.2 ? 'СКУЧНЫЙ…' : '?'; txt(lab, 0, 102, 54, t > 38.6 ? C.sun : C.bg, { f: U, w: 800 }); ctx.restore();
+  label('ИГРОВОЙ АВТОМАТ', CX, 380, t, 31.8, C.green, C.bg, 46);
+  if (t > 40) label('МОЗГ ЖДЁТ НАГРАДУ', CX, 1600 - 120, t, 40.0, C.red, C.bg, 40);
+}
+function sF(t) {                                                     // longer scrolling = more ads; your time is their product
+  bg(t); const off = (t - 43.8) * 420; phone(CX, 1090, 1.0, t, () => feed(off, { ads: 1 }));
+  const ads = Math.floor(off / 960) + (off > 300 ? 1 : 0); txt('РЕКЛАМЫ: ' + Math.max(0, ads), CX, 520, 44, C.red, { f: U, w: 800 });
+  if (t > 48.6) { label('ТВОЁ ВРЕМЯ = ИХ ТОВАР', CX, 400, t, 48.7, C.red, C.bg, 44); } else label('СОЦСЕТИ ЭТО ПОНЯЛИ', CX, 400, t, 44.0, C.green, C.bg, 44);
+}
+function sG(t) {                                                     // the inventor regrets it
+  bg(t); ctx.save(); ctx.translate(CX, 930); ctx.scale(.9, .9); glow(C.green, 30); ctx.fillStyle = C.green; ctx.beginPath(); ctx.moveTo(-200, -360); ctx.lineTo(200, -360); ctx.lineTo(20, 0); ctx.lineTo(200, 360); ctx.lineTo(-200, 360); ctx.lineTo(-20, 0); ctx.closePath(); ctx.fill(); noGlow();
+  const p = ((t - 50.9) / 9.3); ctx.fillStyle = C.sun; ctx.beginPath(); ctx.moveTo(-170 * (1 - p), -330 + 300 * p); ctx.lineTo(170 * (1 - p), -330 + 300 * p); ctx.lineTo(0, -10); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-170 * p, 340 - 300 * p); ctx.lineTo(170 * p, 340 - 300 * p); ctx.lineTo(180, 340); ctx.lineTo(-180, 340); ctx.closePath(); ctx.fill();
+  for (let i = 0; i < 6; i++) circ(0, ((t * 400 + i * 60) % 330), 6, C.sun); ctx.restore();
+  label('РАСКИН ЖАЛЕЕТ', CX, 380, t, 52.6, C.red, C.bg, 46);
+  if (t > 57.6) { label('СОТНИ ТЫСЯЧ ЖИЗНЕЙ', CX, 1390, t, 57.8, C.green, C.bg, 42); label('КАЖДЫЙ ДЕНЬ', CX, 1490, t, 58.5, C.yel, C.bg, 42); }
+}
+function sH(t) {                                                     // so the first second decides everything
+  bg(t); const stop = t > 65.6; const off = stop ? 2 * 320 : (t - 60.2) * 600 % 640;
+  phone(CX, 1050, .93, t, () => { feed(stop ? 640 - 40 : off); if (stop) { ctx.strokeStyle = C.red; ctx.lineWidth = 10; rr(-190, -45, 380, 310, 26); ctx.stroke(); } });
+  const k = pop(t, 62.5, .45); ctx.save(); ctx.translate(CX, 470); ctx.scale(k, k); glow(C.red, 30); txt('0:01', 0, 0, 170, C.red, { f: U, w: 800 }); noGlow(); ctx.restore();
+  label('ПЕРВАЯ СЕКУНДА', CX, 640, t, 62.6, C.green, C.bg, 44);
+  if (stop) label('ПАЛЕЦ ОСТАНОВИЛСЯ', CX, 1540, t, 66.6, C.yel, C.bg, 40);
+}
+function sI(t) {                                                     // this reel is in the feed too
+  bg(t); const z = lerp(1.0, .55, eInOut(prog(t, 68.3, 70.4)));
+  phone(CX, 1050, z * 1.25, t, () => { ctx.fillStyle = C.green; ctx.fillRect(-205, -410, 410, 100); txt('ПОЧЕМУ ЛЕНТА', 0, -375, 26, C.bg, { f: U, w: 800 }); txt('НЕ ЗАКАНЧИВАЕТСЯ', 0, -340, 26, C.sun, { f: U, w: 800 });
+    ctx.save(); ctx.translate(0, 60); ctx.scale(.42, .42); phone(0, 0, 1, t, () => feed((t - 68.1) * 300)); ctx.restore(); });
+  label('ЭТОТ РОЛИК ТОЖЕ В ЛЕНТЕ', CX, 400, t, 69.6, C.red, C.bg, 42);
+}
+function sJ(t) {                                                     // check your screen time
+  bg(t); const k = pop(t, 72.9, .45); ctx.save(); ctx.translate(CX, 420); ctx.scale(k, k); txt('ПРОВЕРЬ САМ', 0, 0, 96, C.green, { f: U, w: 800 }); ctx.restore();
+  phone(CX, 1080, 1.05, t, () => { txt('ЭКРАННОЕ ВРЕМЯ', 0, -340, 32, C.green, { f: U, w: 800 });
+    const days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'], hs = [.55, .7, .5, .8, .65, .95, .85];
+    days.forEach((d, i) => { const h = hs[i] * 380 * eOut(prog(t, 75 + i * .18, 75.8 + i * .18)), x = -165 + i * 55; rr(x - 18, 220 - h, 36, h, 10); ctx.fillStyle = i > 4 ? C.red : C.yel; ctx.fill(); txt(d, x, 255, 20, C.green); });
+    txt('?? Ч', 0, -250, 70, C.red, { f: U, w: 800 }); });
+}
+function header(t) {
+  ctx.fillStyle = C.green; ctx.fillRect(0, 0, W, 250); ctx.fillStyle = C.yel; ctx.fillRect(0, 250, W, 6);
+  txt('ПОЧЕМУ ЛЕНТА', CX, 118, 54, C.bg, { f: U, w: 800 }); txt('НЕ ЗАКАНЧИВАЕТСЯ', CX, 188, 54, C.sun, { f: U, w: 800 });
+}
+function subtitles(t) {
+  const s = SUBS.find(x => t >= x.a - .05 && t < x.b + .35); if (!s) return;
+  ctx.save(); ctx.font = font(900, 64); const sp = 18, widths = s.w.map(w => ctx.measureText(w[2]).width), total = widths.reduce((a, b) => a + b, 0) + sp * (s.w.length - 1);
+  const fit = Math.min(1, 980 / total); ctx.translate(CX, 1660); ctx.scale(fit, fit); ctx.translate(-CX, -1660);
+  let x = CX - total / 2; const y = 1660, k = .9 + .1 * eOut(prog(t, s.a - .05, s.a + .1));
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.lineJoin = 'round';
+  s.w.forEach((w, i) => { const on = t >= w[0] - .03; ctx.lineWidth = 14; ctx.strokeStyle = C.bg; ctx.strokeText(w[2], x, y); ctx.fillStyle = on ? (t < w[1] + .1 ? C.red : C.green) : 'rgba(16,68,52,.35)'; ctx.fillText(w[2], x, y); x += widths[i] + sp; });
+  ctx.restore();
+}
+function watermark(t) {
+  if (!logoImg.naturalWidth) return; const w = 170, h = w * logoImg.naturalHeight / logoImg.naturalWidth;
+  if (!window.LOGO_G) { const c = document.createElement('canvas'); c.width = logoImg.naturalWidth; c.height = logoImg.naturalHeight; const x = c.getContext('2d'); x.drawImage(logoImg, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = C.green; x.fillRect(0, 0, c.width, c.height); window.LOGO_G = c; }
+  ctx.save(); ctx.globalAlpha = .85; ctx.drawImage(window.LOGO_G, W - w - 50, 1820 - h, w, h); ctx.restore();
+}
+function vignette() {}
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.letterSpacing = '0px'; noGlow();
+  let i = SHOTS.findIndex(([a, b]) => t >= a && t < b); if (i < 0) i = SHOTS.length - 1;
+  const [a, b, fn] = SHOTS[i], p = (t - a) / (b - a);
+  const z = 1 + .05 * p, sh = t - a < .25 && i > 0 ? (1 - (t - a) / .25) * 14 : 0;
+  ctx.save(); ctx.translate(CX + Math.sin(t * 50) * sh, H / 2 + Math.cos(t * 43) * sh); ctx.scale(z, z); ctx.translate(-CX, -H / 2); fn(t); ctx.restore(); noGlow();
+  vignette();
+  if (t - a < .12 && i > 0) { ctx.fillStyle = `rgba(253,200,84,${.35 * (1 - (t - a) / .12)})`; ctx.fillRect(0, 0, W, H); }
+  header(t); subtitles(t); watermark(t);
+  const f = Math.max(1 - prog(t, 0, .25), prog(t, DURATION - .6, DURATION)); if (f > 0) { ctx.fillStyle = `rgba(16,68,52,${f})`; ctx.fillRect(0, 0, W, H); }
+}
+window.DURATION = DURATION; window.renderFrame = renderFrame; window.prepare = async () => {};
+window.READY = (async () => { await Promise.all([document.fonts.load(font(900, 60), 'АБВ'), document.fonts.load('800 60px Unbounded', 'АБВ ABC 10%'), logoImg.decode().catch(() => {})]); return true; })();
+</script></body></html>
