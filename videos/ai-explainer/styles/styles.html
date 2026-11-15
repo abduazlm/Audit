@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>ИИ просто — стили</title>
+<style>
+@font-face{font-family:U;font-weight:100 900;src:url(Unbounded-cyrillic.woff2);unicode-range:U+0400-04FF}
+@font-face{font-family:U;font-weight:100 900;src:url(Unbounded-latin.woff2)}
+@font-face{font-family:M;font-weight:900;src:url(montserrat-cyrillic-900-normal.woff2);unicode-range:U+0400-04FF}
+@font-face{font-family:M;font-weight:900;src:url(montserrat-latin-900-normal.woff2)}
+html,body{margin:0;background:#222}
+/* The same scene («Что такое ИИ?») in three visual styles, for choosing a look. */
+#row{display:flex;gap:40px;padding:40px;width:max-content}
+.p{position:relative;width:1080px;height:1920px;overflow:hidden;font-family:M,sans-serif;font-weight:900}
+.cap{position:absolute;left:0;right:0;bottom:60px;text-align:center;font:900 44px M;letter-spacing:2px}
+.wm{position:absolute;left:70px;top:148px;width:215px}
+.num{position:absolute;right:70px;top:160px;font-size:26px;letter-spacing:4px}
+.t1{position:absolute;left:0;right:0;top:330px;text-align:center;font-size:120px;line-height:1}
+.t2{position:absolute;left:0;right:0;top:450px;text-align:center;font-size:230px;line-height:1}
+.chip{position:absolute;left:390px;top:980px;width:300px;height:300px;display:flex;align-items:center;justify-content:center;font-size:150px}
+.tag{position:absolute;padding:28px 44px;font-size:46px}
+.a{left:120px;top:800px}.b{left:690px;top:1040px}.c{left:150px;top:1400px}
+.q{position:absolute;left:820px;top:640px;font-size:200px}
+
+/* 2 — SEE Group brand: paper, institutional green, gold, Unbounded */
+.see{background:#F7F5F0;color:#104434;font-family:U,sans-serif}
+.see:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,transparent 0 160px,rgba(16,68,52,.045) 160px 320px)}
+.see .wm{filter:brightness(0) saturate(100%) invert(19%) sepia(35%) saturate(900%) hue-rotate(115deg)}
+.see .num{color:#A37E2D}.see .t1,.see .t2{font-family:U;font-weight:800}.see .t1{font-size:96px;top:350px}.see .t2{color:#A37E2D;font-size:210px}
+.see .chip{background:#104434;color:#FDC854;border-radius:48px;font-family:U;font-weight:800;font-size:120px;box-shadow:0 30px 60px rgba(16,68,52,.35)}
+.see .tag{font-family:U;font-weight:700;font-size:38px;border-radius:999px;background:#104434;color:#F7F5F0}
+.see .b{background:#FDC854;color:#104434}.see .c{background:transparent;border:5px solid #104434;color:#104434}
+.see .q{color:#A20404;font-family:U}.see .cap{color:#104434}
+.see .line{position:absolute;left:70px;right:70px;top:212px;height:4px;background:#A37E2D}
+
+/* 4 — neon and glass */
+.neon{background:radial-gradient(circle at 50% 58%,#1b1464 0,#090720 60%,#04030f 100%);color:#fff}
+.neon:before{content:"";position:absolute;width:700px;height:700px;left:-200px;top:300px;border-radius:50%;background:#ff3d9a;filter:blur(180px);opacity:.45}
+.neon:after{content:"";position:absolute;width:700px;height:700px;right:-250px;top:1000px;border-radius:50%;background:#19e6ff;filter:blur(180px);opacity:.45}
+.neon .num{color:#19e6ff}.neon .t1{text-shadow:0 0 30px rgba(255,255,255,.5)}
+.neon .t2{color:transparent;-webkit-text-stroke:6px #19e6ff;text-shadow:0 0 40px #19e6ff,0 0 90px #19e6ff}
+.neon .chip{border-radius:60px;background:rgba(255,255,255,.08);border:3px solid rgba(255,255,255,.5);backdrop-filter:blur(30px);box-shadow:0 0 80px #19e6ff,inset 0 0 40px rgba(25,230,255,.4);z-index:2}
+.neon .tag{border-radius:36px;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.45);backdrop-filter:blur(24px);z-index:2;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.neon .a{box-shadow:0 0 40px #ff3d9a}.neon .b{box-shadow:0 0 40px #19e6ff}.neon .c{box-shadow:0 0 40px #b9ff3d}
+.neon .q{color:#ff3d9a;text-shadow:0 0 40px #ff3d9a;z-index:2}.neon .cap{color:#fff;z-index:2}.neon .wm,.neon .num,.neon .t1,.neon .t2{z-index:2}
+
+/* 5 — magazine collage: paper cut-outs, white outlines, tilted */
+.col{background:#f2e9d8;color:#111}
+.col:before{content:"";position:absolute;inset:0;background:radial-gradient(rgba(0,0,0,.09) 1.5px,transparent 2px) 0 0/14px 14px}
+.col .wm{filter:brightness(0)}.col .num{color:#111}
+.col .t1{font-size:110px}.col .t1 span{background:#111;color:#f2e9d8;padding:6px 30px;display:inline-block;transform:rotate(-3deg)}
+.col .t2 span{background:#ff3b1f;color:#fff;padding:0 40px;display:inline-block;transform:rotate(2deg);box-shadow:14px 14px 0 #111}
+.col .chip{background:#ffd400;border:14px solid #fff;border-radius:10px;transform:rotate(-6deg);box-shadow:0 0 0 4px #111,18px 18px 0 rgba(0,0,0,.25);font-size:140px}
+.col .tag{border:10px solid #fff;box-shadow:0 0 0 3px #111,10px 10px 0 rgba(0,0,0,.25)}
+.col .a{background:#2b59ff;color:#fff;transform:rotate(-7deg)}.col .b{background:#ff3b1f;color:#fff;transform:rotate(5deg)}.col .c{background:#111;color:#ffd400;transform:rotate(-3deg)}
+.col .q{color:#2b59ff;-webkit-text-stroke:10px #fff;paint-order:stroke fill;transform:rotate(12deg)}
+.col .tape{position:absolute;width:220px;height:60px;background:rgba(255,212,0,.75);left:430px;top:950px;transform:rotate(-12deg);z-index:3}
+</style></head><body><div id="row">
+<div class="p see"><img class="wm" src="logo.png"><div class="num">01 / 11</div><div class="line"></div>
+  <div class="t1">ЧТО ТАКОЕ</div><div class="t2">ИИ?</div>
+  <div class="tag a">ТЕКСТЫ</div><div class="tag b">КАРТИНЫ</div><div class="tag c">ОТВЕТЫ</div><div class="chip">ИИ</div><div class="q">?</div>
+  <div class="cap">2 · ФИРМЕННЫЙ SEE GROUP</div></div>
+<div class="p neon"><img class="wm" src="logo.png"><div class="num">01 / 11</div>
+  <div class="t1">ЧТО ТАКОЕ</div><div class="t2">ИИ?</div>
+  <div class="tag a">ТЕКСТЫ</div><div class="tag b">КАРТИНЫ</div><div class="tag c">ОТВЕТЫ</div><div class="chip">ИИ</div><div class="q">?</div>
+  <div class="cap">4 · НЕОН И СТЕКЛО</div></div>
+<div class="p col"><img class="wm" src="logo.png"><div class="num">01 / 11</div>
+  <div class="t1"><span>ЧТО ТАКОЕ</span></div><div class="t2"><span>ИИ?</span></div>
+  <div class="tag a">ТЕКСТЫ</div><div class="tag b">КАРТИНЫ</div><div class="tag c">ОТВЕТЫ</div><div class="chip">ИИ</div><div class="tape"></div><div class="q">?</div>
+  <div class="cap">5 · ЖУРНАЛЬНЫЙ КОЛЛАЖ</div></div>
+</div></body></html>

@@ -275,7 +275,7 @@ const K = {
   net: 73.54, y70: 75.3, tysyachi: 76.72, nachalo: 78.6,
   see: 81.0, kazhdy: 81.66, rolik: 84.8, podpis: 87.16, prosto: 89.38
 };
-const LABEL = 'SEE GROUP · ИИ ПРОСТО';
+const LABEL = '';                                                         // the header shows the logo watermark instead of a text label
 const logoImg = new Image(); logoImg.src = 'assets/logo.png';
 const CYAN = '#3ee6ff', PINK = '#ff5fa2', VIO = '#7b5cff';
 
@@ -520,6 +520,8 @@ function renderFrameCam(t) {
   draw.forEach(([j, tj]) => { ctx.save(); ctx.translate(POS[j][0], POS[j][1]); SCENES[j](tj); ctx.restore(); });
   ctx.restore();
   chrome(t, i + 1);
+  if (logoImg.complete && logoImg.naturalWidth) {                         // SEE Group logo as a watermark on every frame
+    ctx.save(); ctx.globalAlpha = .85 * prog(t, .2, .6); ctx.drawImage(logoImg, 70, 148, 215, 215 * logoImg.naturalHeight / logoImg.naturalWidth); ctx.restore(); }
   const f = Math.max(1 - prog(t, 0, .2), prog(t, DURATION - .5, DURATION));
   if (f > 0) { ctx.fillStyle = `rgba(13,10,36,${f})`; ctx.fillRect(0, 0, W, H); }
 }
