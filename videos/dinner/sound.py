@@ -1,8 +1,8 @@
 """Builds assets/soundtrack.wav for the Dinner for Few review: voice (assets/vo.wav) + dark ambient bed + cut whooshes and hits, played at SPEED."""
 import subprocess, numpy as np
-SR = 48000; SPEED = 1.2; DUR = 106.2
+SR = 48000; SPEED = 1.2; DUR = 111.3; HOOK_END, D = 12.464, 5.114
 rng = np.random.default_rng(3); N = int(SR * DUR); L = np.zeros(N); R = np.zeros(N)
-CUTS = [7.3, 14.4, 21.5, 30.7, 41.5, 48.7, 60.1, 68.1, 76.2, 89.7, 98.9]   # keep in sync with SHOTS in index.html
+CUTS = [HOOK_END - D, 14.4, 21.5, 30.7, 41.5, 48.7, 60.1, 68.1, 76.2, 89.7, 98.9]   # keep in sync with SHOTS in index.html
 HITS = [(60.22, 1.0), (74.08, 1.0), (74.84, .8), (93.44, .9)]               # key frame, tiger, table flips, hotel
 def place(sig, t, g=1.0, pan=0.0):
     i = int(t * SR); sig = sig[:max(0, N - i)]; L[i:i + len(sig)] += sig * g * np.sqrt((1 - pan) / 2); R[i:i + len(sig)] += sig * g * np.sqrt((1 + pan) / 2)
@@ -23,8 +23,9 @@ for k, at in enumerate(np.arange(1.0, DUR - 3, 2.4)):
     i = int(at * SR); bed[i:i + n] += tone[:max(0, N - i)] * .35
 bed = bed / np.max(np.abs(bed)) * .5
 place(bed, 0, 1.0)
-for c in CUTS: place(whoosh(), c - .45, .12, pan=rng.uniform(-.4, .4))
-for at, g in HITS: place(hit(), at - .05, .5 * g)
+for c in CUTS: place(whoosh(), c + D - .45, .12, pan=rng.uniform(-.4, .4))
+for at, g in HITS: place(hit(), at + D - .05, .5 * g)
+place(hit(), 0.45, .45); place(hit(), 8.45, .35)               # hook: question, «10 минут»
 fx = np.stack([L, R], 1); fx /= np.max(np.abs(fx)) + 1e-9
 import wave
 with wave.open('assets/bed.wav', 'wb') as w:
