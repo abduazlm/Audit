@@ -1,0 +1,191 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Coffee Shops Reel</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// «Почему кофейни открываются рядом» — закон Хотеллинга + эффект Starbucks (Zillow, 1997–2014). Deterministic: renderFrame(t), t = seconds of assets/vo.wav.
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const W = 1080, H = 1920, CX = W / 2;
+const DURATION = 84.0;
+const SUBS = [{"a": 0.0, "b": 1.26, "w": [[0.0, 0.7, "В"], [0.7, 0.9, "ОДНОМ"], [0.9, 1.26, "ЖИЛОМ"]]}, {"a": 1.26, "b": 2.28, "w": [[1.26, 1.84, "КОМПЛЕКСЕ"], [1.84, 1.92, "В"], [1.92, 2.28, "АСТАНЕ"]]}, {"a": 2.28, "b": 3.58, "w": [[2.28, 2.62, "ИЗ"], [2.62, 2.92, "ВОСЬМИ"], [2.92, 3.58, "ПОМЕЩЕНИЙ"]]}, {"a": 3.58, "b": 4.52, "w": [[3.58, 3.86, "НА"], [3.86, 4.2, "ПЕРВОМ"], [4.2, 4.52, "ЭТАЖЕ"]]}, {"a": 4.52, "b": 6.02, "w": [[4.52, 4.98, "ПЯТЬ"], [4.98, 5.42, "ЗАНЯЛИ"], [5.42, 6.02, "КОФЕЙНИ."]]}, {"a": 6.66, "b": 7.44, "w": [[6.66, 6.92, "ПЯТЬ"], [6.92, 7.44, "КОФЕЕН,"]]}, {"a": 7.76, "b": 8.48, "w": [[7.76, 8.1, "ДВЕРЬ"], [8.1, 8.2, "В"], [8.2, 8.48, "ДВЕРЬ."]]}, {"a": 9.06, "b": 9.62, "w": [[9.06, 9.62, "КАЖЕТСЯ,"]]}, {"a": 9.82, "b": 10.6, "w": [[9.82, 10.0, "ОНИ"], [10.0, 10.42, "РАЗОРЯТ"], [10.42, 10.6, "ДРУГ"]]}, {"a": 10.6, "b": 10.86, "w": [[10.6, 10.86, "ДРУГА."]]}, {"a": 11.62, "b": 12.22, "w": [[11.62, 11.9, "НО"], [11.9, 12.08, "ЭТО"], [12.08, 12.22, "НЕ"]]}, {"a": 12.22, "b": 12.7, "w": [[12.22, 12.7, "ОШИБКА,"]]}, {"a": 13.08, "b": 13.74, "w": [[13.08, 13.28, "ЭТО"], [13.28, 13.74, "РАСЧЁТ."]]}, {"a": 14.46, "b": 15.56, "w": [[14.46, 14.94, "ПРЕДСТАВЬ"], [14.94, 15.38, "ПЛЯЖ"], [15.38, 15.56, "И"]]}, {"a": 15.56, "b": 16.88, "w": [[15.56, 15.74, "ДВУХ"], [15.74, 16.28, "ПРОДАВЦОВ"], [16.28, 16.88, "МОРОЖЕНОГО."]]}, {"a": 17.26, "b": 18.34, "w": [[17.26, 17.68, "СНАЧАЛА"], [17.68, 18.04, "ОНИ"], [18.04, 18.34, "СТОЯТ"]]}, {"a": 18.34, "b": 19.16, "w": [[18.34, 18.52, "ПО"], [18.52, 18.94, "КРАЯМ"], [18.94, 19.16, "И"]]}, {"a": 19.16, "b": 20.3, "w": [[19.16, 19.56, "КАЖДЫЙ"], [19.56, 20.1, "ЗАБИРАЕТ"], [20.1, 20.3, "СВОЮ"]]}, {"a": 20.3, "b": 21.38, "w": [[20.3, 20.88, "ПОЛОВИНУ"], [20.88, 21.38, "ПЛЯЖА."]]}, {"a": 21.72, "b": 22.58, "w": [[21.72, 21.9, "НО"], [21.9, 22.16, "ЕСЛИ"], [22.16, 22.58, "ОДИН"]]}, {"a": 22.58, "b": 23.64, "w": [[22.58, 23.06, "СДВИНЕТСЯ"], [23.06, 23.18, "К"], [23.18, 23.64, "ЦЕНТРУ,"]]}, {"a": 23.96, "b": 24.72, "w": [[23.96, 24.08, "ОН"], [24.08, 24.44, "ЗАБЕРЁТ"], [24.44, 24.72, "ЧАСТЬ"]]}, {"a": 24.72, "b": 25.8, "w": [[24.72, 25.14, "ЧУЖИХ"], [25.14, 25.8, "ПОКУПАТЕЛЕЙ,"]]}, {"a": 26.18, "b": 27.4, "w": [[26.18, 26.58, "ВТОРОЙ"], [26.58, 27.22, "СДЕЛАЕТ"], [27.22, 27.4, "ТО"]]}, {"a": 27.4, "b": 27.86, "w": [[27.4, 27.5, "ЖЕ"], [27.5, 27.86, "САМОЕ."]]}, {"a": 27.86, "b": 28.84, "w": [[27.86, 28.44, "И"], [28.44, 28.58, "В"], [28.58, 28.84, "ИТОГЕ"]]}, {"a": 28.84, "b": 30.12, "w": [[28.84, 29.4, "ОБА"], [29.4, 29.76, "СТОЯТ"], [29.76, 30.12, "РЯДОМ,"]]}, {"a": 30.42, "b": 31.32, "w": [[30.42, 30.5, "В"], [30.5, 30.78, "САМОЙ"], [30.78, 31.32, "СЕРЕДИНЕ."]]}, {"a": 31.92, "b": 33.32, "w": [[31.92, 32.16, "ЭТО"], [32.16, 32.7, "НАЗЫВАЮТ"], [32.7, 33.32, "ЗАКОНОМ"]]}, {"a": 33.32, "b": 33.96, "w": [[33.32, 33.96, "ХОТЕЛЛИНГА."]]}, {"a": 34.4, "b": 35.64, "w": [[34.4, 34.78, "ПОЭТОМУ"], [34.78, 35.32, "БАНКИ"], [35.32, 35.64, "СТОЯТ"]]}, {"a": 35.64, "b": 36.6, "w": [[35.64, 36.06, "НАПРОТИВ"], [36.06, 36.6, "БАНКОВ,"]]}, {"a": 36.9, "b": 38.02, "w": [[36.9, 37.48, "АПТЕКИ"], [37.48, 37.82, "РЯДОМ"], [37.82, 38.02, "С"]]}, {"a": 38.02, "b": 38.5, "w": [[38.02, 38.5, "АПТЕКАМИ."]]}, {"a": 39.06, "b": 39.8, "w": [[39.06, 39.2, "А"], [39.2, 39.32, "У"], [39.32, 39.8, "КОФЕЕН"]]}, {"a": 39.8, "b": 40.7, "w": [[39.8, 40.12, "ЕСТЬ"], [40.12, 40.46, "ЕЩЁ"], [40.46, 40.7, "ОДИН"]]}, {"a": 40.7, "b": 40.96, "w": [[40.7, 40.96, "ПЛЮС."]]}, {"a": 41.46, "b": 42.34, "w": [[41.46, 41.7, "ПЯТЬ"], [41.7, 42.16, "КОФЕЕН"], [42.16, 42.34, "НА"]]}, {"a": 42.34, "b": 43.28, "w": [[42.34, 42.56, "ОДНОЙ"], [42.56, 43.12, "УЛИЦЕ"]]}, {"a": 43.28, "b": 43.8, "w": [[43.28, 43.46, "ЭТО"], [43.46, 43.66, "УЖЕ"], [43.66, 43.8, "НЕ"]]}, {"a": 43.8, "b": 44.72, "w": [[43.8, 44.12, "ПРОСТО"], [44.12, 44.72, "КОФЕЙНЯ."]]}, {"a": 45.0, "b": 45.56, "w": [[45.0, 45.26, "ЭТО"], [45.26, 45.56, "МЕСТО,"]]}, {"a": 45.76, "b": 46.68, "w": [[45.76, 45.98, "КУДА"], [45.98, 46.34, "ИДУТ"], [46.34, 46.68, "ЗА"]]}, {"a": 46.68, "b": 47.14, "w": [[46.68, 47.14, "КОФЕ."]]}, {"a": 47.54, "b": 48.42, "w": [[47.54, 47.82, "ЛЮДИ"], [47.82, 48.22, "ПРИХОДЯТ"], [48.22, 48.42, "НА"]]}, {"a": 48.42, "b": 48.92, "w": [[48.42, 48.92, "УЛИЦУ,"]]}, {"a": 49.0, "b": 49.3, "w": [[49.0, 49.12, "А"], [49.12, 49.2, "НЕ"], [49.2, 49.3, "К"]]}, {"a": 49.3, "b": 49.72, "w": [[49.3, 49.72, "ВЫВЕСКЕ."]]}, {"a": 50.38, "b": 51.28, "w": [[50.38, 50.58, "НО"], [50.58, 50.9, "БОЛЬШЕ"], [50.9, 51.28, "ВСЕХ"]]}, {"a": 51.28, "b": 52.64, "w": [[51.28, 51.86, "ВЫИГРЫВАЕТ"], [51.86, 52.06, "НЕ"], [52.06, 52.64, "КОФЕЙНЯ,"]]}, {"a": 53.02, "b": 53.94, "w": [[53.02, 53.2, "А"], [53.2, 53.94, "ЗАСТРОЙЩИК."]]}, {"a": 54.54, "b": 55.98, "w": [[54.54, 55.14, "АМЕРИКАНСКИЙ"], [55.14, 55.36, "САЙТ"], [55.36, 55.98, "НЕДВИЖИМОСТИ"]]}, {"a": 55.98, "b": 57.22, "w": [[55.98, 56.54, "ZILLOW"], [56.54, 57.22, "ПОСЧИТАЛ,"]]}, {"a": 57.48, "b": 58.5, "w": [[57.48, 57.66, "ЗА"], [57.66, 58.12, "17"], [58.12, 58.5, "ЛЕТ"]]}, {"a": 58.5, "b": 59.38, "w": [[58.5, 58.84, "ДОМА"], [58.84, 59.14, "РЯДОМ"], [59.14, 59.38, "СО"]]}, {"a": 59.38, "b": 60.58, "w": [[59.38, 59.9, "STARBUCKS"], [59.9, 60.42, "ПОДОРОЖАЛИ"], [60.42, 60.58, "НА"]]}, {"a": 60.58, "b": 62.0, "w": [[60.58, 62.0, "96%,"]]}, {"a": 62.0, "b": 63.0, "w": [[62.0, 62.62, "А"], [62.62, 62.7, "В"], [62.7, 63.0, "СРЕДНЕМ"]]}, {"a": 63.0, "b": 63.86, "w": [[63.0, 63.16, "ПО"], [63.16, 63.6, "СТРАНЕ"]]}, {"a": 63.86, "b": 65.22, "w": [[63.86, 63.92, "НА"], [63.92, 65.22, "65%."]]}, {"a": 65.22, "b": 66.4, "w": [[65.22, 65.7, "КОФЕЙНЯ"], [65.7, 66.14, "ВНИЗУ"], [66.14, 66.4, "ГОВОРИТ"]]}, {"a": 66.4, "b": 67.1, "w": [[66.4, 67.1, "ПОКУПАТЕЛЮ,"]]}, {"a": 67.44, "b": 68.4, "w": [[67.44, 67.72, "ЗДЕСЬ"], [67.72, 68.1, "ЖИВУТ"], [68.1, 68.4, "ЛЮДИ,"]]}, {"a": 68.58, "b": 69.34, "w": [[68.58, 68.68, "У"], [68.68, 68.94, "КОТОРЫХ"], [68.94, 69.34, "ЕСТЬ"]]}, {"a": 69.34, "b": 70.22, "w": [[69.34, 69.64, "ДЕНЬГИ"], [69.64, 69.88, "НА"], [69.88, 70.22, "КОФЕ"]]}, {"a": 70.22, "b": 71.1, "w": [[70.22, 70.58, "КАЖДЫЙ"], [70.58, 71.1, "ДЕНЬ."]]}, {"a": 71.66, "b": 72.66, "w": [[71.66, 71.88, "ТАК"], [71.88, 72.08, "ЧТО"], [72.08, 72.66, "КОФЕЙНЯ"]]}, {"a": 72.66, "b": 73.48, "w": [[72.66, 72.8, "НА"], [72.8, 73.16, "ПЕРВОМ"], [73.16, 73.48, "ЭТАЖЕ"]]}, {"a": 73.48, "b": 74.52, "w": [[73.48, 74.04, "ПРОДАЁТ"], [74.04, 74.28, "НЕ"], [74.28, 74.52, "ТОЛЬКО"]]}, {"a": 74.52, "b": 75.0, "w": [[74.52, 75.0, "КОФЕ,"]]}, {"a": 75.34, "b": 76.68, "w": [[75.34, 75.58, "ОНА"], [75.58, 76.02, "ПРОДАЁТ"], [76.02, 76.68, "КВАРТИРЫ"]]}, {"a": 76.68, "b": 77.14, "w": [[76.68, 76.84, "НАД"], [76.84, 77.14, "СОБОЙ."]]}, {"a": 77.74, "b": 78.32, "w": [[77.74, 78.04, "ПРОВЕРЬ"], [78.04, 78.32, "САМ,"]]}, {"a": 78.7, "b": 79.2, "w": [[78.7, 79.2, "ПОСЧИТАЙ,"]]}, {"a": 79.28, "b": 80.16, "w": [[79.28, 79.5, "СКОЛЬКО"], [79.5, 80.06, "КОФЕЕН"], [80.06, 80.16, "В"]]}, {"a": 80.16, "b": 81.3, "w": [[80.16, 80.44, "ТВОЁМ"], [80.44, 80.82, "РАЙОНЕ"], [80.82, 81.3, "СТОЯТ"]]}, {"a": 81.3, "b": 81.94, "w": [[81.3, 81.54, "РЯДОМ"], [81.54, 81.8, "ДРУГ"], [81.8, 81.94, "С"]]}, {"a": 81.94, "b": 82.28, "w": [[81.94, 82.28, "ДРУГОМ."]]}];
+// SEE Group brand: paper, institutional green, gold, carmine accent
+const C = { bg: '#F7F5F0', bg2: '#efebe1', neon: '#1f8a5b', cyan: '#104434', amber: '#C2902F', yel: '#A37E2D', red: '#A20404', cream: '#104434', ink: '#F7F5F0', dim: 'rgba(16,68,52,.22)', sun: '#FDC854', green: '#104434' };
+const F = 'Montserrat, Arial Black, sans-serif', U = 'Unbounded, Montserrat, sans-serif';
+const font = (w, s, f = F) => `${w} ${Math.round(s)}px ${f}`;
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = p => 1 - Math.pow(1 - p, 3), eInOut = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const eBack = p => { const c = 1.7; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+const pop = (t, a, d = .35) => eBack(prog(t, a, a + d));
+const hash = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function circ(x, y, r, col) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); }
+function ell(x, y, rx, ry, col, rot = 0) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); }
+function txt(s, x, y, size, col, o = {}) {
+  ctx.save(); ctx.font = font(o.w || 900, size, o.f || F); ctx.textAlign = o.align || 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = col;
+  if (o.ls) ctx.letterSpacing = o.ls + 'px'; if (o.shadow) { ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 20; }
+  ctx.fillText(s, x, y); ctx.restore();
+}
+function label(s, x, y, t, a, col = C.yel, ink = C.ink, size = 34) {   // pop-in plate
+  const k = pop(t, a); if (k <= 0) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(k, k); ctx.font = font(900, size); const w = ctx.measureText(s).width + 36;
+  rr(-w / 2, -size * .8, w, size * 1.6, 12); ctx.fillStyle = col; ctx.fill(); txt(s, 0, 2, size, ink); ctx.restore();
+}
+
+const logoImg = new Image(); logoImg.src = 'assets/logo.png';
+function glow(col, b = 30) { ctx.shadowColor = 'rgba(16,68,52,.22)'; ctx.shadowBlur = b * .6; ctx.shadowOffsetY = 6; }   // brand look: soft paper shadow instead of neon glow
+function noGlow() { ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0; }
+function bg(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, C.bg2); g.addColorStop(1, C.bg); ctx.fillStyle = g; ctx.fillRect(-300, -300, W + 600, H + 600);
+  ctx.fillStyle = 'rgba(16,68,52,.07)'; for (let x = 0; x < W; x += 60) for (let y = 0; y < H; y += 60) ctx.fillRect(x, y, 3, 3);
+}
+function cup(x, y, s, t, o = {}) {                                   // neon coffee cup with steam
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); const col = o.col || C.amber;
+  glow(col, 30); ctx.strokeStyle = col; ctx.lineWidth = 8; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(-40, -40); ctx.lineTo(40, -40); ctx.lineTo(30, 50); ctx.lineTo(-30, 50); ctx.closePath(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-46, -40); ctx.lineTo(46, -40); ctx.stroke(); rr(-44, -58, 88, 14, 6); ctx.stroke();
+  for (let i = -1; i <= 1; i++) { ctx.beginPath(); for (let k = 0; k <= 10; k++) { const yy = -70 - k * 7, xx = i * 18 + Math.sin(k * .8 + t * 4 + i) * 6; k ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy); } ctx.globalAlpha = .6; ctx.stroke(); ctx.globalAlpha = 1; }
+  noGlow(); ctx.restore();
+}
+function shop(x, y, w, h, t, o = {}) {                               // ground-floor unit
+  ctx.save(); ctx.translate(x, y);
+  rr(0, 0, w, h, 8); ctx.fillStyle = o.on ? 'rgba(253,200,84,.30)' : 'rgba(16,68,52,.10)'; ctx.fill();
+  ctx.strokeStyle = o.on ? C.amber : C.dim; ctx.lineWidth = 4; if (o.on) glow(C.amber, 25); rr(0, 0, w, h, 8); ctx.stroke(); noGlow();
+  ctx.fillStyle = o.on ? C.amber : C.dim; rr(w * .35, h * .45, w * .3, h * .55, 4); ctx.fill();
+  ctx.restore();
+}
+function building(x, y, t, o = {}) {                                 // residential block; o.on = lit units (0..7), o.lit = share of lit windows
+  const w = 900, floors = o.floors || 9, fh = 120, bw = w / 8;
+  ctx.save(); ctx.translate(x - w / 2, y);
+  ctx.fillStyle = C.green; ctx.fillRect(0, -floors * fh, w, floors * fh + 220); ctx.strokeStyle = C.green; ctx.lineWidth = 4; ctx.strokeRect(0, -floors * fh, w, floors * fh + 220);
+  for (let f = 0; f < floors; f++) for (let c = 0; c < 8; c++) { const lit = hash(f * 8 + c + 1) < (o.lit || .25) * (f < (o.litF || 99) ? 1 : 0);
+    ctx.fillStyle = lit ? C.sun : 'rgba(247,245,240,.12)'; ctx.fillRect(c * bw + 22, -floors * fh + f * fh + 26, bw - 44, fh - 50); noGlow(); }
+  ctx.fillStyle = C.bg; ctx.fillRect(4, 10, w - 8, 206); for (let c = 0; c < 8; c++) shop(c * bw + 8, 20, bw - 16, 180, t, { on: o.on && o.on[c] });
+  ctx.restore();
+}
+function person(x, y, s, col) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); circ(0, -36, 14, col); rr(-14, -20, 28, 44, 12); ctx.fillStyle = col; ctx.fill(); ctx.restore(); }
+function icon(kind, x, y, s, col) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); glow(col, 20); ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 7;
+  if (kind === 'bank') { ctx.beginPath(); ctx.moveTo(-50, -20); ctx.lineTo(0, -55); ctx.lineTo(50, -20); ctx.closePath(); ctx.stroke(); for (let i = -1; i <= 1; i++) ctx.fillRect(i * 30 - 6, -12, 12, 50); ctx.fillRect(-55, 42, 110, 10); }
+  if (kind === 'ph') { rr(-45, -45, 90, 90, 16); ctx.stroke(); ctx.fillRect(-9, -28, 18, 56); ctx.fillRect(-28, -9, 56, 18); }
+  noGlow(); ctx.restore();
+}
+function plateN(s, x, y, t, a, col = C.neon, ink = C.ink, size = 40) { label(s, x, y, t, a, col, ink, size); }
+
+const SHOTS = [[0, 6.4, sA], [6.4, 9.0, sB], [9.0, 14.2, sC], [14.2, 31.7, sD], [31.7, 38.9, sE], [38.9, 50.2, sF], [50.2, 54.4, sG], [54.4, 71.4, sH], [71.4, 77.6, sI], [77.6, DURATION, sJ]];
+const ON = [4.6, 4.75, 4.9, 5.05, 5.2];
+function sA(t) {                                                     // the ЖК: 5 of 8 units light up as coffee shops
+  bg(t); const lit = [1, 0, 1, 1, 0, 1, 0, 1].map((v, i) => v && t > ON[[0, 0, 1, 2, 0, 3, 0, 4][i]]);
+  building(CX, 1320, t, { on: lit, lit: .3, floors: 5 });
+  [0, 2, 3, 5, 7].forEach((c, i) => { const k = pop(t, ON[i]); if (k > 0) cup(CX - 450 + c * 112.5 + 56, 1400, .45 * k, t, { col: C.green }); });
+  plateN('АСТАНА · ОДИН ЖК', CX, 330, t, .9, C.cyan, C.ink, 40);
+  const n = [0, 1, 2, 3, 4].filter(i => t > ON[i]).length; if (n) { ctx.save(); glow(C.amber, 40); txt(n + ' / 8', CX, 470, 130, C.amber, { f: U, w: 800 }); ctx.restore(); }
+  if (t > 5.4) plateN('КОФЕЙНИ', CX, 600, t, 5.4, C.amber, C.ink, 46);
+}
+function sB(t) {                                                     // door to door
+  bg(t); for (let i = 0; i < 5; i++) { const k = pop(t, 6.5 + i * .12); shop(70 + i * 190, 820, 180, 300, t, { on: 1 }); if (k > 0) cup(160 + i * 190, 720, .6 * k, t); }
+  plateN('ДВЕРЬ В ДВЕРЬ', CX, 1300, t, 7.8, C.amber, C.ink, 56);
+}
+function sC(t) {                                                     // they'll ruin each other? — no, it's a plan
+  bg(t); const shake = t < 11.5 ? Math.sin(t * 40) * 6 : 0;
+  for (let i = 0; i < 5; i++) cup(160 + i * 190 + shake * (i % 2 ? 1 : -1), 820, .7, t, { col: t < 11.5 ? C.red : C.neon });
+  if (t < 11.5) { ctx.save(); glow(C.red, 40); txt('РАЗОРЯТ', CX, 470, 110, C.red, { f: U, w: 800 }); txt('ДРУГ ДРУГА?', CX, 600, 80, C.cream, { f: U, w: 800 }); ctx.restore(); }
+  else { plateN('НЕ ОШИБКА', CX, 480, t, 11.7, C.cream, C.ink, 54); const k = pop(t, 13.1, .4); ctx.save(); ctx.translate(CX, 1180); ctx.rotate(-.08); ctx.scale(k, k); glow(C.neon, 40); ctx.strokeStyle = C.neon; ctx.lineWidth = 12; rr(-300, -90, 600, 180, 20); ctx.stroke(); txt('РАСЧЁТ', 0, 6, 110, C.neon, { f: U, w: 800 }); ctx.restore(); }
+}
+function sD(t) {                                                     // Hotelling beach
+  const sand = ctx.createLinearGradient(0, 0, 0, H); sand.addColorStop(0, '#dfe9e3'); sand.addColorStop(.42, '#9fc4b4'); sand.addColorStop(.44, '#efe3c6'); sand.addColorStop(1, '#e6d6b0'); ctx.fillStyle = sand; ctx.fillRect(-300, -300, W + 600, H + 600);
+  ctx.strokeStyle = 'rgba(247,245,240,.8)'; ctx.lineWidth = 4; for (let i = 0; i < 5; i++) { ctx.beginPath(); for (let x = -40; x < W + 40; x += 20) { const y = 700 + i * 34 + Math.sin(x / 60 + t * 2 + i) * 8; x < -20 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.stroke(); }
+  const L0 = 90, L1 = 990; const a = lerp(.12, .48, eInOut(prog(t, 22.6, 24.2))), b = lerp(.88, .52, eInOut(prog(t, 26.2, 27.8)));
+  const mid = (a + b) / 2;
+  for (let i = 0; i < 40; i++) { const u = (i + .5) / 40, x = lerp(L0, L1, u), y = 1180 + (hash(i) - .5) * 260; person(x, y, 1.1, u < mid ? C.cyan : C.amber); }
+  [[a, C.cyan], [b, C.amber]].forEach(([u, col], i) => { const x = lerp(L0, L1, u); ctx.save(); ctx.translate(x, 960); glow(col, 30); ctx.fillStyle = col; rr(-55, -40, 110, 80, 12); ctx.fill(); noGlow();
+    ctx.fillStyle = C.bg; ctx.beginPath(); ctx.moveTo(-70, -40); ctx.lineTo(0, -110); ctx.lineTo(70, -40); ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 6; ctx.stroke();
+    ctx.fillStyle = C.cream; ctx.beginPath(); ctx.moveTo(-14, -14); ctx.lineTo(14, -14); ctx.lineTo(0, 22); ctx.closePath(); ctx.fill(); circ(0, -20, 14, '#ffd0e0'); ctx.restore(); });
+  const sa = Math.round(mid * 100), sb = 100 - sa;
+  txt(sa + '%', lerp(L0, L1, mid / 2), 1460, 84, C.cyan, { f: U, w: 800 }); txt(sb + '%', lerp(L0, L1, (1 + mid) / 2), 1460, 84, C.amber, { f: U, w: 800 });
+  plateN('ПЛЯЖ И ДВА ПРОДАВЦА', CX, 380, t, 14.6, C.cream, C.ink, 44);
+  if (t > 29.4) plateN('ОБА В ЦЕНТРЕ', CX, 500, t, 29.4, C.neon, C.ink, 48);
+}
+function sE(t) {                                                     // Hotelling's law: banks by banks, pharmacies by pharmacies
+  bg(t); const k = pop(t, 32.6, .45); ctx.save(); ctx.translate(CX, 470); ctx.scale(k, k); glow(C.neon, 40); txt('ЗАКОН', 0, -70, 80, C.cream, { f: U, w: 800 }); txt('ХОТЕЛЛИНГА', 0, 40, 96, C.neon, { f: U, w: 800 }); ctx.restore();
+  ctx.strokeStyle = 'rgba(16,68,52,.12)'; ctx.lineWidth = 50; ctx.beginPath(); ctx.moveTo(0, 1100); ctx.lineTo(W, 1100); ctx.moveTo(CX, 700); ctx.lineTo(CX, 1600); ctx.stroke();
+  if (t > 34.8) { const k1 = pop(t, 34.8); ctx.save(); ctx.globalAlpha = k1; icon('bank', 330, 960, 1, C.cyan); icon('bank', 330, 1240, 1, C.cyan); ctx.restore(); plateN('БАНКИ', 330, 1430, t, 34.9, C.cyan, C.ink, 36); }
+  if (t > 36.9) { const k2 = pop(t, 36.9); ctx.save(); ctx.globalAlpha = k2; icon('ph', 750, 960, 1, C.neon); icon('ph', 750, 1240, 1, C.neon); ctx.restore(); plateN('АПТЕКИ', 750, 1430, t, 37.0, C.neon, C.ink, 36); }
+}
+function sF(t) {                                                     // a street "for coffee": people come to the street, not a sign
+  bg(t); ctx.fillStyle = '#e7e2d6'; ctx.fillRect(0, 980, W, 360);
+  for (let i = 0; i < 5; i++) { shop(70 + i * 190, 760, 180, 220, t, { on: 1 }); cup(160 + i * 190, 690, .45, t); }
+  const flow = prog(t, 41.4, 50);
+  for (let i = 0; i < 26; i++) { const side = i % 2 ? 1 : -1, p = clamp(flow * 1.6 - hash(i) * .6), x = lerp(side > 0 ? W + 60 : -60, 120 + hash(i + 4) * 840, eOut(p)), y = 1080 + hash(i + 7) * 220; if (p > 0) person(x, y, 1, C.cream); }
+  if (t > 41.5) plateN('5 КОФЕЕН = 1 МЕСТО', CX, 400, t, 41.5, C.amber, C.ink, 46);
+  if (t > 45) plateN('«ЗА КОФЕ»', CX, 520, t, 45.0, C.cream, C.ink, 50);
+  if (t > 47.5) plateN('НА УЛИЦУ, А НЕ К ВЫВЕСКЕ', CX, 1500, t, 47.5, C.neon, C.ink, 38);
+}
+function sG(t) {                                                     // who wins most? the developer
+  bg(t); ctx.save(); ctx.globalAlpha = .9; building(CX, 1400, t, { lit: .1, floors: 5 }); ctx.restore();
+  ctx.save(); ctx.translate(880, 640); ctx.strokeStyle = C.yel; ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 600); ctx.moveTo(-460, 20); ctx.lineTo(120, 20); ctx.stroke();
+  const sw = Math.sin(t * 2) * 20; ctx.beginPath(); ctx.moveTo(-380 + sw, 20); ctx.lineTo(-380 + sw, 220); ctx.stroke(); ctx.fillStyle = C.yel; ctx.fillRect(-420 + sw, 220, 80, 50); noGlow(); ctx.restore();
+  txt('КТО ВЫИГРЫВАЕТ?', CX, 350, 60, C.cream, { f: U, w: 800 });
+  if (t > 53) { const k = pop(t, 53.1, .4); ctx.save(); ctx.translate(CX, 470); ctx.scale(k, k); glow(C.yel, 40); txt('ЗАСТРОЙЩИК', 0, 0, 100, C.yel, { f: U, w: 800 }); ctx.restore(); }
+}
+function sH(t) {                                                     // Zillow: +96 % vs +65 %
+  bg(t); plateN('ZILLOW · США · 1997–2014', CX, 330, t, 55.0, C.cream, C.ink, 36);
+  const base = 1350, mx = 760;
+  const g1 = eOut(prog(t, 58.5, 61)) * 96, g2 = eOut(prog(t, 62.2, 64)) * 65;
+  [[g1, C.amber, 320, 'РЯДОМ СО STARBUCKS'], [g2, C.cyan, 760, 'В СРЕДНЕМ ПО США']].forEach(([v, col, x, lab]) => {
+    if (v <= 0) return; const h = v / 100 * mx; ctx.save(); glow(col, 30); ctx.fillStyle = col; rr(x - 110, base - h, 220, h, 14); ctx.fill(); noGlow();
+    txt('+' + Math.round(v) + '%', x, base - h - 70, 96, col, { f: U, w: 800 }); ctx.restore(); txt(lab, x, base + 60, 30, C.cream); });
+    if (t > 65.2) plateN('ЗДЕСЬ ЖИВУТ ЛЮДИ С ДЕНЬГАМИ', CX, 1520, t, 65.2, C.neon, C.ink, 36);
+}
+function sI(t) {                                                     // it sells the flats above it
+  bg(t); const lf = Math.floor(lerp(0, 7, prog(t, 72.2, 76.4)));
+  building(CX, 1300, t, { on: [0, 0, 0, 1, 0, 0, 0, 0], lit: .85, litF: 99, floors: 6 });
+  ctx.save(); ctx.fillStyle = 'rgba(6,9,18,.75)'; ctx.fillRect(CX - 450, 1300 - 6 * 120, 900, (6 - Math.min(6, lf)) * 120); ctx.restore();
+  cup(CX - 450 + 3 * 112.5 + 56, 1240, .5, t);
+  for (let i = 0; i < lf && i < 6; i++) { const y = 1300 - (i + 1) * 120 + 60; txt('↑', CX + 490, y, 50, C.neon, { f: U }); }
+  if (t > 75.3) plateN('ПРОДАЁТ КВАРТИРЫ НАД СОБОЙ', CX, 330, t, 75.4, C.amber, C.ink, 40);
+  else plateN('ПРОДАЁТ НЕ ТОЛЬКО КОФЕ', CX, 330, t, 71.7, C.cream, C.ink, 40);
+}
+function sJ(t) {                                                     // check it yourself
+  bg(t); const k = pop(t, 77.8, .45); ctx.save(); ctx.translate(CX, 420); ctx.scale(k, k); glow(C.neon, 40); txt('ПРОВЕРЬ САМ', 0, 0, 96, C.neon, { f: U, w: 800 }); ctx.restore();
+  ctx.save(); ctx.translate(CX, 1050); rr(-300, -420, 600, 840, 60); ctx.fillStyle = C.green; ctx.fill(); ctx.strokeStyle = C.yel; ctx.lineWidth = 8; glow(C.cyan, 20); ctx.stroke(); noGlow();
+  ctx.strokeStyle = 'rgba(247,245,240,.18)'; ctx.lineWidth = 30; ctx.beginPath(); ctx.moveTo(-280, -100); ctx.lineTo(280, -60); ctx.moveTo(-60, -400); ctx.lineTo(20, 400); ctx.moveTo(-280, 200); ctx.lineTo(280, 160); ctx.stroke();
+  const pins = [[-40, -80], [10, -70], [-20, -20], [40, -40], [-60, -30]];
+  pins.forEach(([x, y], i) => { const kk = pop(t, 79.4 + i * .35); if (kk <= 0) return; ctx.save(); ctx.translate(x * 2, y * 2); ctx.scale(kk, kk); glow(C.amber, 20); ctx.fillStyle = C.sun; ctx.beginPath(); ctx.arc(0, -40, 26, Math.PI, 0); ctx.lineTo(0, 0); ctx.closePath(); ctx.fill(); circ(0, -42, 10, C.green); noGlow(); ctx.restore(); });
+  const n = pins.filter((_, i) => t > 79.4 + i * .35).length; if (n) txt(String(n), 0, 300, 110, C.sun, { f: U, w: 800 });
+  ctx.restore();
+}
+function header(t) {
+  ctx.fillStyle = C.green; ctx.fillRect(0, 0, W, 250); ctx.fillStyle = C.yel; ctx.fillRect(0, 250, W, 6);
+  txt('ПОЧЕМУ КОФЕЙНИ', CX, 118, 54, C.bg, { f: U, w: 800 }); txt('ОТКРЫВАЮТСЯ РЯДОМ', CX, 188, 54, C.sun, { f: U, w: 800 });
+}
+function subtitles(t) {
+  const s = SUBS.find(x => t >= x.a - .05 && t < x.b + .35); if (!s) return;
+  ctx.save(); ctx.font = font(900, 64); const sp = 18, widths = s.w.map(w => ctx.measureText(w[2]).width), total = widths.reduce((a, b) => a + b, 0) + sp * (s.w.length - 1);
+  const fit = Math.min(1, 980 / total); ctx.translate(CX, 1660); ctx.scale(fit, fit); ctx.translate(-CX, -1660);
+  let x = CX - total / 2; const y = 1660, k = .9 + .1 * eOut(prog(t, s.a - .05, s.a + .1));
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.lineJoin = 'round';
+  s.w.forEach((w, i) => { const on = t >= w[0] - .03; ctx.lineWidth = 14; ctx.strokeStyle = C.bg; ctx.strokeText(w[2], x, y); ctx.fillStyle = on ? (t < w[1] + .1 ? C.red : C.green) : 'rgba(16,68,52,.35)'; ctx.fillText(w[2], x, y); x += widths[i] + sp; });
+  ctx.restore();
+}
+function watermark(t) {
+  if (!logoImg.naturalWidth) return; const w = 170, h = w * logoImg.naturalHeight / logoImg.naturalWidth;
+  if (!window.LOGO_G) { const c = document.createElement('canvas'); c.width = logoImg.naturalWidth; c.height = logoImg.naturalHeight; const x = c.getContext('2d'); x.drawImage(logoImg, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = C.green; x.fillRect(0, 0, c.width, c.height); window.LOGO_G = c; }
+  ctx.save(); ctx.globalAlpha = .85; ctx.drawImage(window.LOGO_G, W - w - 50, 1820 - h, w, h); ctx.restore();
+}
+function vignette() {}
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.letterSpacing = '0px'; noGlow();
+  let i = SHOTS.findIndex(([a, b]) => t >= a && t < b); if (i < 0) i = SHOTS.length - 1;
+  const [a, b, fn] = SHOTS[i], p = (t - a) / (b - a);
+  const z = 1 + .05 * p, sh = t - a < .25 && i > 0 ? (1 - (t - a) / .25) * 14 : 0;
+  ctx.save(); ctx.translate(CX + Math.sin(t * 50) * sh, H / 2 + Math.cos(t * 43) * sh); ctx.scale(z, z); ctx.translate(-CX, -H / 2); fn(t); ctx.restore(); noGlow();
+  vignette();
+  if (t - a < .12 && i > 0) { ctx.fillStyle = `rgba(253,200,84,${.35 * (1 - (t - a) / .12)})`; ctx.fillRect(0, 0, W, H); }
+  header(t); subtitles(t); watermark(t);
+  const f = Math.max(1 - prog(t, 0, .25), prog(t, DURATION - .6, DURATION)); if (f > 0) { ctx.fillStyle = `rgba(16,68,52,${f})`; ctx.fillRect(0, 0, W, H); }
+}
+window.DURATION = DURATION; window.renderFrame = renderFrame; window.prepare = async () => {};
+window.READY = (async () => { await Promise.all([document.fonts.load(font(900, 60), 'АБВ'), document.fonts.load('800 60px Unbounded', 'АБВ ABC 10%'), logoImg.decode().catch(() => {})]); return true; })();
+</script></body></html>
