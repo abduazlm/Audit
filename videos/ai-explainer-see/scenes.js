@@ -1,0 +1,315 @@
+// «Что такое искусственный интеллект и кто его создал» — максимально просто. SEE Group brand restyle of videos/ai-explainer. Timing: Whisper word starts on
+// assets/vo.wav (ElevenLabs «Pavel», 0.5 s lead). Facts: Turing 1950 («Can machines think?»), McCarthy coined
+// the term for the 1956 Dartmouth workshop, Rosenblatt's perceptron (1958), 2012 ImageNet breakthrough by
+// Hinton's team (AlexNet), 2017 Transformer (Google), 2022 ChatGPT. People are drawn as plain silhouettes.
+const VO = [0.5, 8.1, 15.44, 20.64, 28.32, 34.68, 43.0, 53.82, 63.66, 71.66, 81.0];
+const DURATION = 91.8;
+const SC = VO.map((s, i) => [i ? s - .3 : 0, i < VO.length - 1 ? VO[i + 1] - .3 : DURATION]);
+const K = {
+  teksty: 2.2, kartiny: 3.32, voprosy: 4.94, chto: 6.2,
+  programma: 9.64, pravila: 11.9, uchitsya: 12.7, rebenok: 14.5,
+  million: 16.04, sama: 18.02, koshka: 19.7,
+  kto: 20.78, y1950: 22.2, turing: 24.74, vopros: 26.78,
+  y1956: 28.88, mccarthy: 30.3, nazvanie: 32.56,
+  neuro: 35.64, neurons: 38.72, rosen: 41.5,
+  slabye: 44.38, proryv: 45.42, y2012: 46.84, hinton: 49.44, kartinki: 51.4,
+  y2017: 53.96, transformer: 56.12, chatbots: 59.62, y2022: 60.88, gpt: 62.26,
+  kak: 63.66, prochital: 65.14, ugad: 67.96, slovo: 69.34, snova: 70.12,
+  net: 73.54, y70: 75.3, tysyachi: 76.72, nachalo: 78.6,
+  see: 81.0, kazhdy: 81.66, rolik: 84.8, podpis: 87.16, prosto: 89.38
+};
+const LABEL = '';                                                         // the header shows the logo watermark instead of a text label
+const logoImg = new Image(); logoImg.src = 'assets/logo.png';
+let CYAN = '#1b7a5c', PINK = '#C2902F', VIO = '#FDC854', EDGE = 'rgba(16,68,52,.18)';
+const PAPER = '#F7F5F0', SEEGREEN = '#104434', GOLD = '#A37E2D', SUN = '#FDC854';
+const CATS = ['#FDC854', '#f0b35a', '#8fe3c4', '#F7F5F0', '#ffb86b', '#e2574c'];
+// two themes from the brandbook: paper (light) and institutional green (dark); history scenes sit on dark panels
+const TH = {
+  light: { BG: PAPER, BG2: '#e7e2d6', WHITE: SEEGREEN, YEL: GOLD, RED: '#A20404', GREY: '#545454', GREEN: '#1f8a5b', CYAN: '#1b7a5c', PINK: '#C2902F', VIO: SUN, INK: PAPER, EDGE: 'rgba(16,68,52,.18)' },
+  dark: { BG: SEEGREEN, BG2: '#0a3327', WHITE: PAPER, YEL: SUN, RED: '#ff6b5e', GREY: '#b9c4bf', GREEN: '#3ddc97', CYAN: '#8fe3c4', PINK: '#f0b35a', VIO: GOLD, INK: SEEGREEN, EDGE: 'rgba(255,255,255,.16)' }
+};
+const DARK = [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0];
+function theme(dark) { const c = TH[dark ? 'dark' : 'light']; BG = c.BG; BG2 = c.BG2; WHITE = c.WHITE; YEL = c.YEL; RED = c.RED; GREY = c.GREY; GREEN = c.GREEN; CYAN = c.CYAN; PINK = c.PINK; VIO = c.VIO; INK = c.INK; EDGE = c.EDGE; }
+function title(lines, t, a, b, y = 330) { HEADF = true; titleBase(lines, t, a, b, y); HEADF = false; }
+function foil(draw) {                                                     // gold-foil glint sweeping across whatever draw() just painted
+  ctx.save(); ctx.globalCompositeOperation = 'source-atop'; draw(); ctx.restore();
+}
+
+// ---------- props ----------
+function chip(x, y, s, t) {                                              // the «ИИ» core: glowing rounded chip with pins
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 330); g.addColorStop(0, 'rgba(163,126,45,.28)'); g.addColorStop(1, 'rgba(163,126,45,0)'); ctx.fillStyle = g; ctx.fillRect(-330, -330, 660, 660);
+  ctx.strokeStyle = CYAN; ctx.lineWidth = 8; ctx.lineCap = 'round';
+  for (let i = -2; i <= 2; i++) { const p = .5 + .5 * Math.sin(t * 5 + i); [[i * 46, -150, i * 46, -150 - 50 * p], [i * 46, 150, i * 46, 150 + 50 * p], [-150, i * 46, -150 - 50 * p, i * 46], [150, i * 46, 150 + 50 * p, i * 46]].forEach(([a, b, c, d]) => { ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.stroke(); }); }
+  ctx.shadowColor = CYAN; ctx.shadowBlur = 40; rr(-150, -150, 300, 300, 50); ctx.fillStyle = BG2; ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+  ctx.font = font(900, 150); ctx.fillStyle = WHITE; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('ИИ', 0, 10);
+  ctx.restore();
+}
+function net(x, y, s, t, o = {}) {                                       // layered neural network with signals running along the edges
+  const { layers = [3, 5, 5, 2], build = 1, col = CYAN, hot = -1 } = o, dx = 190, P = [];
+  layers.forEach((n, i) => { P.push([]); for (let j = 0; j < n; j++) P[i].push([(i - (layers.length - 1) / 2) * dx, (j - (n - 1) / 2) * 110]); });
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  let e = 0; const total = layers.slice(1).reduce((acc, n, i) => acc + n * layers[i], 0);
+  for (let i = 0; i < P.length - 1; i++) for (const a of P[i]) for (const b of P[i + 1]) {
+    const k = clamp(build * total - e); e++; if (k <= 0) continue;
+    ctx.strokeStyle = EDGE; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(lerp(a[0], b[0], k), lerp(a[1], b[1], k)); ctx.stroke();
+    if (build >= 1 && hash(e) > .55) { const p = (t * .9 + hash(e + 3)) % 1; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(lerp(a[0], b[0], p), lerp(a[1], b[1], p), 6, 0, 7); ctx.fill(); }
+  }
+  P.forEach((L, i) => L.forEach((p, j) => { const k = pop(build, i / P.length * .8, .2); if (k <= 0) return; const on = i === P.length - 1 && j === hot;
+    ctx.beginPath(); ctx.arc(p[0], p[1], 28 * k * (1 + .08 * Math.sin(t * 5 + i + j)), 0, 7); ctx.fillStyle = on ? YEL : BG2; ctx.fill(); ctx.strokeStyle = on ? YEL : col; ctx.lineWidth = 6; ctx.stroke(); }));
+  ctx.restore();
+}
+function cat(x, y, s, col, rot = 0) {                                    // little cat face card
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+  rr(-70, -70, 140, 140, 22); ctx.fillStyle = SEEGREEN; ctx.fill();
+  ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(-46, -22); ctx.lineTo(-36, -58); ctx.lineTo(-10, -34); ctx.moveTo(46, -22); ctx.lineTo(36, -58); ctx.lineTo(10, -34); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 6, 46, 0, 7); ctx.fill();
+  ctx.fillStyle = '#0a3327'; [-17, 17].forEach(ex => { ctx.beginPath(); ctx.ellipse(ex, 0, 6, 9, 0, 0, 7); ctx.fill(); });
+  ctx.fillStyle = '#A20404'; ctx.beginPath(); ctx.moveTo(-6, 16); ctx.lineTo(6, 16); ctx.lineTo(0, 24); ctx.fill();
+  ctx.strokeStyle = '#0a3327'; ctx.lineWidth = 2.5; [[-10, 22, -42, 16], [-10, 26, -42, 32], [10, 22, 42, 16], [10, 26, 42, 32]].forEach(([a, b, c, d]) => { ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.stroke(); });
+  ctx.restore();
+}
+function year(s, t, a, y = 560, col = YEL) {                              // big year stamp
+  const k = pop(t, a, .45); if (k <= 0) return;
+  HEADF = true; ctx.save(); ctx.translate(CX, y); ctx.scale(k, k); ctx.font = font(900, 230); ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.letterSpacing = '-6px';
+  const g = ctx.createLinearGradient(0, -200, 0, 10); g.addColorStop(0, '#ffe7a8'); g.addColorStop(.55, col); g.addColorStop(1, '#b98a2e');
+  ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 10; ctx.fillStyle = g; ctx.fillText(s, 0, 0); ctx.shadowColor = 'transparent';
+  const sh = ((t * .7) % 2) - .5, g2 = ctx.createLinearGradient(-500 + sh * 1000, 0, -320 + sh * 1000, 0); g2.addColorStop(0, 'rgba(255,255,255,0)'); g2.addColorStop(.5, 'rgba(255,255,255,.75)'); g2.addColorStop(1, 'rgba(255,255,255,0)');
+  foil(() => { ctx.fillStyle = g2; ctx.fillText(s, 0, 0); }); ctx.restore(); HEADF = false;
+}
+function scientist(x, y, s, t, name, at, b, col = PINK) {                 // silhouette with a name plate
+  const k = pop(t, at - .3, .45); if (k <= 0) return;
+  ctx.save(); ctx.globalAlpha = clamp(k); const g = ctx.createRadialGradient(x, y + 60 * s, 0, x, y + 60 * s, 330 * s); g.addColorStop(0, 'rgba(253,200,84,.22)'); g.addColorStop(1, 'rgba(253,200,84,0)'); ctx.fillStyle = g; ctx.fillRect(x - 340 * s, y - 300 * s, 680 * s, 720 * s);
+  person(x, y, s * clamp(k, 0, 1.2), { col, head: '#ffd9c2', bob: Math.sin(t * 2.2) * 5 }); ctx.restore();
+  plate(name, x, y + 300 * s, t, at, b, { col: WHITE, size: 44 });
+}
+function typed(s, x, y, size, col, t, a, cps = 22) {                      // text typed letter by letter with a caret
+  const n = Math.floor(clamp((t - a) * cps, 0, s.length)); if (t < a) return;
+  ctx.save(); ctx.font = font(900, size); ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; const w = ctx.measureText(s).width, w2 = ctx.measureText(s.slice(0, n)).width;
+  ctx.fillStyle = col; ctx.fillText(s.slice(0, n), x - w / 2, y); if (Math.floor(t * 3) % 2 === 0 || n < s.length) ctx.fillRect(x - w / 2 + w2 + 6, y - size * .5, 8, size); ctx.restore();
+}
+
+// ---------- scenes ----------
+function s1(t) {                                                          // hook: it writes, draws, answers — but what is it?
+  const [a, b] = SC[0];
+  chip(CX, 1130, 1.0 * pop(t, a + .1, .5), t);
+  const items = [['ТЕКСТЫ', K.teksty, -2.4], ['КАРТИНЫ', K.kartiny, -.4], ['ОТВЕТЫ', K.voprosy - .5, 1.7]];
+  items.forEach(([s, at, a0], i) => { const k = pop(t, at - .2, .4); if (k <= 0) return; const an = a0 + t * .35, x = CX + Math.cos(an) * 360, y = 1130 + Math.sin(an) * 430;
+    ctx.save(); ctx.translate(x, y); ctx.scale(k, k); rr(-150, -60, 300, 120, 30); ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 10; ctx.fillStyle = [WHITE, YEL, RED][i]; ctx.fill(); ctx.shadowColor = 'transparent'; txt(s, 0, 4, 46, BG); ctx.restore(); });
+  qmark(880, 720, 1.2, t, K.chto);
+  title([['ЧТО ТАКОЕ', WHITE, 120], ['ИИ?', YEL, 220]], t, a, b, 400);
+}
+function s2(t) {                                                          // not rules — learning from examples, like a child
+  const [a, b] = SC[1];
+  // left: a list of ready-made rules, struck out
+  const kr = eOut(prog(t, K.programma, K.programma + .5));
+  ctx.save(); ctx.globalAlpha = kr * (t > K.uchitsya ? .45 : 1); rr(80, 760, 420, 480, 28); ctx.fillStyle = BG2; ctx.fill(); ctx.strokeStyle = EDGE; ctx.lineWidth = 3; ctx.stroke();
+  txt('ПРАВИЛА', 290, 820, 40, GREY); ['ЕСЛИ … ТО …', 'ЕСЛИ … ТО …', 'ЕСЛИ … ТО …', 'ИНАЧЕ …'].forEach((s, i) => txt(s, 290, 910 + i * 80, 34, WHITE, 'center', 800)); ctx.restore();
+  const kx = eInOut(prog(t, K.pravila, K.pravila + .5)); if (kx > 0) { ctx.strokeStyle = RED; ctx.lineWidth = 16; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(110, 790); ctx.lineTo(110 + 360 * kx, 790 + 420 * kx); ctx.stroke(); }
+  // right: examples flow into the network
+  const kn = prog(t, K.uchitsya - .3, K.uchitsya + 1.2);
+  if (kn > 0) { net(770, 1000, .62, t, { build: kn, layers: [3, 4, 2] });
+    for (let i = 0; i < 5; i++) { const p = ((t - K.uchitsya) * .6 + i / 5) % 1; if (t < K.uchitsya) break; ctx.save(); ctx.globalAlpha = Math.sin(Math.PI * p); cat(lerp(560, 660, p) , lerp(1420, 1080, p) + Math.sin(i) * 30, .45, CATS[i], p * 2); ctx.restore(); } }
+  plate('ПРИМЕРЫ', 770, 1270, t, K.uchitsya + .3, b, { col: CYAN, ink: BG, size: 44 });
+  // a kid, bottom
+  const kk = pop(t, K.rebenok - .5, .45); if (kk > 0) { ctx.save(); ctx.globalAlpha = clamp(kk); person(CX, 1500, .7 * clamp(kk, 0, 1.2), { col: PINK, head: '#ffd9c2', bob: -Math.abs(Math.sin(t * 5)) * 14 }); ctx.restore(); }
+  plate('КАК РЕБЁНОК', CX, 1770, t, K.rebenok - .3, b, { size: 46 });
+  title([['УЧИТСЯ', YEL, 150], ['НА ПРИМЕРАХ', WHITE, 100]], t, a, b, 420);
+}
+function s3(t) {                                                          // a million cat photos → «кошка»
+  const [a, b] = SC[2];
+  const cols = CATS;
+  for (let i = 0; i < 18; i++) { const p = ((t - a) * .55 + hash(i) * 3) % 1, lane = i % 6;
+    const x = lerp(-80, CX - 250, p), y = 760 + lane * 110 + Math.sin(p * 6 + i) * 14;
+    ctx.save(); ctx.globalAlpha = p < .85 ? 1 : (1 - p) / .15; cat(x, lerp(y, 1040, eInOut(clamp((p - .6) / .4))), lerp(.62, .25, clamp((p - .6) / .4)), cols[i % 6], Math.sin(i) * .2); ctx.restore(); }
+  net(CX + 110, 1040, .78, t, { layers: [4, 5, 4, 1], hot: t > K.sama ? 0 : -1 });
+  const cnt = Math.round(1000000 * eOut(prog(t, K.million - .3, K.sama)));
+  ctx.save(); ctx.font = font(900, 96); ctx.fillStyle = YEL; ctx.textAlign = 'center'; ctx.fillText(cnt.toLocaleString('ru-RU').replace(/ /g, ' '), CX, 1480); ctx.restore(); txt('ФОТОГРАФИЙ', CX, 1540, 36, WHITE);
+  const kc = pop(t, K.koshka - .5, .45); if (kc > 0) { ctx.save(); ctx.translate(930, 1040); ctx.scale(kc, kc); rr(-110, -56, 220, 112, 26); ctx.fillStyle = YEL; ctx.fill(); txt('КОШКА', 0, 4, 44, BG); ctx.restore(); check(1010, 970, 1, kc); }
+  plate('САМА ПОНЯЛА', CX, 1700, t, K.sama, b, { col: CYAN, ink: BG, size: 46 });
+  title([['МИЛЛИОН', WHITE, 120], ['ПРИМЕРОВ', YEL, 120]], t, a, b, 420);
+}
+function s4(t) {                                                          // 1950: Turing asks whether machines can think
+  const [a, b] = SC[3];
+  if (t < K.y1950 - .2) { title([['КТО ЭТО', WHITE, 130], ['ПРИДУМАЛ?', YEL, 130]], t, a, K.y1950 - .2, 800); return; }
+  year('1950', t, K.y1950 - .2);
+  scientist(330, 1130, 1.05, t, 'АЛАН ТЬЮРИНГ', K.turing, b);
+  plate('МАТЕМАТИК', 330, 1540, t, K.turing - .7, b, { size: 36 });
+  const kb = pop(t, K.vopros - .2, .45);
+  if (kb > 0) { ctx.save(); ctx.translate(760, 1000); ctx.scale(kb, kb); ctx.rotate(Math.sin(t * 2) * .02);
+    rr(-250, -170, 500, 340, 50); ctx.fillStyle = WHITE; ctx.fill(); ctx.beginPath(); ctx.moveTo(-250, 60); ctx.lineTo(-320, 130); ctx.lineTo(-220, 120); ctx.fill();
+    txt('МОЖЕТ ЛИ', 0, -80, 52, INK); txt('МАШИНА', 0, 0, 72, VIO); txt('ДУМАТЬ?', 0, 84, 72, INK); ctx.restore(); }
+}
+function s5(t) {                                                          // 1956: McCarthy coins the name
+  const [a, b] = SC[4];
+  year('1956', t, a + .2);
+  scientist(CX, 1000, .9, t, 'ДЖОН МАККАРТИ', K.mccarthy, b, CYAN);
+  const kn = eOut(prog(t, K.nazvanie - .5, K.nazvanie)); if (kn > 0) { ctx.save(); ctx.globalAlpha = kn; rr(70, 1440, 940, 300, 36); ctx.fillStyle = BG2; ctx.fill(); ctx.strokeStyle = YEL; ctx.lineWidth = 5; ctx.stroke(); ctx.restore(); }
+  typed('ИСКУССТВЕННЫЙ', CX, 1540, 80, WHITE, t, K.nazvanie - .2); typed('ИНТЕЛЛЕКТ', CX, 1650, 110, YEL, t, K.nazvanie + .7);
+  plate('ПРИДУМАЛ НАЗВАНИЕ', CX, 1380, t, K.nazvanie - .9, b, { size: 38 });
+}
+function s6(t) {                                                          // neural networks, modelled on neurons; Rosenblatt
+  const [a, b] = SC[5];
+  // a biological neuron on the left that hands over to the network
+  const kb = eOut(prog(t, K.neurons - 1.4, K.neurons - .6));
+  if (kb > 0) { ctx.save(); ctx.globalAlpha = kb; ctx.translate(210, 1010); ctx.strokeStyle = PINK; ctx.lineWidth = 9; ctx.lineCap = 'round';
+    for (let i = 0; i < 7; i++) { const an = i * .9 + 1.6; ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(Math.cos(an) * 70, Math.sin(an) * 70, Math.cos(an + .3) * 130, Math.sin(an + .3) * 130); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(80, 40, 120, -40, 210, 0); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, 44 + 4 * Math.sin(t * 6), 0, 7); ctx.fillStyle = PINK; ctx.fill(); ctx.restore(); }
+  plate('НЕЙРОН', 210, 1220, t, K.neurons - .6, b, { col: PINK, ink: WHITE, size: 38 });
+  net(690, 1010, .8, t, { build: prog(t, K.neuro - .5, K.neuro + 1.6), layers: [3, 5, 5, 2] });
+  plate('НЕЙРОСЕТЬ', 690, 1400, t, K.neuro, b, { col: CYAN, ink: BG, size: 46 });
+  plate('ФРЭНК РОЗЕНБЛАТТ · ПЕРСЕПТРОН', CX, 1620, t, K.rosen, b, { col: WHITE, size: 36 });
+  plate('ОДНА ИЗ ПЕРВЫХ', CX, 1730, t, K.rosen - .9, b, { size: 34 });
+  title([['НЕЙРОСЕТИ', YEL, 140]], t, a, b, 460);
+}
+function s7(t) {                                                          // weak computers → 2012 breakthrough (Hinton's team)
+  const [a, b] = SC[6];
+  if (t < K.proryv) {
+    ctx.save(); ctx.translate(CX, 1100); rr(-230, -170, 460, 320, 26); ctx.fillStyle = '#b9b3a2'; ctx.fill(); rr(-200, -140, 400, 240, 14); ctx.fillStyle = '#18331e'; ctx.fill();
+    typed('ЗАГРУЗКА…', 0, -30, 44, '#5cff8a', t, a + .3, 6); rr(-170, 40, 340, 26, 13); ctx.fillStyle = 'rgba(92,255,138,.2)'; ctx.fill(); rr(-170, 40, 340 * (.08 + .05 * prog(t, a, K.proryv)), 26, 13); ctx.fillStyle = '#5cff8a'; ctx.fill();
+    rr(-60, 150, 120, 50, 8); ctx.fillStyle = '#b9b3a2'; ctx.fill(); rr(-180, 200, 360, 30, 12); ctx.fill(); ctx.restore();
+    plate('СЛИШКОМ СЛАБЫЕ', CX, 1500, t, K.slabye - .5, K.proryv, { col: RED, ink: WHITE, size: 50 });
+    title([['НО КОМПЬЮТЕРЫ…', WHITE, 100]], t, a, K.proryv, 470); return;
+  }
+  year('2012', t, K.y2012 - .5);
+  if (t > K.proryv && t < K.proryv + .5) { ctx.fillStyle = `rgba(255,255,255,${.5 * (1 - prog(t, K.proryv, K.proryv + .5))})`; ctx.fillRect(0, 0, W, H); }
+  plate('ПРОРЫВ', CX, 700, t, K.proryv, b, { size: 70, rot: -.04 });
+  // recognised pictures with check marks
+  const pics = [['КОШКА', YEL], ['СОБАКА', PINK], ['МАШИНА', CYAN], ['ЦВЕТОК', '#8affc1']];
+  pics.forEach(([s, c], i) => { const k = pop(t, K.kartinki - .9 + i * .25, .4); if (k <= 0) return; const x = 170 + i * 247, y = 1130;
+    ctx.save(); ctx.translate(x, y); ctx.scale(k, k); rr(-105, -120, 210, 240, 22); ctx.fillStyle = WHITE; ctx.fill(); rr(-85, -100, 170, 130, 14); ctx.fillStyle = c; ctx.fill(); txt(s, 0, 74, 28, INK); ctx.restore(); check(x + 80, y - 110, .9, pop(t, K.kartinki - .5 + i * .25, .3)); });
+  plate('КОМАНДА ДЖЕФФРИ ХИНТОНА', CX, 1420, t, K.hinton - .3, b, { col: WHITE, size: 40 });
+  plate('УЗНАЁТ КАРТИНКИ', CX, 1540, t, K.kartinki - .6, b, { col: CYAN, ink: BG, size: 44 });
+}
+function s8(t) {                                                          // 2017 transformer → 2022 ChatGPT
+  const [a, b] = SC[7];
+  const second = t >= K.y2022 - .3;
+  if (!second) {
+    year('2017', t, a + .1);
+    // attention picture: words in a row, arcs linking them
+    const ws = ['КОТ', 'СИДИТ', 'НА', 'ОКНЕ'], kk = prog(t, K.transformer - .4, K.transformer + 1.2);
+    ws.forEach((s, i) => { const k = pop(t, K.transformer - .4 + i * .12, .35); if (k <= 0) return; const x = 170 + i * 247; ctx.save(); ctx.translate(x, 1160); ctx.scale(k, k); rr(-105, -50, 210, 100, 24); ctx.fillStyle = BG2; ctx.fill(); ctx.strokeStyle = CYAN; ctx.lineWidth = 5; ctx.stroke(); txt(s, 0, 4, 40, WHITE); ctx.restore(); });
+    [[0, 1], [1, 3], [0, 3], [2, 3]].forEach(([i, j], n) => { const k = eInOut(clamp(kk * 4 - n)); if (k <= 0) return; const x1 = 170 + i * 247, x2 = 170 + j * 247, pulse = .5 + .5 * Math.sin(t * 6 + n);
+      ctx.strokeStyle = `rgba(255,210,63,${.4 + .5 * pulse})`; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(x1, 1105); ctx.quadraticCurveTo((x1 + x2) / 2, 1105 - 90 - (j - i) * 60, lerp(x1, x2, k), 1105 - (1 - k) * 60); ctx.stroke(); });
+    plate('ТРАНСФОРМЕР', CX, 760, t, K.transformer, K.y2022 - .3, { size: 64 });
+    plate('ПРИДУМАЛИ В GOOGLE', CX, 1400, t, a + .9, K.y2022 - .3, { col: WHITE, size: 40 });
+    plate('ОСНОВА ЧАТ-БОТОВ', CX, 1520, t, K.chatbots - .6, K.y2022 - .3, { col: CYAN, ink: BG, size: 42 });
+  } else {
+    year('2022', t, K.y2022 - .3);
+    const k = eOut(prog(t, K.y2022, K.y2022 + .5));                        // chat window
+    ctx.save(); ctx.globalAlpha = k; ctx.translate(0, (1 - k) * 60); rr(110, 760, 860, 720, 40); ctx.fillStyle = '#f4f4f8'; ctx.fill(); rr(110, 760, 860, 100, 40); ctx.fillStyle = '#10a37f'; ctx.fill(); ctx.fillRect(110, 820, 860, 40); txt('ChatGPT', CX, 812, 46, WHITE);
+    rr(480, 910, 440, 100, 30); ctx.fillStyle = VIO; ctx.fill(); txt('Привет! Кто ты?', 700, 962, 36, WHITE, 'center', 800);
+    rr(160, 1060, 620, 220, 30); ctx.fillStyle = WHITE; ctx.fill(); ctx.strokeStyle = '#d0d5e0'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
+    typed('Я — языковая', 470, 1125, 40, INK, t, K.gpt, 16); typed('модель. Чем помочь?', 470, 1205, 40, INK, t, K.gpt + .8, 16);
+    plate('ВЫШЕЛ CHATGPT', CX, 1600, t, K.gpt - .4, b, { size: 56 });
+  }
+}
+function s9(t) {                                                          // it just guesses the next word, again and again
+  const [a, b] = SC[8];
+  const words = ['НЕБО', 'ГОЛУБОЕ,', 'А', 'ТРАВА'], cands = ['ЗЕЛЁНАЯ', 'КРАСНАЯ', 'КВАДРАТНАЯ'], bars = [.92, .1, .04];
+  const loop = t > K.snova ? Math.floor((t - K.snova) * 1.6) % 2 : 0;
+  ctx.save(); const kb = eOut(prog(t, K.prochital - .3, K.prochital + .3)); ctx.globalAlpha = kb; rr(80, 780, 920, 220, 36); ctx.fillStyle = BG2; ctx.fill(); ctx.restore();
+  let x = 130; ctx.save(); ctx.font = font(900, 52); ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  words.forEach((w, i) => { const k = eOut(prog(t, K.prochital + i * .22, K.prochital + .3 + i * .22)); ctx.globalAlpha = k; ctx.fillStyle = WHITE; ctx.fillText(w, x, 860); x += ctx.measureText(w + ' ').width; });
+  const picked = prog(t, K.slovo - .2, K.slovo + .3); ctx.globalAlpha = 1;
+  if (picked > 0) { ctx.fillStyle = YEL; ctx.globalAlpha = picked; ctx.fillText(loop ? '… И ДАЛЬШЕ →' : 'ЗЕЛЁНАЯ', 130, 940); } else if (t > K.ugad - .5) { ctx.fillStyle = YEL; if (Math.floor(t * 4) % 2) ctx.fillText('___ ?', 130, 940); }
+  ctx.restore();
+  // candidate next words with likelihood bars (illustration, no numbers)
+  cands.forEach((s, i) => { const k = eOut(prog(t, K.ugad - .3 + i * .15, K.ugad + .2 + i * .15)); if (k <= 0) return; const y = 1180 + i * 150, win = i === 0 && picked > 0;
+    ctx.save(); ctx.globalAlpha = k; txt(s, 110, y, 44, win ? YEL : WHITE, 'left'); rr(480, y - 24, 500, 48, 24); ctx.fillStyle = EDGE; ctx.fill(); rr(480, y - 24, 500 * bars[i] * k, 48, 24); ctx.fillStyle = win ? YEL : CYAN; ctx.fill(); ctx.restore(); });
+  plate('ПРОЧИТАЛ ОГРОМНОЕ КОЛИЧЕСТВО ТЕКСТОВ', CX, 700, t, K.prochital, b, { col: WHITE, size: 32 });
+  plate('СНОВА И СНОВА', CX, 1700, t, K.snova, b, { col: CYAN, ink: BG, size: 50 });
+  title([['УГАДЫВАЕТ', YEL, 120], ['СЛЕДУЮЩЕЕ СЛОВО', WHITE, 84]], t, a, b, 410);
+}
+function s10(t) {                                                         // no single creator: 70 years, thousands of scientists
+  const [a, b] = SC[9];
+  const ys = ['1950', '1956', '1958', '2012', '2017', '2022'], kl = eInOut(prog(t, a + .2, K.net));
+  ctx.strokeStyle = EDGE; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(90, 800); ctx.lineTo(90 + 900 * kl, 800); ctx.stroke();
+  ys.forEach((s, i) => { const k = pop(t, a + .2 + i * .25, .35); if (k <= 0) return; const x = 110 + i * 172; ctx.beginPath(); ctx.arc(x, 800, 18 * k, 0, 7); ctx.fillStyle = [PINK, CYAN, PINK, YEL, CYAN, YEL][i]; ctx.fill(); ctx.save(); ctx.globalAlpha = clamp(k); txt(s, x, 860, 30, WHITE); ctx.restore(); });
+  // a growing crowd of scientists
+  for (let i = 0; i < 40; i++) { const k = pop(t, K.y70 - .2 + i * .045, .3); if (k <= 0) continue; const r = Math.floor(i / 8), c = i % 8;
+    ctx.save(); ctx.globalAlpha = clamp(k); person(100 + c * 126 + (r % 2) * 40, 1060 + r * 120, .36, { col: [PINK, CYAN, VIO, YEL][(i * 7) % 4], head: '#ffd9c2', bob: -Math.abs(Math.sin(t * 4 + i)) * 8 }); ctx.restore(); }
+  plate('70 ЛЕТ', 300, 1730, t, K.y70, b + 1, { size: 60 });
+  plate('ТЫСЯЧИ УЧЁНЫХ', 730, 1730, t, K.tysyachi, b + 1, { col: WHITE, size: 44 });
+  if (t < K.nachalo - .2) title([['НЕТ ОДНОГО', WHITE, 110], ['СОЗДАТЕЛЯ', YEL, 130]], t, a, K.nachalo - .2, 420);
+  else title([['И ЭТО ТОЛЬКО', WHITE, 100], ['НАЧАЛО', YEL, 170]], t, K.nachalo - .2, b + 1, 420);
+}
+function s11(t) {                                                         // SEE Group card: we work with AI every day; this reel was made with it
+  const [a, b] = SC[10];
+  const g = ctx.createLinearGradient(0, 300, 0, 1800); g.addColorStop(0, '#145a44'); g.addColorStop(1, '#062a20');
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 60; rr(40, 300, 1000, 1500, 60); ctx.fillStyle = g; ctx.fill(); ctx.restore();
+  ctx.save(); rr(40, 300, 1000, 1500, 60); ctx.clip(); ctx.strokeStyle = 'rgba(253,200,84,.10)'; ctx.lineWidth = 60; for (let i = -4; i < 12; i++) { const o = (t * 30) % 220; ctx.beginPath(); ctx.moveTo(i * 220 + o, 300); ctx.lineTo(i * 220 - 500 + o, 1800); ctx.stroke(); } ctx.restore();
+  const kl = eOut(prog(t, a + .1, a + .8));
+  if (logoImg.complete && logoImg.naturalWidth) { const w = 760 * lerp(.85, 1, kl), h = w * logoImg.naturalHeight / logoImg.naturalWidth; ctx.save(); ctx.globalAlpha = kl; ctx.drawImage(logoImg, CX - w / 2, 560 - h / 2, w, h); ctx.restore(); }
+  txt('КРЕАТИВНОЕ АГЕНТСТВО ВИДЕОМАРКЕТИНГА', CX, 720, 30, 'rgba(255,255,255,.7)', 'center', 800);
+  plate('РАБОТАЕМ С ИИ КАЖДЫЙ ДЕНЬ', CX, 900, t, K.kazhdy, b + 1, { col: PAPER, ink: SEEGREEN, size: 46 });
+  plate('ЭТОТ РОЛИК ТОЖЕ СДЕЛАН С ИИ', CX, 1040, t, K.rolik, b + 1, { col: '#FDC854', ink: '#104434', size: 44 });
+  const kb = pop(t, K.podpis - .2, .5);
+  if (kb > 0) { pill(CX, 1330, kb, 'ПОДПИСАТЬСЯ', '#FDC854', '#104434', t);
+    const tap = K.podpis + .8, rp = prog(t, tap, tap + .6); if (rp > 0 && rp < 1) { ctx.strokeStyle = `rgba(255,255,255,${1 - rp})`; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(CX + 200, 1340, 30 + rp * 150, 0, 7); ctx.stroke(); } }
+  const ks = eOut(prog(t, K.prosto - .6, K.prosto)); if (ks > 0) { ctx.save(); ctx.globalAlpha = ks; txt('ОБЪЯСНЯЕМ СЛОЖНОЕ ПРОСТО', CX, 1530, 44, PAPER); txt('@seegroup.kz', CX, 1640, 60, '#FDC854'); ctx.restore(); }
+}
+const SCENES = [s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11];
+
+// ---------- one big board: the camera travels between scenes instead of cutting ----------
+// each scene sits one step diagonally from the previous one; POS is its top-left corner in world space
+const STEP = [[1, 1], [1, -1], [1, 1], [-1, 1], [1, 1], [1, -1], [1, 1], [-1, 1], [1, 1], [1, -1]];
+const POS = [[0, 0]]; STEP.forEach(([dx, dy]) => { const p = POS[POS.length - 1]; POS.push([p[0] + dx * W * 1.22, p[1] + dy * H * 1.16]); });
+const T_OUT = .55, T_IN = .5;                                              // travel starts T_OUT before a scene's start and lands T_IN after it
+const BX0 = Math.min(...POS.map(p => p[0])), BX1 = Math.max(...POS.map(p => p[0])) + W, BY0 = Math.min(...POS.map(p => p[1])), BY1 = Math.max(...POS.map(p => p[1])) + H;
+const ZFIT = Math.min(W / (BX1 - BX0), H / (BY1 - BY0)) * .86;              // zoom that shows the whole board
+const logoTint = {};                                                      // the white logo recoloured per theme
+function logo(col) {
+  if (!logoTint[col] && logoImg.complete && logoImg.naturalWidth) { const c = document.createElement('canvas'); c.width = logoImg.naturalWidth; c.height = logoImg.naturalHeight; const x = c.getContext('2d');
+    x.drawImage(logoImg, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = col; x.fillRect(0, 0, c.width, c.height); logoTint[col] = c; }
+  return logoTint[col];
+}
+function paper(t) {                                                       // the board itself: paper, soft diagonal bands, a little grain
+  ctx.fillStyle = PAPER; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.strokeStyle = 'rgba(16,68,52,.035)'; ctx.lineWidth = 150; const o = (t * 14) % 320;
+  for (let i = -3; i < 8; i++) { ctx.beginPath(); ctx.moveTo(i * 320 + o, -100); ctx.lineTo(i * 320 - 900 + o, H + 100); ctx.stroke(); } ctx.restore();
+  ctx.fillStyle = 'rgba(16,68,52,.05)'; for (let i = 0; i < 420; i++) ctx.fillRect(hash(i) * W, hash(i + 500) * H, 3, 3);
+}
+function board(t, u) {                                                    // world-space layer: dots, dark panels, the gold route drawn up to progress u
+  ctx.fillStyle = 'rgba(16,68,52,.10)'; for (let x = BX0 - W; x < BX1 + W; x += 180) for (let y = BY0 - H; y < BY1 + H; y += 180) ctx.fillRect(x, y, 6, 6);
+  const C = POS.map(([x, y]) => [x + CX, y + H / 2]);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(163,126,45,.25)'; ctx.lineWidth = 6; ctx.setLineDash([22, 26]); ctx.beginPath(); C.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle = GOLD; ctx.lineWidth = 12; ctx.beginPath(); ctx.moveTo(...C[0]);                // the thread the camera leaves behind
+  for (let i = 1; i < C.length && i - 1 < u; i++) { const f = clamp(u - (i - 1)); ctx.lineTo(lerp(C[i - 1][0], C[i][0], f), lerp(C[i - 1][1], C[i][1], f)); } ctx.stroke();
+  POS.forEach(([x, y], j) => {                                             // every scene is a card on the board: paper for light ones, dark green for history
+    ctx.save(); ctx.shadowColor = DARK[j] ? 'rgba(0,0,0,.35)' : 'rgba(16,68,52,.18)'; ctx.shadowBlur = 80; ctx.shadowOffsetY = 30; const g = ctx.createLinearGradient(0, y - 100, 0, y + H + 100);
+    g.addColorStop(0, DARK[j] ? '#145a44' : '#fdfcf9'); g.addColorStop(1, DARK[j] ? '#0b3528' : '#f3f0e8');
+    rr(x - 100, y - 100, W + 200, H + 200, 90); ctx.fillStyle = g; ctx.fill(); ctx.restore(); });
+  for (let i = 1; i < C.length; i++) {                                    // brandbook checker tile at the middle of every leg
+    const mx = (C[i - 1][0] + C[i][0]) / 2, my = (C[i - 1][1] + C[i][1]) / 2, a = Math.atan2(C[i][1] - C[i - 1][1], C[i][0] - C[i - 1][0]);
+    ctx.save(); ctx.translate(mx, my); ctx.rotate(a); for (let r = 0; r < 2; r++) for (let c = 0; c < 6; c++) { ctx.fillStyle = (r + c) % 2 ? '#C2902F' : SEEGREEN; ctx.fillRect(-150 + c * 50, -50 + r * 50, 50, 50); } ctx.restore();
+  }
+}
+function renderFrameCam(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none'; ctx.letterSpacing = '0px'; ctx.setLineDash([]);
+  theme(false); paper(t);
+  let i = SC.findIndex(([a, b]) => t >= a && t < b); if (i < 0) i = SC.length - 1;
+  let cam = POS[i], zoom = 1, draw = [[i, t]], u = i, dark = DARK[i];
+  for (let j = 1; j < SC.length; j++) {
+    const a = SC[j][0], last = j === SC.length - 1, t0 = a - (last ? 1.0 : T_OUT), t1 = a + (last ? .65 : T_IN); if (t < t0 || t > t1) continue;
+    const p = prog(t, t0, t1); u = j - 1 + eInOut(p);
+    if (!last) {                                                           // glide diagonally to the next scene, pulling back a little
+      const q = eInOut(p); cam = [lerp(POS[j - 1][0], POS[j][0], q), lerp(POS[j - 1][1], POS[j][1], q)]; zoom = 1 - .2 * Math.sin(Math.PI * p);
+      draw = [[j - 1, Math.min(t, a - .25)], [j, t]]; dark = q < .5 ? DARK[j - 1] : DARK[j];
+    } else {                                                               // finale: pull back to show the whole board, then dive into the SEE Group card
+      const mid = [(BX0 + BX1) / 2 - CX, (BY0 + BY1) / 2 - H / 2], q = p < .5 ? eInOut(p * 2) : eInOut((p - .5) * 2), from = p < .5 ? POS[j - 1] : mid, to = p < .5 ? mid : POS[j];
+      cam = [lerp(from[0], to[0], q), lerp(from[1], to[1], q)]; zoom = Math.exp(lerp(0, Math.log(ZFIT), p < .5 ? q : 1 - q));
+      draw = SCENES.map((_, n) => [n, n === j ? t : Math.min(t, SC[n][1] - .25)]); dark = 0;
+    }
+  }
+  const fl = [Math.sin(t * .7) * 8, Math.cos(t * .9) * 10];                // slow float so a resting frame never sits still
+  ctx.save(); ctx.translate(CX, H / 2); ctx.scale(zoom, zoom); ctx.translate(-CX - cam[0] + fl[0], -H / 2 - cam[1] + fl[1]);
+  board(t, u);
+  draw.forEach(([j, tj]) => { ctx.save(); ctx.translate(POS[j][0], POS[j][1]); theme(DARK[j]); SCENES[j](tj); ctx.restore(); });
+  ctx.restore();
+  theme(dark); chrome(t, i + 1);
+  const lg = logo(WHITE); if (lg) { ctx.save(); ctx.globalAlpha = prog(t, .2, .6); ctx.drawImage(lg, 70, 148, 215, 215 * lg.height / lg.width); ctx.restore(); }   // logo watermark on every frame
+  const f = Math.max(1 - prog(t, 0, .2), prog(t, DURATION - .5, DURATION));
+  if (f > 0) { ctx.fillStyle = `rgba(247,245,240,${f})`; ctx.fillRect(0, 0, W, H); }
+}
