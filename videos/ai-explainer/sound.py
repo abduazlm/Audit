@@ -3,7 +3,7 @@ import subprocess, numpy as np
 
 SR = 48000
 SPEED = 1.2                                # whole reel plays 20 % faster
-DUR = 81.4
+DUR = 91.8
 rng = np.random.default_rng(7)
 L = np.zeros(int(SR * DUR)); R = np.zeros_like(L)
 
@@ -82,8 +82,8 @@ def shutter():
 def norm(x): return x / (np.max(np.abs(x)) + 1e-9)
 
 # ---- timeline (keep in sync with VO / K in scenes.js) ----
-VO = [0.5, 8.1, 15.44, 20.64, 28.32, 34.68, 43.0, 53.82, 63.66, 71.66]
-for at in VO[1:]: place(norm(whoosh(.45)), at - .45, .12)       # scene changes
+VO = [0.5, 8.1, 15.44, 20.64, 28.32, 34.68, 43.0, 53.82, 63.66, 71.66, 81.0]
+for at in VO[1:]: place(norm(whoosh(.9)), at - .95, .16)        # camera travels to the next scene
 for tt in (2.0, 3.12, 4.24, 11.9, 13.0, 14.2, 19.2, 22.0, 24.74, 26.58, 28.52, 30.3, 35.64, 41.5, 46.34, 49.14, 54.0, 56.12, 60.58, 67.76, 70.12, 75.3, 76.72):   # plates / key words
     place(norm(pop(600 + 70 * (tt % 5))), tt, .07)
 for i in range(10): place(norm(tick(2000 + 120 * i)), 32.4 + i * .14, .04)   # the name is typed
@@ -91,6 +91,8 @@ place(norm(thump()), 45.42, .3); place(norm(shimmer(1.2)), 45.5, .2)         # 2
 for i in range(12): place(norm(tick(1800)), 62.3 + i * .12, .04)             # chatbot typing
 place(norm(ding(1318)), 69.3, .1)                                            # the word is picked
 place(norm(shimmer(1.6)), 78.5, .25)                                         # «только начало»
+for tt in (81.66, 84.8): place(norm(pop(700)), tt, .07)                      # SEE Group plates
+place(norm(pop(880)), 86.96, .12); place(norm(tick(3000)), 87.96, .2)        # subscribe button + tap
 sfx = np.stack([L, R], 1)
 sfx /= max(1.0, np.max(np.abs(sfx)) / .9)
 sfx[-int(.6 * SR):] *= np.linspace(1, 0, int(.6 * SR))[:, None]

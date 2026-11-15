@@ -3,7 +3,7 @@ marimba-like plucks, soft kick, finger snaps, shaker. Final chord on the last li
 import numpy as np, wave
 
 SR = 48000
-DUR = 81.4
+DUR = 91.8
 BPM = 104; BEAT = 60 / BPM; BAR = 4 * BEAT
 START = 0.3                               # groove starts with the voice
 T0 = START - BAR                          # one soft pickup bar before the video starts
@@ -67,7 +67,7 @@ def pluck(m):
 # C – G – Am – F, one chord per bar (bright, school-friendly)
 PROG = [([60, 64, 67, 72], 48), ([59, 62, 67, 71], 43), ([57, 60, 64, 69], 45), ([57, 60, 65, 69], 41)]
 ARP = [[72, 76, 79, 84], [71, 74, 79, 83], [69, 72, 76, 81], [69, 72, 77, 81]]
-END = 78.3                                # «начало»: final chord
+END = 89.4                                # «начало»: final chord
 def marimba(m):
     n = at(.5); f = midi(m); t = np.arange(n) / SR
     return (np.sin(2 * np.pi * f * t) + .25 * np.sin(2 * np.pi * f * 4 * t) * np.exp(-t / .03)) * env(n, .002, .16)

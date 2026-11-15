@@ -2,8 +2,8 @@
 // assets/vo.wav (ElevenLabs «Pavel», 0.5 s lead). Facts: Turing 1950 («Can machines think?»), McCarthy coined
 // the term for the 1956 Dartmouth workshop, Rosenblatt's perceptron (1958), 2012 ImageNet breakthrough by
 // Hinton's team (AlexNet), 2017 Transformer (Google), 2022 ChatGPT. People are drawn as plain silhouettes.
-const VO = [0.5, 8.1, 15.44, 20.64, 28.32, 34.68, 43.0, 53.82, 63.66, 71.66];
-const DURATION = 81.4;
+const VO = [0.5, 8.1, 15.44, 20.64, 28.32, 34.68, 43.0, 53.82, 63.66, 71.66, 81.0];
+const DURATION = 91.8;
 const SC = VO.map((s, i) => [i ? s - .3 : 0, i < VO.length - 1 ? VO[i + 1] - .3 : DURATION]);
 const K = {
   teksty: 2.2, kartiny: 3.32, voprosy: 4.94, chto: 6.2,
@@ -15,9 +15,11 @@ const K = {
   slabye: 44.38, proryv: 45.42, y2012: 46.84, hinton: 49.44, kartinki: 51.4,
   y2017: 53.96, transformer: 56.12, chatbots: 59.62, y2022: 60.88, gpt: 62.26,
   kak: 63.66, prochital: 65.14, ugad: 67.96, slovo: 69.34, snova: 70.12,
-  net: 73.54, y70: 75.3, tysyachi: 76.72, nachalo: 78.6
+  net: 73.54, y70: 75.3, tysyachi: 76.72, nachalo: 78.6,
+  see: 81.0, kazhdy: 81.66, rolik: 84.8, podpis: 87.16, prosto: 89.38
 };
-const LABEL = 'ИИ — ПРОСТО';
+const LABEL = 'SEE GROUP · ИИ ПРОСТО';
+const logoImg = new Image(); logoImg.src = 'assets/logo.png';
 const CYAN = '#3ee6ff', PINK = '#ff5fa2', VIO = '#7b5cff';
 
 // ---------- props ----------
@@ -216,4 +218,51 @@ function s10(t) {                                                         // no 
   if (t < K.nachalo - .2) title([['НЕТ ОДНОГО', WHITE, 110], ['СОЗДАТЕЛЯ', YEL, 130]], t, a, K.nachalo - .2, 420);
   else title([['И ЭТО ТОЛЬКО', WHITE, 100], ['НАЧАЛО', YEL, 170]], t, K.nachalo - .2, b + 1, 420);
 }
-const SCENES = [s1, s2, s3, s4, s5, s6, s7, s8, s9, s10];
+function s11(t) {                                                         // SEE Group card: we work with AI every day; this reel was made with it
+  const [a, b] = SC[10];
+  const g = ctx.createLinearGradient(0, 300, 0, 1800); g.addColorStop(0, '#145a44'); g.addColorStop(1, '#062a20');
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 60; rr(40, 300, 1000, 1500, 60); ctx.fillStyle = g; ctx.fill(); ctx.restore();
+  ctx.save(); rr(40, 300, 1000, 1500, 60); ctx.clip(); ctx.strokeStyle = 'rgba(253,200,84,.10)'; ctx.lineWidth = 60; for (let i = -4; i < 12; i++) { const o = (t * 30) % 220; ctx.beginPath(); ctx.moveTo(i * 220 + o, 300); ctx.lineTo(i * 220 - 500 + o, 1800); ctx.stroke(); } ctx.restore();
+  const kl = eOut(prog(t, a + .1, a + .8));
+  if (logoImg.complete && logoImg.naturalWidth) { const w = 760 * lerp(.85, 1, kl), h = w * logoImg.naturalHeight / logoImg.naturalWidth; ctx.save(); ctx.globalAlpha = kl; ctx.drawImage(logoImg, CX - w / 2, 560 - h / 2, w, h); ctx.restore(); }
+  txt('КРЕАТИВНОЕ АГЕНТСТВО ВИДЕОМАРКЕТИНГА', CX, 720, 30, 'rgba(255,255,255,.7)', 'center', 800);
+  plate('РАБОТАЕМ С ИИ КАЖДЫЙ ДЕНЬ', CX, 900, t, K.kazhdy, b + 1, { col: WHITE, ink: '#104434', size: 46 });
+  plate('ЭТОТ РОЛИК ТОЖЕ СДЕЛАН С ИИ', CX, 1040, t, K.rolik, b + 1, { col: '#FDC854', ink: '#104434', size: 44 });
+  const kb = pop(t, K.podpis - .2, .5);
+  if (kb > 0) { pill(CX, 1330, kb, 'ПОДПИСАТЬСЯ', '#FDC854', '#104434', t);
+    const tap = K.podpis + .8, rp = prog(t, tap, tap + .6); if (rp > 0 && rp < 1) { ctx.strokeStyle = `rgba(255,255,255,${1 - rp})`; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(CX + 200, 1340, 30 + rp * 150, 0, 7); ctx.stroke(); } }
+  const ks = eOut(prog(t, K.prosto - .6, K.prosto)); if (ks > 0) { ctx.save(); ctx.globalAlpha = ks; txt('ОБЪЯСНЯЕМ СЛОЖНОЕ ПРОСТО', CX, 1530, 44, WHITE); txt('@seegroup.kz', CX, 1640, 60, '#FDC854'); ctx.restore(); }
+}
+const SCENES = [s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11];
+
+// ---------- one big board: the camera travels between scenes instead of cutting ----------
+// each scene sits one step diagonally (or sideways) from the previous one; POS is its top-left corner in world space
+const STEP = [[1, 1], [1, -1], [1, 1], [-1, 1], [1, 1], [1, -1], [1, 1], [-1, 1], [1, 1], [1, -1]];
+const POS = [[0, 0]]; STEP.forEach(([dx, dy]) => { const p = POS[POS.length - 1]; POS.push([p[0] + dx * W * 1.12, p[1] + dy * H * 1.08]); });
+const T_OUT = .55, T_IN = .5;                                              // travel starts T_OUT before a scene's start and lands T_IN after it
+function board(t) {                                                       // world-space decoration: dot grid + the route between scenes
+  const x0 = Math.min(...POS.map(p => p[0])) - W, x1 = Math.max(...POS.map(p => p[0])) + 2 * W, y0 = Math.min(...POS.map(p => p[1])) - H, y1 = Math.max(...POS.map(p => p[1])) + 2 * H;
+  ctx.fillStyle = 'rgba(255,255,255,.07)'; for (let x = x0; x < x1; x += 180) for (let y = y0; y < y1; y += 180) ctx.fillRect(x, y, 6, 6);
+  ctx.strokeStyle = 'rgba(255,210,63,.28)'; ctx.lineWidth = 8; ctx.setLineDash([26, 26]); ctx.lineDashOffset = -t * 60; ctx.lineCap = 'round';
+  ctx.beginPath(); POS.forEach(([x, y], i) => i ? ctx.lineTo(x + CX, y + H / 2) : ctx.moveTo(x + CX, y + H / 2)); ctx.stroke(); ctx.setLineDash([]);
+}
+function renderFrameCam(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none'; ctx.letterSpacing = '0px'; ctx.setLineDash([]);
+  bg(t);
+  let i = SC.findIndex(([a, b]) => t >= a && t < b); if (i < 0) i = SC.length - 1;
+  let cam = POS[i], zoom = 1, draw = [[i, t]];
+  for (let j = 1; j < SC.length; j++) {                                    // inside a travel window: glide from scene j-1 to j, pulling back a little
+    const a = SC[j][0]; if (t < a - T_OUT || t > a + T_IN) continue;
+    const p = eInOut(prog(t, a - T_OUT, a + T_IN));
+    cam = [lerp(POS[j - 1][0], POS[j][0], p), lerp(POS[j - 1][1], POS[j][1], p)]; zoom = 1 - .2 * Math.sin(Math.PI * p);
+    draw = [[j - 1, Math.min(t, a - .25)], [j, t]];                        // the scene we leave is frozen just before its text fades
+  }
+  const fl = [Math.sin(t * .7) * 8, Math.cos(t * .9) * 10];                // slow hand-held float so a resting frame never sits still
+  ctx.save(); ctx.translate(CX, H / 2); ctx.scale(zoom, zoom); ctx.translate(-CX - cam[0] + fl[0], -H / 2 - cam[1] + fl[1]);
+  board(t);
+  draw.forEach(([j, tj]) => { ctx.save(); ctx.translate(POS[j][0], POS[j][1]); SCENES[j](tj); ctx.restore(); });
+  ctx.restore();
+  chrome(t, i + 1);
+  const f = Math.max(1 - prog(t, 0, .2), prog(t, DURATION - .5, DURATION));
+  if (f > 0) { ctx.fillStyle = `rgba(13,10,36,${f})`; ctx.fillRect(0, 0, W, H); }
+}

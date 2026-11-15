@@ -15,5 +15,7 @@ for d, title, note in (('.', 'AI Explainer Reel', 'Что такое искус�
     assert tail2 != tail
     h = re.sub(r"const BG = '#[0-9a-f]+', BG2 = '#[0-9a-f]+', YEL = '#[0-9a-f]+'", "const BG = '#0d0a24', BG2 = '#1c1740', YEL = '#ffd23f'", h)
     assert "'#ffd23f'" in h
+    tail2 = tail2.replace("'KERIM')", "'SEE'), logoImg.decode().catch(() => {})").replace('window.renderFrame = renderFrame;', 'window.renderFrame = renderFrameCam;')
+    assert 'renderFrameCam;' in tail2 and 'logoImg.decode' in tail2
     open(f'{d}/index.html', 'w', encoding='utf-8').write(h + props + '\n' + scenes + '\n' + tail2)
     print(d, 'ok')
