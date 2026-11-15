@@ -1,0 +1,304 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Dinner for Few Review</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Обзор мультфильма «Dinner for Few» (Нассос Вакалис, 2014) своими рисунками — кадры фильма не используются.
+// Deterministic: renderFrame(t), t = seconds of the voice track (assets/vo.wav).
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const W = 1080, H = 1920, CX = W / 2;
+const DURATION = 106.2;
+const SUBS = [{"a": 0.0, "b": 1.8, "w": [[0.0, 1.26, "МУЛЬТФИЛЬМ"], [1.26, 1.4, "НА"], [1.4, 1.8, "10"]]}, {"a": 1.8, "b": 2.2, "w": [[1.8, 2.2, "МИНУТ,"]]}, {"a": 2.46, "b": 3.58, "w": [[2.46, 2.86, "КОТОРЫЙ"], [2.86, 3.58, "ОБЪЯСНЯЕТ,"]]}, {"a": 3.64, "b": 4.74, "w": [[3.64, 3.88, "КАК"], [3.88, 4.48, "УСТРОЕН"], [4.48, 4.74, "МИР,"]]}, {"a": 5.3, "b": 6.5, "w": [[5.3, 5.6, "БЕЗ"], [5.6, 6.18, "ЕДИНОГО"], [6.18, 6.5, "СЛОВА."]]}, {"a": 7.42, "b": 8.44, "w": [[7.42, 7.66, "ЗА"], [7.66, 8.04, "СТОЛОМ"], [8.04, 8.44, "ШЕСТЬ"]]}, {"a": 8.44, "b": 8.98, "w": [[8.44, 8.98, "СВИНЕЙ."]]}, {"a": 9.4, "b": 9.84, "w": [[9.4, 9.84, "СУДЬЯ,"]]}, {"a": 10.1, "b": 10.6, "w": [[10.1, 10.6, "БАНКИР,"]]}, {"a": 10.84, "b": 11.44, "w": [[10.84, 11.44, "СВЯЩЕННИК,"]]}, {"a": 11.84, "b": 13.18, "w": [[11.84, 12.2, "ВЛАДЕЛЕЦ"], [12.2, 12.86, "ТЕЛЕКАНАЛА"], [12.86, 13.18, "И"]]}, {"a": 13.18, "b": 13.94, "w": [[13.18, 13.38, "ДВА"], [13.38, 13.94, "ПОЛИТИКА."]]}, {"a": 14.52, "b": 15.86, "w": [[14.52, 15.02, "ПОЛИТИКИ"], [15.02, 15.86, "ОДИНАКОВЫЕ,"]]}, {"a": 16.12, "b": 17.8, "w": [[16.12, 16.72, "ОТЛИЧАЮТСЯ"], [16.72, 17.08, "ТОЛЬКО"], [17.08, 17.8, "ГАЛСТУКОМ."]]}, {"a": 18.12, "b": 18.8, "w": [[18.12, 18.22, "У"], [18.22, 18.48, "ОДНОГО"], [18.48, 18.8, "ОН"]]}, {"a": 18.8, "b": 19.78, "w": [[18.8, 19.22, "НАКЛОНЕН"], [19.22, 19.78, "ВПРАВО,"]]}, {"a": 20.08, "b": 21.18, "w": [[20.08, 20.16, "У"], [20.16, 20.6, "ДРУГОГО"], [20.6, 21.18, "ВЛЕВО."]]}, {"a": 21.66, "b": 23.32, "w": [[21.66, 22.3, "ОФИЦИАНТ"], [22.3, 22.64, "БЕЗ"], [22.64, 23.32, "ОСТАНОВКИ"]]}, {"a": 23.32, "b": 24.0, "w": [[23.32, 23.62, "НЕСЕТ"], [23.62, 24.0, "ЕДУ,"]]}, {"a": 24.42, "b": 25.14, "w": [[24.42, 24.52, "А"], [24.52, 24.7, "ПОД"], [24.7, 25.14, "СТОЛОМ"]]}, {"a": 25.14, "b": 26.02, "w": [[25.14, 25.48, "СИДЯТ"], [25.48, 26.02, "КОШКИ."]]}, {"a": 26.02, "b": 27.52, "w": [[26.02, 26.56, "ИМ"], [26.56, 27.02, "ДОСТАЮТСЯ"], [27.02, 27.52, "ТОЛЬКО"]]}, {"a": 27.52, "b": 28.22, "w": [[27.52, 28.22, "КРОШКИ,"]]}, {"a": 28.5, "b": 29.38, "w": [[28.5, 28.6, "И"], [28.6, 28.78, "ОНИ"], [28.78, 29.38, "ДЕРУТСЯ"]]}, {"a": 29.38, "b": 29.84, "w": [[29.38, 29.5, "ЗА"], [29.5, 29.66, "НИХ"], [29.66, 29.84, "ДРУГ"]]}, {"a": 29.84, "b": 30.38, "w": [[29.84, 30.0, "С"], [30.0, 30.38, "ДРУГОМ."]]}, {"a": 30.84, "b": 31.7, "w": [[30.84, 31.32, "ОТКУДА"], [31.32, 31.7, "ЕДА?"]]}, {"a": 32.3, "b": 33.3, "w": [[32.3, 32.5, "НА"], [32.5, 32.9, "КУХНЕ"], [32.9, 33.3, "ПОВАР"]]}, {"a": 33.3, "b": 34.26, "w": [[33.3, 33.72, "БРОСАЕТ"], [33.72, 33.88, "В"], [33.88, 34.26, "МАШИНУ"]]}, {"a": 34.26, "b": 34.62, "w": [[34.26, 34.62, "ВСЕ,"]]}, {"a": 34.68, "b": 35.22, "w": [[34.68, 34.84, "ЧТО"], [34.84, 35.08, "ЕСТЬ"], [35.08, 35.22, "В"]]}, {"a": 35.22, "b": 35.66, "w": [[35.22, 35.66, "КОМНАТЕ."]]}, {"a": 36.08, "b": 36.48, "w": [[36.08, 36.48, "МЕБЕЛЬ,"]]}, {"a": 36.62, "b": 37.1, "w": [[36.62, 37.1, "КАРТИНЫ,"]]}, {"a": 37.26, "b": 37.64, "w": [[37.26, 37.64, "СТЕНЫ."]]}, {"a": 38.1, "b": 39.26, "w": [[38.1, 38.56, "КОМНАТА"], [38.56, 39.26, "БЕДНЕЕТ,"]]}, {"a": 39.48, "b": 40.6, "w": [[39.48, 39.6, "А"], [39.6, 40.08, "ТАРЕЛКИ"], [40.08, 40.6, "СТАНОВЯТСЯ"]]}, {"a": 40.6, "b": 41.08, "w": [[40.6, 41.08, "ПОЛНЕЕ."]]}, {"a": 41.64, "b": 42.62, "w": [[41.64, 41.98, "ПОЧЕМУ"], [41.98, 42.42, "НИКТО"], [42.42, 42.62, "НЕ"]]}, {"a": 42.62, "b": 43.28, "w": [[42.62, 42.96, "ВСТАЕТ"], [42.96, 43.18, "ИЗ"], [43.18, 43.28, "-ЗА"]]}, {"a": 43.28, "b": 43.68, "w": [[43.28, 43.68, "СТОЛА?"]]}, {"a": 44.16, "b": 45.32, "w": [[44.16, 44.32, "ПОД"], [44.32, 44.8, "СТОЛОМ"], [44.8, 45.32, "СВИНЬИ"]]}, {"a": 45.32, "b": 46.72, "w": [[45.32, 45.8, "СКОВАНЫ"], [45.8, 46.16, "ОДНОЙ"], [46.16, 46.72, "ЦЕПЬЮ."]]}, {"a": 47.08, "b": 47.94, "w": [[47.08, 47.54, "СВЕРХУ"], [47.54, 47.74, "ЕЕ"], [47.74, 47.94, "НЕ"]]}, {"a": 47.94, "b": 48.22, "w": [[47.94, 48.22, "ВИДНО."]]}, {"a": 48.78, "b": 49.96, "w": [[48.78, 49.06, "ЕДЫ"], [49.06, 49.62, "СТАНОВИТСЯ"], [49.62, 49.96, "МЕНЬШЕ,"]]}, {"a": 50.48, "b": 51.78, "w": [[50.48, 50.84, "КОШКИ"], [50.84, 51.3, "НАЧИНАЮТ"], [51.3, 51.78, "ШУМЕТЬ."]]}, {"a": 51.78, "b": 53.22, "w": [[51.78, 52.26, "И"], [52.26, 52.56, "ТОГДА"], [52.56, 53.22, "ВЛАДЕЛЕЦ"]]}, {"a": 53.22, "b": 54.7, "w": [[53.22, 53.78, "ТЕЛЕКАНАЛА"], [53.78, 54.48, "ВЫПУСКАЕТ"], [54.48, 54.7, "НА"]]}, {"a": 54.7, "b": 55.92, "w": [[54.7, 54.84, "ПОЛ"], [54.84, 55.46, "ЗАВОДНУЮ"], [55.46, 55.92, "МЫШЬ."]]}, {"a": 56.26, "b": 57.56, "w": [[56.26, 56.64, "КОШКИ"], [56.64, 57.24, "БРОСАЮТСЯ"], [57.24, 57.56, "ЗА"]]}, {"a": 57.56, "b": 58.72, "w": [[57.56, 57.76, "НЕЙ"], [57.76, 58.22, "И"], [58.22, 58.72, "ЗАБЫВАЮТ,"]]}, {"a": 58.9, "b": 59.5, "w": [[58.9, 59.0, "ЧТО"], [59.0, 59.5, "ГОЛОДНЫ."]]}, {"a": 60.22, "b": 61.78, "w": [[60.22, 60.54, "ЭТО"], [60.54, 61.22, "САМЫЙ"], [61.22, 61.78, "ВАЖНЫЙ"]]}, {"a": 61.78, "b": 62.26, "w": [[61.78, 62.26, "КАДР."]]}, {"a": 62.66, "b": 63.7, "w": [[62.66, 63.12, "ПРОБЛЕМУ"], [63.12, 63.4, "НЕ"], [63.4, 63.7, "НУЖНО"]]}, {"a": 63.7, "b": 64.18, "w": [[63.7, 64.18, "РЕШАТЬ."]]}, {"a": 64.6, "b": 65.94, "w": [[64.6, 65.16, "ДОСТАТОЧНО"], [65.16, 65.52, "ДАТЬ"], [65.52, 65.94, "ЛЮДЯМ"]]}, {"a": 65.94, "b": 66.24, "w": [[65.94, 66.24, "ТО,"]]}, {"a": 66.46, "b": 67.26, "w": [[66.46, 66.61, "ЗА"], [66.61, 66.76, "ЧЕМ"], [66.76, 67.26, "МОЖНО"]]}, {"a": 67.26, "b": 67.76, "w": [[67.26, 67.76, "БЕЖАТЬ."]]}, {"a": 68.22, "b": 69.72, "w": [[68.22, 68.44, "НО"], [68.44, 68.76, "ЕДА"], [68.76, 69.72, "ЗАКАНЧИВАЕТСЯ."]]}, {"a": 70.26, "b": 71.48, "w": [[70.26, 70.7, "СВИНЬИ"], [70.7, 71.34, "ГРЫЗУТСЯ"], [71.34, 71.48, "МЕЖДУ"]]}, {"a": 71.48, "b": 71.94, "w": [[71.48, 71.94, "СОБОЙ."]]}, {"a": 72.38, "b": 73.46, "w": [[72.38, 72.74, "КОШКИ"], [72.74, 73.26, "СЛИВАЮТСЯ"], [73.26, 73.46, "В"]]}, {"a": 73.46, "b": 74.84, "w": [[73.46, 74.08, "ОГРОМНОГО"], [74.08, 74.54, "ТИГРА"], [74.54, 74.84, "И"]]}, {"a": 74.84, "b": 75.86, "w": [[74.84, 75.52, "ОПРОКИДЫВАЮТ"], [75.52, 75.86, "СТОЛ."]]}, {"a": 76.32, "b": 77.62, "w": [[76.32, 76.64, "ТИГР"], [76.64, 77.2, "МСТИТ"], [77.2, 77.62, "И"]]}, {"a": 77.62, "b": 78.24, "w": [[77.62, 78.24, "ЗАСЫПАЕТ."]]}, {"a": 78.24, "b": 79.4, "w": [[78.24, 78.86, "ПОКА"], [78.86, 79.06, "ОН"], [79.06, 79.4, "СПИТ,"]]}, {"a": 79.7, "b": 80.9, "w": [[79.7, 80.06, "СИСТЕМА"], [80.06, 80.7, "ЗАБИРАЕТ"], [80.7, 80.9, "ЕГО"]]}, {"a": 80.9, "b": 82.0, "w": [[80.9, 81.32, "КОТЯТ"], [81.32, 81.58, "И"], [81.58, 82.0, "УНОСИТ"]]}, {"a": 82.0, "b": 83.14, "w": [[82.0, 82.12, "В"], [82.12, 82.66, "СОСЕДНЮЮ"], [82.66, 83.14, "КОМНАТУ."]]}, {"a": 83.54, "b": 84.26, "w": [[83.54, 83.96, "НОВЫЙ"], [83.96, 84.26, "СТОЛ,"]]}, {"a": 84.7, "b": 85.48, "w": [[84.7, 85.12, "НОВАЯ"], [85.12, 85.48, "ЕДА."]]}, {"a": 85.96, "b": 86.66, "w": [[85.96, 86.02, "И"], [86.02, 86.16, "СО"], [86.16, 86.66, "ВРЕМЕНЕМ"]]}, {"a": 86.66, "b": 88.14, "w": [[86.66, 87.0, "НЕКОТОРЫЕ"], [87.0, 87.74, "КОТЯТА"], [87.74, 88.14, "САМИ"]]}, {"a": 88.14, "b": 89.28, "w": [[88.14, 88.74, "СТАНОВЯТСЯ"], [88.74, 89.28, "СВИНЬЯМИ."]]}, {"a": 89.84, "b": 90.4, "w": [[89.84, 89.96, "А"], [89.96, 90.04, "В"], [90.04, 90.4, "КОНЦЕ"]]}, {"a": 90.4, "b": 90.84, "w": [[90.4, 90.84, "—"]]}, {"a": 90.84, "b": 91.98, "w": [[90.84, 91.2, "КАМЕРА"], [91.2, 91.98, "ОТЪЕЗЖАЕТ."]]}, {"a": 92.54, "b": 93.44, "w": [[92.54, 92.8, "ВСЕ"], [92.8, 93.08, "ЭТО"], [93.08, 93.44, "—"]]}, {"a": 93.44, "b": 94.42, "w": [[93.44, 93.86, "ОТЕЛЬ"], [93.86, 94.08, "НА"], [94.08, 94.42, "КРАЮ"]]}, {"a": 94.42, "b": 94.94, "w": [[94.42, 94.94, "ОБРЫВА."]]}, {"a": 95.36, "b": 96.3, "w": [[95.36, 95.62, "ЗДЕСЬ"], [95.62, 96.14, "НИКТО"], [96.14, 96.3, "НЕ"]]}, {"a": 96.3, "b": 96.8, "w": [[96.3, 96.8, "ХОЗЯИН."]]}, {"a": 97.2, "b": 98.52, "w": [[97.2, 97.46, "ВСЕ"], [97.46, 98.02, "ТОЛЬКО"], [98.02, 98.52, "ГОСТИ."]]}, {"a": 99.0, "b": 100.82, "w": [[99.0, 99.52, "МУЛЬТФИЛЬМ"], [99.52, 99.98, "НАЗЫВАЕТСЯ"], [99.98, 100.82, "DINNER"]]}, {"a": 100.82, "b": 101.4, "w": [[100.82, 101.0, "FOR"], [101.0, 101.4, "FEW."]]}, {"a": 101.74, "b": 102.52, "w": [[101.74, 102.18, "НАЙДИТЕ"], [102.18, 102.36, "ЕГО"], [102.36, 102.52, "ПО"]]}, {"a": 102.52, "b": 103.92, "w": [[102.52, 103.04, "НАЗВАНИЮ"], [103.04, 103.3, "И"], [103.3, 103.92, "ПОСМОТРИТЕ"]]}, {"a": 103.92, "b": 104.32, "w": [[103.92, 104.32, "ЦЕЛИКОМ."]]}];
+const C = { bg: '#140b16', wall: '#2a1424', wall2: '#331a2c', gold: '#e8b54a', yel: '#ffd23f', red: '#e2443a', pink: '#f2a7a0', pinkD: '#d98a85',
+  ink: '#0b0710', cream: '#f4ead8', cloth: '#efe6d6', wood: '#5a3322', cat: '#16121a', eye: '#ffd23f', tiger: '#f08a24' };
+const F = 'Montserrat, Arial Black, sans-serif', U = 'Unbounded, Montserrat, sans-serif';
+const font = (w, s, f = F) => `${w} ${Math.round(s)}px ${f}`;
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = p => 1 - Math.pow(1 - p, 3), eInOut = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const eBack = p => { const c = 1.7; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+const pop = (t, a, d = .35) => eBack(prog(t, a, a + d));
+const hash = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function circ(x, y, r, col) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); }
+function ell(x, y, rx, ry, col, rot = 0) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); }
+function txt(s, x, y, size, col, o = {}) {
+  ctx.save(); ctx.font = font(o.w || 900, size, o.f || F); ctx.textAlign = o.align || 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = col;
+  if (o.ls) ctx.letterSpacing = o.ls + 'px'; if (o.shadow) { ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 20; }
+  ctx.fillText(s, x, y); ctx.restore();
+}
+function label(s, x, y, t, a, col = C.yel, ink = C.ink, size = 34) {   // pop-in plate
+  const k = pop(t, a); if (k <= 0) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(k, k); ctx.font = font(900, size); const w = ctx.measureText(s).width + 36;
+  rr(-w / 2, -size * .8, w, size * 1.6, 12); ctx.fillStyle = col; ctx.fill(); txt(s, 0, 2, size, ink); ctx.restore();
+}
+const logoImg = new Image(); logoImg.src = 'assets/logo.png';
+
+// ---------- characters (own simple designs) ----------
+function pig(x, y, s, t, o = {}) {
+  ctx.save(); ctx.translate(x, y + Math.sin(t * 3 + (o.ph || 0)) * 4 * (o.chew ? 1 : 0)); ctx.scale(s, s);
+  const suit = o.suit || '#2b2733';
+  rr(-80, 40, 160, 150, 50); ctx.fillStyle = suit; ctx.fill();                       // body
+  if (o.role === 'priest') { rr(-80, 40, 160, 150, 50); ctx.fillStyle = '#1b1820'; ctx.fill(); rr(-22, 40, 44, 16, 6); ctx.fillStyle = C.cream; ctx.fill(); }
+  else { ctx.beginPath(); ctx.moveTo(-26, 40); ctx.lineTo(0, 92); ctx.lineTo(26, 40); ctx.fillStyle = C.cream; ctx.fill(); }   // shirt
+  if (o.tie !== undefined) { ctx.save(); ctx.translate(0, 52); ctx.rotate(o.tie); ctx.beginPath(); ctx.moveTo(-9, 0); ctx.lineTo(9, 0); ctx.lineTo(6, 70); ctx.lineTo(0, 82); ctx.lineTo(-6, 70); ctx.closePath(); ctx.fillStyle = C.red; ctx.fill(); ctx.restore(); }
+  if (o.role === 'banker') { circ(44, 110, 18, C.gold); txt('$', 44, 112, 24, C.ink); }
+  if (o.role === 'tv') { rr(18, 86, 48, 36, 6); ctx.fillStyle = '#3e6fd8'; ctx.fill(); ctx.strokeStyle = C.cream; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(30, 86); ctx.lineTo(22, 72); ctx.moveTo(54, 86); ctx.lineTo(62, 72); ctx.stroke(); }
+  // head
+  [-1, 1].forEach(d => { ctx.beginPath(); ctx.moveTo(d * 30, -60); ctx.lineTo(d * 62, -82); ctx.lineTo(d * 56, -36); ctx.closePath(); ctx.fillStyle = C.pinkD; ctx.fill(); });
+  circ(0, -20, 70, C.pink);
+  ell(0, 0, 30, 22, C.pinkD); ell(-10, 0, 5, 8, '#8a4b4b'); ell(10, 0, 5, 8, '#8a4b4b');
+  const bl = (Math.floor(t * 1.3 + (o.ph || 0)) % 5 === 0 && (t * 1.3 + (o.ph || 0)) % 1 < .12) ? .15 : 1;
+  ell(-24, -34, 7, 7 * bl, C.ink); ell(24, -34, 7, 7 * bl, C.ink);
+  if (o.angry) { ctx.strokeStyle = C.ink; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(-40, -52); ctx.lineTo(-12, -42); ctx.moveTo(40, -52); ctx.lineTo(12, -42); ctx.stroke(); }
+  if (o.role === 'judge') { [-1, 1].forEach(d => { for (let i = 0; i < 4; i++) circ(d * (58 + (i % 2) * 6), -60 + i * 26, 18, '#e9e4dc'); }); rr(-56, -104, 112, 30, 15); ctx.fillStyle = '#e9e4dc'; ctx.fill(); }
+  if (o.role === 'banker') { rr(-44, -150, 88, 70, 6); ctx.fillStyle = C.ink; ctx.fill(); rr(-66, -86, 132, 14, 6); ctx.fill(); rr(-44, -100, 88, 10, 2); ctx.fillStyle = C.red; ctx.fill(); }
+  if (o.role === 'priest') { rr(-46, -112, 92, 40, 18); ctx.fillStyle = '#1b1820'; ctx.fill(); }
+  ctx.restore();
+}
+function cat(x, y, s, t, o = {}) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s * (o.flip ? -1 : 1), s); ctx.rotate(o.rot || 0);
+  const w = o.thin ? .8 : 1;
+  ctx.strokeStyle = o.col || C.cat; ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-50 * w, 10);
+  ctx.quadraticCurveTo(-95, -10 + Math.sin(t * 4 + (o.ph || 0)) * 20, -80, -60); ctx.stroke();
+  ell(0, 10, 55 * w, 32, o.col || C.cat); circ(46, -22, 30, o.col || C.cat);
+  [[28, -44], [62, -44]].forEach(([ex, ey], i) => { ctx.beginPath(); ctx.moveTo(ex - 12, ey + 6); ctx.lineTo(ex + (i ? 10 : -6), ey - 26); ctx.lineTo(ex + 14, ey + 4); ctx.fillStyle = o.col || C.cat; ctx.fill(); });
+  if (!o.sleep) { ell(36, -24, 6, 8, C.eye); ell(58, -24, 6, 8, C.eye); ell(37, -24, 2, 6, C.ink); ell(59, -24, 2, 6, C.ink); }
+  for (let i = -1; i <= 1; i += 2) { ctx.fillStyle = o.col || C.cat; rr(-34 * w + (i + 1) * 30, 30, 14, 26, 7); ctx.fill(); }
+  ctx.restore();
+}
+function waiter(x, y, s, t) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  rr(-45, -40, 90, 230, 40); ctx.fillStyle = '#efe6d6'; ctx.fill(); rr(-45, 60, 90, 130, 20); ctx.fillStyle = '#1b1820'; ctx.fill();
+  circ(0, -90, 48, '#cfc3b2'); ctx.fillStyle = '#1b1820'; rr(-12, -40, 24, 12, 6); ctx.fill();
+  ctx.strokeStyle = '#efe6d6'; ctx.lineWidth = 22; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(30, -10); ctx.lineTo(110, -60); ctx.stroke();
+  rr(60, -84, 150, 14, 7); ctx.fillStyle = '#bfc4cc'; ctx.fill();
+  ctx.beginPath(); ctx.arc(135, -84, 50, Math.PI, 0); ctx.fillStyle = '#d8dce2'; ctx.fill(); circ(135, -136, 8, '#d8dce2');
+  ctx.restore();
+}
+function table(x, y, w, t, o = {}) {
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = C.wood; [-w / 2 + 40, w / 2 - 60].forEach(lx => ctx.fillRect(lx, 0, 20, 260));
+  rr(-w / 2 - 20, -30, w + 40, 60, 10); ctx.fillStyle = C.cloth; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-w / 2 - 20, 20); for (let i = 0; i <= 12; i++) { const px = -w / 2 - 20 + (w + 40) * i / 12; ctx.lineTo(px, 90 + (i % 2) * 18); } ctx.lineTo(w / 2 + 20, 20); ctx.fillStyle = C.cloth; ctx.fill();
+  const full = o.full === undefined ? 1 : o.full;
+  for (let i = 0; i < (o.plates || 5); i++) { const px = -w / 2 + 80 + i * (w - 160) / Math.max(1, (o.plates || 5) - 1);
+    ell(px, -30, 62, 16, '#fbf7ef'); ell(px, -30, 44, 10, '#e6dccb');
+    if (full > hash(i + 3) * .9) { ell(px - 8, -42, 26 * full, 14 * full, i % 2 ? '#c4552d' : '#7fa040'); circ(px + 16, -44, 10 * full, C.gold); } }
+  ctx.restore();
+}
+function chainLinks(x0, y0, x1, y1, t, n, col = '#9aa0ab') {
+  for (let i = 0; i < n; i++) { const p = i / (n - 1), x = lerp(x0, x1, p), y = lerp(y0, y1, p) + Math.sin(p * Math.PI) * 40;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(y1 - y0, x1 - x0) + (i % 2 ? Math.PI / 2 : 0) * .0); ctx.strokeStyle = col; ctx.lineWidth = 9;
+    ctx.beginPath(); ctx.ellipse(0, 0, 26, i % 2 ? 6 : 14, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }
+}
+function mouse(x, y, s, t) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ell(0, 0, 60, 34, '#a9adb6'); circ(54, -6, 26, '#a9adb6'); circ(44, -32, 14, '#c9b2b2'); ell(80, -6, 6, 6, C.ink); circ(62, -12, 4, C.ink);
+  ctx.strokeStyle = '#a9adb6'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(-58, 6); ctx.quadraticCurveTo(-110, 30, -120, -10); ctx.stroke();
+  ctx.save(); ctx.translate(-10, -34); ctx.rotate(t * 6); ctx.fillStyle = C.gold; rr(-4, -30, 8, 30, 3); ctx.fill(); ell(0, -36, 22, 10, C.gold); ctx.restore();
+  for (const d of [-30, 30]) { ctx.save(); ctx.translate(d, 34); ctx.rotate(t * 12); ctx.fillStyle = C.ink; rr(-10, -10, 20, 20, 10); ctx.fill(); ctx.restore(); }
+  ctx.restore();
+}
+function tiger(x, y, s, t, o = {}) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.strokeStyle = C.tiger; ctx.lineWidth = 26; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-170, 0); ctx.quadraticCurveTo(-260, -40 + Math.sin(t * 2) * 20, -230, -140); ctx.stroke();
+  ell(0, 10, 190, 100, C.tiger); circ(170, -60, 90, C.tiger);
+  ctx.fillStyle = C.ink; for (let i = 0; i < 6; i++) { ctx.save(); ctx.translate(-130 + i * 50, -40); ctx.rotate(.3); rr(-8, -40, 16, 80, 8); ctx.fill(); ctx.restore(); }
+  [[120, -140], [220, -140]].forEach(([ex, ey]) => { ctx.beginPath(); ctx.moveTo(ex - 30, ey + 30); ctx.lineTo(ex, ey - 30); ctx.lineTo(ex + 30, ey + 30); ctx.fillStyle = C.tiger; ctx.fill(); });
+  if (o.sleep) { ctx.strokeStyle = C.ink; ctx.lineWidth = 8; [140, 200].forEach(ex => { ctx.beginPath(); ctx.arc(ex, -70, 16, .2, Math.PI - .2); ctx.stroke(); }); }
+  else { [140, 200].forEach(ex => { ell(ex, -72, 14, 18, C.yel); ell(ex, -72, 5, 15, C.ink); }); }
+  ell(170, -20, 34, 22, '#fff3e0'); circ(170, -34, 10, C.ink);
+  ctx.fillStyle = C.tiger; [-120, -40, 60, 120].forEach(lx => { rr(lx, 70, 44, 90, 20); ctx.fill(); });
+  ctx.restore();
+}
+function machine(x, y, s, t, run) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.beginPath(); ctx.moveTo(-180, -260); ctx.lineTo(180, -260); ctx.lineTo(80, -140); ctx.lineTo(-80, -140); ctx.closePath(); ctx.fillStyle = '#6b6f7a'; ctx.fill();
+  rr(-200, -150, 400, 300, 30); ctx.fillStyle = '#8a8f9a'; ctx.fill(); rr(-200, -150, 400, 300, 30); ctx.strokeStyle = '#4c505a'; ctx.lineWidth = 8; ctx.stroke();
+  [[-90, -30, 70], [70, 20, 50]].forEach(([gx, gy, r], i) => { ctx.save(); ctx.translate(gx, gy); ctx.rotate(t * (i ? -3 : 2) * run); ctx.fillStyle = '#4c505a';
+    for (let k = 0; k < 8; k++) { ctx.rotate(Math.PI / 4); rr(-10, -r - 14, 20, 28, 4); ctx.fill(); } circ(0, 0, r, '#4c505a'); circ(0, 0, r * .35, '#8a8f9a'); ctx.restore(); });
+  circ(140, -100, 14, run && (t * 4) % 1 < .5 ? C.red : '#5a2a2a');
+  rr(200, 60, 140, 40, 8); ctx.fillStyle = '#6b6f7a'; ctx.fill();
+  ctx.restore();
+}
+function room(t, bare = 0) {                                      // dining room: wallpaper, curtains, lamp
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, C.wall2); g.addColorStop(1, C.bg); ctx.fillStyle = g; ctx.fillRect(-200, -200, W + 400, H + 400);
+  ctx.globalAlpha = 1 - bare;
+  for (let y = 0; y < 1300; y += 110) for (let x = (y / 110 % 2) * 55; x < W; x += 110) { ctx.save(); ctx.translate(x, y); ctx.rotate(Math.PI / 4); ctx.fillStyle = 'rgba(232,181,74,.08)'; ctx.fillRect(-16, -16, 32, 32); ctx.restore(); }
+  ctx.fillStyle = '#5c1622'; [[-40, 0], [W - 130, 0]].forEach(([x]) => { ctx.beginPath(); ctx.moveTo(x, -50); ctx.lineTo(x + 170, -50); ctx.quadraticCurveTo(x + 90, 600, x + 150, 1250); ctx.lineTo(x + 20, 1250); ctx.quadraticCurveTo(x + 60, 600, x, -50); ctx.fill(); });
+  rr(330, 300, 200, 150, 8); ctx.fillStyle = '#3a2a1a'; ctx.fill(); rr(345, 315, 170, 120, 4); ctx.fillStyle = '#6a7f5a'; ctx.fill(); circ(400, 360, 22, '#d9b45a');
+  rr(600, 330, 140, 180, 8); ctx.fillStyle = '#3a2a1a'; ctx.fill(); rr(615, 345, 110, 150, 4); ctx.fillStyle = '#5a6a8a'; ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#3d2433'; ctx.fillRect(-200, 1250, W + 400, H); const fl = ctx.createRadialGradient(CX, 1450, 40, CX, 1450, 700); fl.addColorStop(0, 'rgba(255,190,120,.28)'); fl.addColorStop(1, 'rgba(255,190,120,0)'); ctx.fillStyle = fl; ctx.fillRect(-200, 1200, W + 400, 900);
+  const lg = ctx.createRadialGradient(CX, 700, 50, CX, 900, 900); lg.addColorStop(0, 'rgba(255,200,120,.22)'); lg.addColorStop(1, 'rgba(255,200,120,0)'); ctx.fillStyle = lg; ctx.fillRect(-200, -200, W + 400, H + 400);
+}
+function vignette() { const g = ctx.createRadialGradient(CX, H / 2, 500, CX, H / 2, 1250); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.7)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
+
+const PIGS = [{ role: 'judge', name: 'СУДЬЯ', at: 9.4, suit: '#1b1820' }, { role: 'banker', name: 'БАНКИР', at: 10.1, suit: '#23314a' }, { role: 'priest', name: 'СВЯЩЕННИК', at: 10.84 },
+  { role: 'tv', name: 'ТЕЛЕКАНАЛ', at: 11.84, suit: '#3b2a4a' }, { role: 'pol', name: 'ПОЛИТИК', at: 13.18, suit: '#2b2f38', tie: -.35 }, { role: 'pol', name: 'ПОЛИТИК', at: 13.38, suit: '#2b2f38', tie: .35 }];
+function dinner(t, o = {}) {                                        // the whole dinner set-up at table level
+  const n = PIGS.length;
+  PIGS.forEach((p, i) => { const k = o.all ? 1 : pop(t, p.at); if (k <= 0) return; const x = 120 + i * 168, y = 860 + (i % 2) * 40;
+    ctx.save(); ctx.translate(x, y); ctx.scale(k, k); pig(0, 0, .95, t, { role: p.role, suit: p.suit, tie: p.tie, chew: o.chew, ph: i, angry: o.angry }); ctx.restore();
+  });
+  table(CX, 1060, 940, t, { plates: 6, full: o.full });
+  if (o.names) PIGS.forEach((p, i) => label(p.name, 120 + i * 168, 640 + (i % 2) * 70, t, p.at + .1, C.yel, C.ink, 26));
+}
+
+// ---------- shots ----------
+const SHOTS = [
+  [0, 7.3, s0], [7.3, 14.4, s1], [14.4, 21.5, s2], [21.5, 30.7, s3], [30.7, 41.5, s4], [41.5, 48.7, s5], [48.7, 60.1, s6],
+  [60.1, 68.1, s7], [68.1, 76.2, s8], [76.2, 89.7, s9], [89.7, 98.9, s10], [98.9, DURATION, s11]];
+function s0(t) {                                                    // hook
+  room(t); ctx.save(); ctx.globalAlpha = .55; dinner(t, { all: true, chew: 1 }); ctx.restore();
+  ctx.fillStyle = 'rgba(10,6,12,.55)'; ctx.fillRect(0, 0, W, H);
+  const k = pop(t, .4, .5); ctx.save(); ctx.translate(CX, 760); ctx.scale(k, k);
+  txt('10 МИНУТ', 0, -70, 118, C.cream, { f: U, w: 800 }); txt('0 СЛОВ', 0, 90, 150, C.yel, { f: U, w: 800 }); ctx.restore();
+  label('КАК УСТРОЕН МИР', CX, 1050, t, 3.2, C.red, C.cream, 46);
+  // film strip
+  ctx.save(); ctx.globalAlpha = prog(t, 1, 1.6); ctx.fillStyle = '#0a070c'; ctx.fillRect(0, 1250, W, 120); ctx.fillStyle = C.cream;
+  for (let i = 0; i < 14; i++) { const x = ((i * 90 - t * 120) % 1260 + 1260) % 1260 - 90; rr(x, 1264, 50, 22, 4); ctx.fill(); rr(x, 1334, 50, 22, 4); ctx.fill(); } ctx.restore();
+}
+function s1(t) { room(t); dinner(t, { names: true, chew: 1 }); }
+function s2(t) {                                                    // two identical politicians
+  room(t); ctx.fillStyle = 'rgba(10,6,12,.35)'; ctx.fillRect(0, 0, W, H);
+  const tl = -.35 * pop(t, 18.9), tr = .35 * pop(t, 20.3);
+  pig(330, 860, 1.9, t, { suit: '#2b2f38', tie: tl }); pig(750, 860, 1.9, t, { suit: '#2b2f38', tie: tr });
+  txt('=', CX, 820, 160, C.yel, { f: U });
+  label('ОДИНАКОВЫЕ', CX, 470, t, 15.0, C.yel);
+  label('← ВЛЕВО', 330, 1330, t, 19.2, C.cream, C.ink, 40); label('ВПРАВО →', 750, 1330, t, 20.6, C.cream, C.ink, 40);
+}
+function s3(t) {                                                    // waiter + cats under the table
+  room(t); dinner(t, { all: true, chew: 1 });
+  const wx = lerp(-260, 1300, ((t - 21.5) / 9 * 1.6) % 1); waiter(wx, 760, 1.1, t);
+    for (let i = 0; i < 6; i++) { const k = pop(t, 24.6 + i * .12); if (k <= 0) continue; const fight = t > 28.7 ? Math.sin(t * 9 + i) * 18 : 0;
+    ctx.save(); ctx.translate(150 + i * 160 + fight, 1370 + (i % 2) * 40); ctx.scale(k, k); cat(0, 0, 1, t, { flip: i % 2, ph: i, thin: 1 }); ctx.restore(); }
+  for (let i = 0; i < 10; i++) { const p = ((t * .8 + hash(i)) % 1); if (t < 27.2) break; circ(200 + hash(i + 9) * 680, 1120 + p * 260, 7, C.gold); }
+  label('КРОШКИ', CX, 1230, t, 27.5, C.yel);
+}
+function s4(t) {                                                    // the machine eats the room
+  const bare = prog(t, 36, 41); room(t, bare);
+  machine(CX, 1000, 1.25, t, 1);
+  const items = [['ТАРЕЛКИ', 0], ['МЕБЕЛЬ', 36.08], ['КАРТИНЫ', 36.62], ['СТЕНЫ', 37.26]];
+  items.slice(1).forEach(([s, a], i) => { const p = prog(t, a, a + 1.4); if (p <= 0 || p >= 1) return; const x = lerp(200 + i * 340, CX, eInOut(p)), y = lerp(260, 700, eInOut(p));
+    ctx.save(); ctx.translate(x, y); ctx.rotate(p * 4); ctx.scale(1 - p * .6, 1 - p * .6);
+    if (i === 0) { ctx.fillStyle = C.wood; rr(-70, -40, 140, 30, 6); ctx.fill(); ctx.fillRect(-60, -10, 16, 70); ctx.fillRect(44, -10, 16, 70); }
+    if (i === 1) { rr(-80, -60, 160, 120, 8); ctx.fillStyle = '#3a2a1a'; ctx.fill(); rr(-66, -46, 132, 92, 4); ctx.fillStyle = '#6a7f5a'; ctx.fill(); }
+    if (i === 2) { rr(-90, -90, 180, 180, 4); ctx.fillStyle = C.wall; ctx.fill(); ctx.fillStyle = 'rgba(232,181,74,.3)'; ctx.fillRect(-20, -20, 40, 40); }
+    ctx.restore(); label(s, 200 + i * 340, 200, t, a, C.cream, C.ink, 30); });
+  for (let i = 0; i < 4; i++) { const p = ((t - 33.9) * .7 + i / 4) % 1; if (t < 33.9) break; ctx.save(); ctx.translate(lerp(CX + 280, W + 120, p), 1180); ell(0, 0, 60, 16, '#fbf7ef'); ell(-6, -10, 28, 14, i % 2 ? '#c4552d' : '#7fa040'); ctx.restore(); }
+  label('ОТКУДА ЕДА?', CX, 420, t, 30.84, C.yel, C.ink, 48);
+  if (t > 38.5) { label('КОМНАТА БЕДНЕЕТ', CX, 1430, t, 38.56, C.red, C.cream, 38); label('ТАРЕЛКИ ПОЛНЕЕ', CX, 1530, t, 40.6, C.yel, C.ink, 38); }
+}
+function s5(t) {                                                    // the hidden chain
+  room(t); dinner(t, { all: true });
+  const dark = prog(t, 43.6, 44.6); ctx.fillStyle = `rgba(5,3,8,${.75 * dark})`; ctx.fillRect(0, 1100, W, 820);
+  const n = prog(t, 44.6, 46.4);
+  if (n > 0) { ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W * n, H); ctx.clip(); chainLinks(80, 1240, 1000, 1240, t, 22); for (let i = 0; i < 6; i++) { const x = 120 + i * 168; chainLinks(x, 1110, x, 1240, t, 4); } ctx.restore(); }
+  label('ЦЕПЬ', CX, 1460, t, 46.1, C.red, C.cream, 48);
+  if (t > 47) { ctx.save(); ctx.globalAlpha = prog(t, 47, 47.5); txt('СВЕРХУ НЕ ВИДНО', CX, 420, 54, C.cream, { f: U, w: 800 }); ctx.restore(); }
+}
+function s6(t) {                                                    // noise → wind-up mouse
+  room(t); dinner(t, { all: true, full: .4 });
+  const chase = prog(t, 56.4, 59.5), mx = t < 55 ? -300 : lerp(-200, 1400, prog(t, 55, 60));
+  for (let i = 0; i < 6; i++) { const x = chase > 0 ? mx - 260 - i * 150 : 150 + i * 160, y = 1420 + (i % 2) * 50;
+    cat(x, y, 1, t, { flip: chase > 0 ? 0 : i % 2, ph: i, thin: 1 }); }
+  if (t > 50.4 && t < 55.5) for (let i = 0; i < 3; i++) { const p = ((t - 50.4) * 1.4 + i / 3) % 1; ctx.save(); ctx.globalAlpha = 1 - p; txt('МЯУ!', 200 + i * 340, 1250 - p * 150, 40 + p * 30, C.cream); ctx.restore(); }
+  if (t > 55) mouse(mx, 1560, 1.1, t);
+  label('ЗАВОДНАЯ МЫШЬ', CX, 420, t, 55.4, C.yel, C.ink, 48);
+  if (t > 58.2) label('ЗАБЫЛИ, ЧТО ГОЛОДНЫ', CX, 1760, t, 58.2, C.red, C.cream, 38);
+}
+function s7(t) {                                                    // the key frame
+  ctx.fillStyle = '#0d080f'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = C.red; ctx.lineWidth = 14; const k = pop(t, 60.3); ctx.save(); ctx.translate(CX, H / 2); ctx.scale(k, k); ctx.strokeRect(-430, -560, 860, 1080); ctx.restore();
+  txt('САМЫЙ ВАЖНЫЙ КАДР', CX, 480, 50, C.red, { f: U, w: 800 });
+  mouse(CX - 40 + Math.sin(t * 2) * 60, 830, 2.2, t);
+  if (t > 62.6) { ctx.save(); ctx.globalAlpha = prog(t, 62.6, 63.1); txt('ПРОБЛЕМУ', CX, 1150, 92, C.cream, { f: U, w: 800 }); txt('НЕ НУЖНО РЕШАТЬ', CX, 1255, 64, C.cream, { f: U, w: 800 }); ctx.restore(); }
+  if (t > 64.6) label('ДАЙ ЛЮДЯМ, ЗА ЧЕМ БЕЖАТЬ', CX, 1385, t, 64.6, C.yel, C.ink, 44);
+}
+function s8(t) {                                                    // pigs fight, cats → tiger, table flips
+  const flip = prog(t, 74.8, 75.6); room(t, .5);
+  if (t < 72.4) { dinner(t, { all: true, full: 0, angry: t > 70.4 }); if (t > 70.4) { for (let i = 0; i < 5; i++) { const p = ((t * 3 + i * .37) % 1); ctx.save(); ctx.globalAlpha = 1 - p; txt('!', 150 + i * 190, 600 - p * 80, 80, C.red); ctx.restore(); } } }
+  else { ctx.save(); ctx.translate(CX, 1060); ctx.rotate(-flip * 1.1); ctx.translate(-CX, -1060 - flip * 300); dinner(t, { all: true, full: 0, angry: 1 }); ctx.restore(); }
+  const m = prog(t, 72.6, 74.2);
+  if (t > 72.4 && m < 1) for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + t * 3, r = lerp(420, 0, eInOut(m)); cat(CX + Math.cos(a) * r, 1450 + Math.sin(a) * r * .4, 1 - m * .5, t, { ph: i }); }
+  if (m >= 1 || t > 74.1) { const k = pop(t, 74.08, .5); ctx.save(); ctx.translate(CX - 80, 1450); ctx.scale(k * 1.6, k * 1.6); tiger(0, 0, 1, t); ctx.restore(); }
+  label('ЕДА ЗАКОНЧИЛАСЬ', CX, 420, t, 68.76, C.red, C.cream, 46);
+}
+function s9(t) {                                                    // sleep, kittens taken, new table, kitten → pig
+  ctx.fillStyle = '#120a14'; ctx.fillRect(0, 0, W, H);
+  if (t < 83.5) {
+    room(t, .85); tiger(CX - 100, 1300, 1.3, t, { sleep: 1 });
+    if (t > 77.6) for (let i = 0; i < 3; i++) { const p = ((t - 77.6) * .5 + i / 3) % 1; ctx.save(); ctx.globalAlpha = 1 - p; txt('Z', CX + 200 + p * 120, 980 - p * 200, 50 + i * 16, C.cream, { f: U }); ctx.restore(); }
+    const p = prog(t, 80, 83); ctx.save(); ctx.translate(lerp(CX - 50, W + 200, eInOut(p)), lerp(1440, 700, eInOut(p)));
+    for (let i = 0; i < 3; i++) cat(-80 + i * 70, 40, .55, t, { col: '#3a3242', ph: i });
+    ctx.fillStyle = '#9aa0ab'; rr(-160, -120, 30, 160, 12); ctx.fill(); rr(-160, -130, 240, 30, 12); ctx.fill(); ctx.restore();
+    label('СИСТЕМА', CX, 420, t, 79.7, C.yel, C.ink, 48); label('СОСЕДНЯЯ КОМНАТА →', CX, 540, t, 82.1, C.cream, C.ink, 36);
+  } else {
+    const p = prog(t, 87, 88.9); room(t);
+    table(CX, 1060, 940, t, { plates: 6, full: 1 }); label('НОВЫЙ СТОЛ', 300, 420, t, 83.54, C.cream, C.ink, 40); label('НОВАЯ ЕДА', 780, 420, t, 84.7, C.yel, C.ink, 40);
+    if (p < .5) cat(CX - 40, 830, 1.4 * (1 - p), t, { col: '#3a3242' }); else { const k = (p - .5) * 2; ctx.save(); ctx.translate(CX, 840); ctx.scale(k, k); pig(0, 0, 1.1, t, { suit: '#2b2f38', tie: 0 }); ctx.restore(); }
+    if (p > 0 && p < 1) { ctx.save(); ctx.globalAlpha = Math.sin(p * Math.PI); circ(CX, 820, 200 * Math.sin(p * Math.PI), 'rgba(255,255,255,.5)'); ctx.restore(); }
+    if (t > 88.7) label('КОТЁНОК СТАЛ СВИНЬЁЙ', CX, 1500, t, 88.7, C.red, C.cream, 40);
+  }
+}
+function s10(t) {                                                   // pull back: hotel on the cliff
+  const p = eInOut(prog(t, 90.6, 94.6)), z = lerp(5.5, 1, p);
+  const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#0a0f24'); sky.addColorStop(1, '#2a1830'); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 70; i++) circ(hash(i) * W, hash(i + 70) * 900, 2 + hash(i + 3) * 2, `rgba(255,255,255,${.3 + .5 * hash(i + 5)})`);
+  ctx.save(); ctx.translate(CX, 980); ctx.scale(z, z); ctx.translate(-CX, -980);
+  const rk = ctx.createLinearGradient(0, 1300, 0, 2000); rk.addColorStop(0, '#6a5566'); rk.addColorStop(1, '#2a2030'); ctx.fillStyle = rk; ctx.beginPath(); ctx.moveTo(-400, 1300); ctx.lineTo(740, 1300); ctx.lineTo(770, 1380); ctx.lineTo(730, 1520); ctx.lineTo(780, 1700); ctx.lineTo(720, 2400); ctx.lineTo(-400, 2400); ctx.fill(); ctx.strokeStyle = '#a08a8a'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(-400, 1300); ctx.lineTo(740, 1300); ctx.lineTo(770, 1380); ctx.stroke();
+  ctx.fillStyle = '#1a1a2a'; ctx.fillRect(160, 700, 560, 600); ctx.beginPath(); ctx.moveTo(130, 700); ctx.lineTo(440, 560); ctx.lineTo(750, 700); ctx.fill();
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) { const lit = hash(r * 5 + c) > .35; ctx.fillStyle = lit ? 'rgba(255,200,120,.85)' : '#262338'; ctx.fillRect(200 + c * 104, 740 + r * 108, 60, 70); }
+  ctx.fillStyle = 'rgba(255,200,120,.95)'; ctx.fillRect(408, 956, 60, 70);
+  txt('HOTEL', 440, 650, 34, C.gold, { f: U, w: 800, ls: 6 });
+  ctx.restore();
+  const sea = ctx.createLinearGradient(0, 1500, 0, H); sea.addColorStop(0, 'rgba(30,60,110,.0)'); sea.addColorStop(1, 'rgba(30,60,110,.9)'); ctx.fillStyle = sea; ctx.fillRect(0, 1500, W, 420); ctx.strokeStyle = 'rgba(140,180,230,.35)'; ctx.lineWidth = 3; for (let i = 0; i < 8; i++) { const y = 1560 + i * 40, o = (t * 30 + i * 70) % 160; ctx.beginPath(); for (let x = -160 + o; x < W; x += 160) { ctx.moveTo(x, y); ctx.lineTo(x + 70, y); } ctx.stroke(); }
+  label('ОТЕЛЬ НА КРАЮ ОБРЫВА', CX, 380, t, 94.0, C.yel, C.ink, 42);
+  if (t > 96) { label('НИКТО НЕ ХОЗЯИН', CX, 1560, t, 96.0, C.cream, C.ink, 40); label('ВСЕ ТОЛЬКО ГОСТИ', CX, 1680, t, 97.8, C.red, C.cream, 46); }
+}
+function s11(t) {                                                   // end card
+  ctx.fillStyle = '#0d080f'; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.globalAlpha = .25; dinner(t, { all: true, chew: 1 }); ctx.restore();
+  ctx.fillStyle = 'rgba(10,6,12,.6)'; ctx.fillRect(0, 0, W, H);
+  txt('МУЛЬТФИЛЬМ', CX, 600, 50, C.cream, { f: U, w: 800, ls: 4 });
+  const k = pop(t, 99.9, .5); ctx.save(); ctx.translate(CX, 780); ctx.scale(k, k); txt('DINNER', 0, -60, 140, C.yel, { f: U, w: 800 }); txt('FOR FEW', 0, 90, 140, C.yel, { f: U, w: 800 }); ctx.restore();
+  label('НАССОС ВАКАЛИС · 2014', CX, 1040, t, 100.4, C.cream, C.ink, 36);
+  label('НАЙДИТЕ ПО НАЗВАНИЮ', CX, 1180, t, 101.7, C.red, C.cream, 40);
+  txt('10 МИНУТ · БЕЗ СЛОВ', CX, 1300, 36, 'rgba(244,234,216,.7)');
+}
+
+// ---------- overlay: header, subtitles, watermark ----------
+function header(t) {
+  ctx.fillStyle = 'rgba(8,5,10,.82)'; ctx.fillRect(0, 0, W, 250);
+  txt('МУЛЬТФИЛЬМ, КОТОРЫЙ', CX, 118, 50, C.cream, { f: U, w: 800 }); txt('ОБЪЯСНИЛ СИСТЕМУ', CX, 186, 50, C.yel, { f: U, w: 800 });
+}
+function subtitles(t) {
+  const s = SUBS.find(x => t >= x.a - .05 && t < x.b + .35); if (!s) return;
+  ctx.save(); ctx.font = font(900, 64); const sp = 18, widths = s.w.map(w => ctx.measureText(w[2]).width), total = widths.reduce((a, b) => a + b, 0) + sp * (s.w.length - 1);
+  const fit = Math.min(1, 980 / total); ctx.translate(CX, 1660); ctx.scale(fit, fit); ctx.translate(-CX, -1660);
+  let x = CX - total / 2; const y = 1660, k = .9 + .1 * eOut(prog(t, s.a - .05, s.a + .1));
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.lineJoin = 'round';
+  s.w.forEach((w, i) => { const on = t >= w[0] - .03; ctx.lineWidth = 12; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.strokeText(w[2], x, y); ctx.fillStyle = on ? (t < w[1] + .1 ? C.yel : C.cream) : 'rgba(244,234,216,.45)'; ctx.fillText(w[2], x, y); x += widths[i] + sp; });
+  ctx.restore();
+}
+function watermark(t) {
+  if (!logoImg.naturalWidth) return; const w = 170, h = w * logoImg.naturalHeight / logoImg.naturalWidth;
+  ctx.save(); ctx.globalAlpha = .75; ctx.drawImage(logoImg, W - w - 50, 1820 - h, w, h); ctx.restore();
+}
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.letterSpacing = '0px';
+  let i = SHOTS.findIndex(([a, b]) => t >= a && t < b); if (i < 0) i = SHOTS.length - 1;
+  const [a, b, fn] = SHOTS[i], p = (t - a) / (b - a);
+  const z = 1 + .05 * p, sh = t - a < .25 ? (1 - (t - a) / .25) * 14 : 0;         // slow push-in, small kick on each cut
+  ctx.save(); ctx.translate(CX + Math.sin(t * 50) * sh, H / 2 + Math.cos(t * 43) * sh); ctx.scale(z, z); ctx.translate(-CX, -H / 2); fn(t); ctx.restore();
+  vignette();
+  if (t - a < .12 && i > 0) { ctx.fillStyle = `rgba(255,240,220,${.5 * (1 - (t - a) / .12)})`; ctx.fillRect(0, 0, W, H); }   // cut flash
+  header(t); subtitles(t); watermark(t);
+  const f = Math.max(1 - prog(t, 0, .25), prog(t, DURATION - .6, DURATION)); if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f})`; ctx.fillRect(0, 0, W, H); }
+}
+window.DURATION = DURATION; window.renderFrame = renderFrame; window.prepare = async () => {};
+window.READY = (async () => { await Promise.all([document.fonts.load(font(900, 60), 'АБВ'), document.fonts.load('800 60px Unbounded', 'АБВ ABC 10'), logoImg.decode().catch(() => {})]); return true; })();
+</script></body></html>
