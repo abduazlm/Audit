@@ -1,0 +1,159 @@
+<!doctype html><html><head><meta charset="utf-8"><title>MAN Review Reel</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Обзор мультфильма «MAN» (Стив Каттс, 2012) своими рисунками — кадры фильма не используются. Финал намеренно не пересказан.
+// Deterministic: renderFrame(t), t = seconds of assets/vo.wav.
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const W = 1080, H = 1920, CX = W / 2;
+const DURATION = 61.9;
+const SUBS = [{"a": 0.0, "b": 2.34, "w": [[0.0, 0.84, "ВСЯ"], [0.84, 1.48, "ИСТОРИЯ"], [1.48, 2.34, "ЧЕЛОВЕЧЕСТВА"]]}, {"a": 2.34, "b": 3.58, "w": [[2.34, 2.76, "ЗА"], [2.76, 3.02, "ТРИ"], [3.02, 3.58, "МИНУТЫ."]]}, {"a": 4.06, "b": 5.38, "w": [[4.06, 4.48, "БЕЗ"], [4.48, 5.08, "ЕДИНОГО"], [5.08, 5.38, "СЛОВА."]]}, {"a": 6.32, "b": 7.64, "w": [[6.32, 7.04, "ЧЕЛОВЕК"], [7.04, 7.42, "ВЫХОДИТ"], [7.42, 7.64, "В"]]}, {"a": 7.64, "b": 7.82, "w": [[7.64, 7.82, "ЛЕС,"]]}, {"a": 8.44, "b": 9.32, "w": [[8.44, 8.9, "НАСТУПАЕТ"], [8.9, 9.04, "НА"], [9.04, 9.32, "ЖУКА,"]]}, {"a": 9.86, "b": 11.1, "w": [[9.86, 10.2, "СРЫВАЕТ"], [10.2, 10.8, "ЦВЕТОК"], [10.8, 11.1, "И"]]}, {"a": 11.1, "b": 11.74, "w": [[11.1, 11.74, "ВЫБРАСЫВАЕТ."]]}, {"a": 12.2, "b": 13.02, "w": [[12.2, 12.54, "ПРОСТО"], [12.54, 13.02, "ПОТОМУ,"]]}, {"a": 13.18, "b": 13.78, "w": [[13.18, 13.44, "ЧТО"], [13.44, 13.78, "МОЖЕТ."]]}, {"a": 14.48, "b": 15.64, "w": [[14.48, 15.02, "ДАЛЬШЕ"], [15.02, 15.64, "БЫСТРЕЕ."]]}, {"a": 16.18, "b": 16.88, "w": [[16.18, 16.34, "ОН"], [16.34, 16.68, "НАХОДИТ"], [16.68, 16.88, "ПОД"]]}, {"a": 16.88, "b": 17.76, "w": [[16.88, 17.16, "ЗЕМЛЁЙ"], [17.16, 17.76, "РЕСУРСЫ,"]]}, {"a": 18.1, "b": 18.78, "w": [[18.1, 18.46, "ВЫРУБАЕТ"], [18.46, 18.78, "ЛЕС,"]]}, {"a": 19.12, "b": 19.82, "w": [[19.12, 19.44, "СТРОИТ"], [19.44, 19.82, "ЗАВОДЫ."]]}, {"a": 20.44, "b": 21.88, "w": [[20.44, 20.76, "НЕБО"], [20.76, 21.22, "СТАНОВИТСЯ"], [21.22, 21.88, "СЕРЫМ."]]}, {"a": 22.4, "b": 23.76, "w": [[22.4, 22.86, "ЖИВОТНЫЕ"], [22.86, 23.54, "ПРЕВРАЩАЮТСЯ"], [23.54, 23.76, "В"]]}, {"a": 23.76, "b": 24.22, "w": [[23.76, 24.22, "ШУБЫ,"]]}, {"a": 24.44, "b": 25.26, "w": [[24.44, 24.84, "ОБУВЬ"], [24.84, 24.98, "И"], [24.98, 25.26, "ЕДУ"]]}, {"a": 25.26, "b": 25.96, "w": [[25.26, 25.4, "НА"], [25.4, 25.96, "КОНВЕЙЕРЕ."]]}, {"a": 25.96, "b": 27.34, "w": [[25.96, 26.44, "А"], [26.44, 26.86, "ЧЕЛОВЕК"], [26.86, 27.34, "ИДЁТ"]]}, {"a": 27.34, "b": 28.16, "w": [[27.34, 27.5, "ПО"], [27.5, 28.02, "МАГАЗИНУ"], [28.02, 28.16, "И"]]}, {"a": 28.16, "b": 29.28, "w": [[28.16, 28.68, "СКЛАДЫВАЕТ"], [28.68, 28.82, "В"], [28.82, 29.28, "ТЕЛЕЖКУ"]]}, {"a": 29.28, "b": 30.32, "w": [[29.28, 29.5, "ВСЁ"], [29.5, 30.08, "НОВОЕ"], [30.08, 30.32, "И"]]}, {"a": 30.32, "b": 30.8, "w": [[30.32, 30.8, "НОВОЕ."]]}, {"a": 31.18, "b": 32.96, "w": [[31.18, 31.78, "ОКЕАНЫ"], [32.0, 32.38, "ЗАБИТЫ"], [32.38, 32.96, "МУСОРОМ."]]}, {"a": 33.32, "b": 34.12, "w": [[33.32, 33.66, "ГОРОДА"], [33.66, 34.12, "РАСТУТ,"]]}, {"a": 34.18, "b": 35.18, "w": [[34.18, 34.42, "ПОКА"], [34.42, 34.58, "НЕ"], [34.58, 35.18, "ПРЕВРАЩАЮТСЯ"]]}, {"a": 35.18, "b": 36.52, "w": [[35.18, 35.44, "В"], [35.44, 35.76, "ОДНУ"], [35.76, 36.52, "ОГРОМНУЮ"]]}, {"a": 36.52, "b": 37.1, "w": [[36.52, 37.1, "СВАЛКУ."]]}, {"a": 37.5, "b": 38.0, "w": [[37.5, 37.58, "И"], [37.58, 37.66, "В"], [37.66, 38.0, "КОНЦЕ"]]}, {"a": 38.0, "b": 38.94, "w": [[38.0, 38.46, "ОН"], [38.46, 38.78, "СИДИТ"], [38.78, 38.94, "НА"]]}, {"a": 38.94, "b": 39.96, "w": [[38.94, 39.34, "ВЕРШИНЕ"], [39.34, 39.78, "ГОРЫ"], [39.78, 39.96, "ИЗ"]]}, {"a": 39.96, "b": 40.54, "w": [[39.96, 40.54, "ОТХОДОВ."]]}, {"a": 40.94, "b": 41.38, "w": [[40.94, 41.38, "ОДИН."]]}, {"a": 41.78, "b": 42.64, "w": [[41.78, 42.14, "ПОСРЕДИ"], [42.14, 42.64, "ПЛАНЕТЫ,"]]}, {"a": 42.88, "b": 44.12, "w": [[42.88, 43.18, "КОТОРУЮ"], [43.18, 43.64, "САМ"], [43.64, 44.12, "СЪЕЛ."]]}, {"a": 44.98, "b": 46.24, "w": [[44.98, 45.5, "САМОЕ"], [45.5, 46.08, "СТРАШНОЕ"], [46.08, 46.24, "В"]]}, {"a": 46.24, "b": 46.94, "w": [[46.24, 46.36, "ЭТОМ"], [46.36, 46.94, "МУЛЬТФИЛЬМЕ —"]]}, {"a": 47.36, "b": 47.92, "w": [[47.36, 47.48, "В"], [47.48, 47.62, "НЁМ"], [47.62, 47.92, "НЕТ"]]}, {"a": 47.92, "b": 48.56, "w": [[47.92, 48.56, "ЗЛОДЕЯ."]]}, {"a": 49.0, "b": 50.16, "w": [[49.0, 49.28, "ЕСТЬ"], [49.28, 49.7, "ТОЛЬКО"], [49.7, 50.16, "ЧЕЛОВЕК,"]]}, {"a": 50.5, "b": 51.54, "w": [[50.5, 50.72, "КОТОРЫЙ"], [50.72, 51.12, "КАЖДЫЙ"], [51.12, 51.54, "ДЕНЬ"]]}, {"a": 51.54, "b": 52.78, "w": [[51.54, 52.1, "ПОКУПАЕТ"], [52.1, 52.34, "ЧУТЬ"], [52.34, 52.78, "БОЛЬШЕ,"]]}, {"a": 52.94, "b": 53.7, "w": [[52.94, 53.08, "ЧЕМ"], [53.08, 53.36, "ЕМУ"], [53.36, 53.7, "НУЖНО."]]}, {"a": 53.7, "b": 54.64, "w": [[53.7, 54.32, "А"], [54.32, 54.48, "ЧЕМ"], [54.48, 54.64, "ВСЁ"]]}, {"a": 54.64, "b": 55.26, "w": [[54.64, 55.26, "ЗАКОНЧИЛОСЬ,"]]}, {"a": 55.52, "b": 56.32, "w": [[55.52, 55.86, "СМОТРИТЕ"], [55.86, 56.32, "САМИ."]]}, {"a": 56.7, "b": 58.42, "w": [[56.7, 57.16, "МУЛЬТФИЛЬМ"], [57.16, 57.56, "НАЗЫВАЕТСЯ"], [57.56, 58.42, "«MAN»."]]}, {"a": 58.84, "b": 60.08, "w": [[58.84, 59.24, "АВТОР"], [59.24, 59.72, "СТИВ"], [59.72, 60.08, "КАТТС."]]}];
+const C = { yel: '#ffd23f', red: '#e2443a', cream: '#f4ead8', ink: '#0b0710', leaf: '#3fa45b', leaf2: '#2b7a43', sky: '#7ec4e8', grey: '#6d6a70', smoke: '#4a474e', sea: '#1f6fa0', trash: ['#c2902f', '#9aa0ab', '#e2443a', '#3e6fd8', '#efe6d6'], suit: '#26232c', skin: '#e9c9a7' };
+const F = 'Montserrat, Arial Black, sans-serif', U = 'Unbounded, Montserrat, sans-serif';
+const font = (w, s, f = F) => `${w} ${Math.round(s)}px ${f}`;
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = p => 1 - Math.pow(1 - p, 3), eInOut = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const eBack = p => { const c = 1.7; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+const pop = (t, a, d = .35) => eBack(prog(t, a, a + d));
+const hash = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function circ(x, y, r, col) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); }
+function ell(x, y, rx, ry, col, rot = 0) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); }
+function txt(s, x, y, size, col, o = {}) {
+  ctx.save(); ctx.font = font(o.w || 900, size, o.f || F); ctx.textAlign = o.align || 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = col;
+  if (o.ls) ctx.letterSpacing = o.ls + 'px'; if (o.shadow) { ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 20; }
+  ctx.fillText(s, x, y); ctx.restore();
+}
+function label(s, x, y, t, a, col = C.yel, ink = C.ink, size = 34) {   // pop-in plate
+  const k = pop(t, a); if (k <= 0) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(k, k); ctx.font = font(900, size); const w = ctx.measureText(s).width + 36;
+  rr(-w / 2, -size * .8, w, size * 1.6, 12); ctx.fillStyle = col; ctx.fill(); txt(s, 0, 2, size, ink); ctx.restore();
+}
+
+const logoImg = new Image(); logoImg.src = 'assets/logo.png';
+function man(x, y, s, t, o = {}) {                                   // our own simple figure: dark suit, round head
+  ctx.save(); ctx.translate(x, y); ctx.scale(s * (o.flip ? -1 : 1), s); const st = o.walk ? Math.sin(t * 8) : 0;
+  ctx.strokeStyle = C.suit; ctx.lineWidth = 26; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-14, 60); ctx.lineTo(-14 - st * 22, 150); ctx.moveTo(14, 60); ctx.lineTo(14 + st * 22, 150); ctx.stroke();
+  rr(-46, -70, 92, 140, 30); ctx.fillStyle = C.suit; ctx.fill(); ctx.beginPath(); ctx.moveTo(-14, -70); ctx.lineTo(0, -30); ctx.lineTo(14, -70); ctx.fillStyle = C.cream; ctx.fill();
+  ctx.strokeStyle = C.suit; ctx.lineWidth = 22; ctx.beginPath(); ctx.moveTo(-40, -50); ctx.lineTo(-58 - st * 10, 30); ctx.moveTo(40, -50); ctx.lineTo(o.reach ? 110 : 58 + st * 10, o.reach ? -60 : 30); ctx.stroke();
+  circ(0, -120, 50, C.skin); ell(-16, -126, 6, o.tired ? 2 : 7, C.ink); ell(16, -126, 6, o.tired ? 2 : 7, C.ink);
+  ctx.strokeStyle = C.ink; ctx.lineWidth = 5; ctx.beginPath(); o.tired ? ctx.arc(0, -86, 14, Math.PI + .3, -.3) : ctx.arc(0, -108, 14, .3, Math.PI - .3); ctx.stroke();
+  ctx.fillStyle = '#3a2a1a'; ctx.beginPath(); ctx.arc(0, -134, 50, Math.PI, 0); ctx.fill();
+  ctx.restore();
+}
+function tree(x, y, s, fall = 0) { ctx.save(); ctx.translate(x, y); ctx.rotate(fall * 1.45); ctx.scale(s, s); ctx.fillStyle = '#6b4226'; ctx.fillRect(-14, -120, 28, 120); circ(0, -170, 80, C.leaf2); circ(-40, -140, 55, C.leaf); circ(42, -150, 60, C.leaf); ctx.restore(); }
+function factory(x, y, s, t, k) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s * k); ctx.fillStyle = '#3b3940'; ctx.fillRect(-120, -160, 240, 160); ctx.beginPath(); ctx.moveTo(-120, -160); for (let i = 0; i < 3; i++) { ctx.lineTo(-120 + i * 80 + 40, -210); ctx.lineTo(-120 + i * 80 + 80, -160); } ctx.fill(); ctx.fillRect(60, -330, 40, 170); ctx.restore();
+  if (k > .9) for (let i = 0; i < 6; i++) { const p = ((t * .4 + i / 6) % 1); circ(x + 80 * s + p * 120, y - 330 * s - p * 300, (30 + p * 60) * s, `rgba(74,71,78,${.7 * (1 - p)})`); } }
+function animal(kind, x, y, s, t) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); const col = kind === 'fox' ? '#e07a2b' : kind === 'cow' ? '#f1ece2' : '#a87b54';
+  ell(0, 0, 70, 40, col); circ(70, -30, 32, col); ctx.fillStyle = col; [-40, -10, 25, 50].forEach(lx => ctx.fillRect(lx, 20, 14, 46)); ell(78, -34, 5, 6, C.ink);
+  if (kind === 'cow') { circ(-20, -6, 16, C.ink); circ(30, 10, 12, C.ink); } if (kind === 'fox') { ctx.beginPath(); ctx.moveTo(-60, -10); ctx.quadraticCurveTo(-130, -40, -120, 30); ctx.fill(); } ctx.restore(); }
+function box(x, y, s, lab, col) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); rr(-70, -60, 140, 120, 10); ctx.fillStyle = col; ctx.fill(); ctx.fillStyle = 'rgba(0,0,0,.15)'; ctx.fillRect(-70, -60, 140, 26); txt(lab, 0, 14, 26, C.ink); ctx.restore(); }
+function cart(x, y, s, n, t) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); for (let i = 0; i < n; i++) { const r = Math.floor(i / 4), c = i % 4; rr(-110 + c * 55, -70 - r * 50, 50, 46, 6); ctx.fillStyle = C.trash[i % 5]; ctx.fill(); }
+  ctx.strokeStyle = '#c9ced6'; ctx.lineWidth = 10; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(-170, -110); ctx.lineTo(-130, -110); ctx.lineTo(-110, 40); ctx.lineTo(110, 40); ctx.lineTo(130, -80); ctx.lineTo(-120, -80); ctx.stroke(); circ(-80, 75, 18, '#c9ced6'); circ(80, 75, 18, '#c9ced6'); ctx.restore(); }
+function trashPile(cx, by, w, h, t, seed = 0) { ctx.fillStyle = '#4a4248'; ctx.beginPath(); ctx.moveTo(cx - w / 2, by + 40); ctx.quadraticCurveTo(cx, by - h * 1.25, cx + w / 2, by + 40); ctx.fill(); for (let i = 0; i < 260; i++) { const u = hash(i + seed), v = hash(i * 3 + seed + 1); const yy = by + 20 - v * h * Math.max(0, 1 - Math.abs(u - .5) * 2.1); const xx = cx + (u - .5) * w;
+  ctx.save(); ctx.translate(xx, yy); ctx.rotate(hash(i + 7) * 6); rr(-26, -18, 52, 36, 6); ctx.fillStyle = C.trash[i % 5]; ctx.globalAlpha = .9; ctx.fill(); ctx.restore(); } }
+function sky(top, bot) { const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, top); g.addColorStop(1, bot); ctx.fillStyle = g; ctx.fillRect(-300, -300, W + 600, H + 600); }
+function mixCol(a, b, p) { const pa = a.match(/\w\w/g).map(h => parseInt(h, 16)), pb = b.match(/\w\w/g).map(h => parseInt(h, 16)); return 'rgb(' + pa.map((v, i) => Math.round(lerp(v, pb[i], p))).join(',') + ')'; }
+function globe(x, y, r, t, bite = 0, grey = 0) {
+  ctx.save(); ctx.translate(x, y); ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.clip(); ctx.fillStyle = mixCol('#2c7fb8', '#5a5860', grey); ctx.fillRect(-r, -r, 2 * r, 2 * r);
+  ctx.fillStyle = mixCol('#3fa45b', '#7a6a50', grey); const o = (t * 40) % (r * 2);
+  for (let k = -1; k <= 1; k++) { ell(-r * .3 + o + k * r * 2, -r * .2, r * .35, r * .25); ctx.fill(); ell(r * .2 + o + k * r * 2, r * .35, r * .3, r * .2); ctx.fill(); ell(-r * .6 + o + k * r * 2, r * .4, r * .2, r * .3); ctx.fill(); }
+  ctx.restore(); ctx.save(); ctx.translate(x, y); ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+  if (bite > 0) { [[r * .95, -r * .35, r * .45], [r * .72, r * .55, r * .3]].forEach(([bx, by, br]) => circ(bx, by, br * bite, '#38323b')); for (let i = 0; i < 8; i++) circ(r * 1.1 + hash(i) * 120 * bite, -r * .2 + hash(i + 3) * 200, 6 + hash(i + 5) * 8, mixCol('#3fa45b', '#7a6a50', grey)); }
+  ctx.restore();
+}
+function ell2(x, y, rx, ry) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); }
+function stars(t) { for (let i = 0; i < 60; i++) circ(hash(i) * W, hash(i + 60) * H, 2 + hash(i + 3) * 2, `rgba(255,255,255,${.25 + .5 * hash(i + 5)})`); }
+
+const SHOTS = [[0, 6.1, s0], [6.1, 14.2, s1], [14.2, 22.2, s2], [22.2, 30.9, s3], [30.9, 37.3, s4], [37.3, 44.8, s5], [44.8, 53.8, s6], [53.8, DURATION, s7]];
+function s0(t) { sky('#05070f', '#141a2e'); stars(t); globe(CX, 960, 320, t); const k = pop(t, .3, .45); ctx.save(); ctx.translate(CX, 1450); ctx.scale(k, k); txt('3 МИНУТЫ', 0, -40, 100, C.cream, { f: U, w: 800 }); txt('0 СЛОВ', 0, 80, 120, C.yel, { f: U, w: 800 }); ctx.restore(); }
+function s1(t) {                                                     // forest, beetle, flower
+  sky('#7ec4e8', '#d8f0e0'); ctx.fillStyle = '#4caa5f'; ctx.fillRect(-300, 1250, W + 600, 800);
+  [[120, 1260, 1.3], [330, 1240, 1.0], [800, 1260, 1.4], [980, 1250, 1.1]].forEach(([x, y, s]) => tree(x, y, s));
+  for (let i = 0; i < 4; i++) { const p = ((t * .15 + i / 4) % 1); ctx.save(); ctx.translate(lerp(-50, W + 50, p), 300 + i * 70 + Math.sin(t * 3 + i) * 20); ctx.strokeStyle = C.ink; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-18, 0); ctx.quadraticCurveTo(-9, -12 * Math.abs(Math.sin(t * 8 + i)), 0, 0); ctx.quadraticCurveTo(9, -12 * Math.abs(Math.sin(t * 8 + i)), 18, 0); ctx.stroke(); ctx.restore(); }
+  const mx = lerp(150, 520, prog(t, 6.1, 9.6)); man(mx, 1250, 1.5, t, { walk: t < 9.6, reach: t > 9.8 && t < 11.1 });
+  const squash = prog(t, 8.4, 8.6); ctx.save(); ctx.translate(560, 1470); ctx.scale(1, 1 - squash * .8); ell(0, 0, 26, 18, '#2a5'); circ(24, -4, 10, '#163'); ctx.restore(); if (t > 8.5) label('ЖУК', 620, 1400, t, 8.5, C.red, C.cream, 30);
+  if (t < 9.9) { ctx.strokeStyle = '#2b7a43'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(760, 1460); ctx.lineTo(760, 1360); ctx.stroke(); for (let i = 0; i < 5; i++) circ(760 + Math.cos(i * 1.256) * 22, 1350 + Math.sin(i * 1.256) * 22, 16, '#ff6fa8'); circ(760, 1350, 12, C.yel); }
+  else { const p = prog(t, 11.0, 12.0), fx = t < 11 ? mx + 170 : lerp(mx + 170, 1000, p), fy = t < 11 ? 1130 : lerp(1130, 1500, p) - Math.sin(p * Math.PI) * 200; ctx.save(); ctx.translate(fx, fy); ctx.rotate(p * 8); for (let i = 0; i < 5; i++) circ(Math.cos(i * 1.256) * 22, Math.sin(i * 1.256) * 22, 16, '#ff6fa8'); circ(0, 0, 12, C.yel); ctx.restore(); }
+  if (t > 12.2) label('ПРОСТО ПОТОМУ, ЧТО МОЖЕТ', CX, 420, t, 12.2, C.yel, C.ink, 42);
+}
+function s2(t) {                                                     // faster: mine, fell, factories, grey sky
+  const g = prog(t, 19.5, 21.5); sky(mixCol('#7ec4e8', '#6d6a70', g), mixCol('#d8f0e0', '#9a9590', g)); ctx.fillStyle = mixCol('#4caa5f', '#6b5b45', prog(t, 17.5, 20)); ctx.fillRect(-300, 1250, W + 600, 800);
+  [[120, 1260], [300, 1250], [480, 1260], [660, 1250], [840, 1260], [1000, 1250]].forEach(([x, y], i) => { const f = eInOut(prog(t, 18.1 + i * .12, 18.6 + i * .12)); if (f < 1) tree(x, y, 1.1, f); else { ctx.fillStyle = '#6b4226'; ctx.fillRect(x - 14, y - 26, 28, 26); } });
+  if (t > 16.3) { const d = prog(t, 16.3, 17.3); ctx.save(); ctx.translate(800, 1250); ctx.fillStyle = '#c2902f'; rr(-60, -90 * d, 120, 90 * d, 10); ctx.fill(); ctx.strokeStyle = '#3b3940'; ctx.lineWidth = 16; ctx.beginPath(); ctx.moveTo(0, -200); ctx.lineTo(0, 120 * d + Math.sin(t * 40) * 4); ctx.stroke(); ctx.restore(); label('РЕСУРСЫ', 800, 900, t, 17.1, C.yel, C.ink, 36); }
+  [[250, .9, 19.1], [560, 1.2, 19.4], [900, 1.0, 19.7]].forEach(([x, s, a]) => { const k = eBack(prog(t, a, a + .5)); if (k > 0) factory(x, 1260, s, t, k); });
+  label('ДАЛЬШЕ — БЫСТРЕЕ', CX, 420, t, 14.5, C.red, C.cream, 46);
+}
+function s3(t) {                                                     // animals → products; shopping cart
+  sky('#3a3640', '#1d1b22'); ctx.fillStyle = '#2a2830'; ctx.fillRect(-300, 1180, W + 600, 900);
+  ctx.fillStyle = '#4b4852'; rr(-40, 1040, W + 80, 40, 10); ctx.fill(); for (let i = 0; i < 14; i++) circ(((i * 90 - t * 200) % 1260 + 1260) % 1260 - 90, 1060, 14, '#6d6a72');
+  ctx.fillStyle = '#5a5862'; rr(CX - 140, 800, 280, 300, 20); ctx.fill(); circ(CX + 90, 860, 14, C.red);
+  const kinds = ['fox', 'cow', 'sheep'];
+  for (let i = 0; i < 6; i++) { const p = ((t - 22.2) * .3 + i / 6) % 1, x = lerp(-120, W + 120, p); if (x < CX - 140) animal(kinds[i % 3], x, 1000, .7, t); else if (x > CX + 140) box(x, 990, .8, ['ШУБА', 'ОБУВЬ', 'ЕДА'][i % 3], ['#c2902f', '#9aa0ab', '#e2443a'][i % 3]); }
+  label('ШУБЫ', 250, 560, t, 23.76, C.cream, C.ink, 36); label('ОБУВЬ', CX, 560, t, 24.44, C.cream, C.ink, 36); label('ЕДА', 830, 560, t, 24.98, C.red, C.cream, 36);
+  if (t > 26.4) { const n = Math.floor(lerp(0, 12, prog(t, 26.6, 30.5))); cart(CX, 1520, 1.3, n, t); label('ВСЁ НОВОЕ И НОВОЕ', CX, 1300, t, 29.5, C.yel, C.ink, 40); }
+}
+function s4(t) {                                                     // oceans of trash, city → landfill
+  sky('#4a474e', '#6d6a70');
+  if (t < 33.2) { ctx.fillStyle = C.sea; ctx.fillRect(-300, 900, W + 600, 1200); for (let i = 0; i < 40; i++) { const x = (hash(i) * W + t * 30 * (hash(i + 2) - .5)) % W, y = 920 + hash(i + 9) * 700 + Math.sin(t * 2 + i) * 6; ctx.save(); ctx.translate(x, y); ctx.rotate(hash(i + 4) * 6); rr(-24, -14, 48, 28, 6); ctx.fillStyle = C.trash[i % 5]; ctx.fill(); ctx.restore(); }
+    label('ОКЕАНЫ В МУСОРЕ', CX, 420, t, 31.3, C.red, C.cream, 46); }
+  else { const g = prog(t, 33.3, 36.4); ctx.fillStyle = '#5a5258'; ctx.fillRect(-300, 1250, W + 600, 800);
+    for (let i = 0; i < 9; i++) { const h = 200 + hash(i) * 500, k = eOut(prog(t, 33.4 + i * .08, 34.2 + i * .08)); ctx.fillStyle = '#3b3940'; ctx.fillRect(i * 125 - 10, 1250 - h * k, 110, h * k); }
+    ctx.save(); ctx.globalAlpha = g; trashPile(CX, 1420, 1500, 900 * g + 50, t, 3); ctx.restore();
+    label('ОДНА ОГРОМНАЯ СВАЛКА', CX, 420, t, 35.4, C.red, C.cream, 44); }
+}
+function s5(t) {                                                     // alone on the trash mountain; the eaten planet
+  sky('#2b2830', '#4a4048');
+  if (t < 41.6) { trashPile(CX, 1500, 1300, 640, t, 11); man(CX, 760, 1.2, t, { tired: 1 }); label('ОДИН', CX, 420, t, 40.9, C.cream, C.ink, 54); }
+  else { stars(t); const b = eOut(prog(t, 42.8, 43.6)); globe(CX, 960, 330, t, b, 1); label('ПЛАНЕТА, КОТОРУЮ САМ СЪЕЛ', CX, 420, t, 42.0, C.red, C.cream, 40); }
+}
+function s6(t) {                                                     // no villain — just a person who buys a bit more
+  ctx.fillStyle = '#0d0a10'; ctx.fillRect(0, 0, W, H);
+  txt('ЗЛОДЕЯ НЕТ', CX, 430, 92, C.red, { f: U, w: 800 });
+  ctx.save(); ctx.strokeStyle = '#c9ced6'; ctx.lineWidth = 12; rr(CX - 260, 560, 520, 760, 240); ctx.stroke(); ctx.clip(); ctx.fillStyle = 'rgba(126,196,232,.08)'; ctx.fillRect(0, 0, W, H); man(CX, 1100, 1.6, t); ctx.restore();
+  if (t > 49.6) { const n = Math.floor(lerp(4, 12, prog(t, 51.5, 53.4))); cart(CX, 1500, 1.0, n, t); label('ЧУТЬ БОЛЬШЕ, ЧЕМ НУЖНО', CX, 1330, t, 52.3, C.yel, C.ink, 38); }
+}
+function s7(t) {                                                     // end card
+  ctx.fillStyle = '#0d0a10'; ctx.fillRect(0, 0, W, H); ctx.save(); ctx.globalAlpha = .3; globe(CX, 900, 280, t, 0, 1); ctx.restore();
+  label('ЧЕМ ЗАКОНЧИЛОСЬ?', CX, 520, t, 54.0, C.red, C.cream, 52);
+  txt('СМОТРИТЕ САМИ', CX, 650, 56, C.cream, { f: U, w: 800 });
+  const k = pop(t, 56.8, .5); ctx.save(); ctx.translate(CX, 940); ctx.scale(k, k); txt('MAN', 0, 0, 220, C.yel, { f: U, w: 800 }); ctx.restore();
+  label('СТИВ КАТТС · 2012', CX, 1140, t, 59.2, C.cream, C.ink, 38);
+}
+function header(t) {
+  ctx.fillStyle = 'rgba(8,5,10,.85)'; ctx.fillRect(0, 0, W, 250);
+  txt('ВСЯ ИСТОРИЯ ЧЕЛОВЕЧЕСТВА', CX, 118, 46, C.cream, { f: U, w: 800 }); txt('ЗА 3 МИНУТЫ', CX, 188, 54, C.yel, { f: U, w: 800 });
+}
+function subtitles(t) {
+  const s = SUBS.find(x => t >= x.a - .05 && t < x.b + .35); if (!s) return;
+  ctx.save(); ctx.font = font(900, 64); const sp = 18, widths = s.w.map(w => ctx.measureText(w[2]).width), total = widths.reduce((a, b) => a + b, 0) + sp * (s.w.length - 1);
+  const fit = Math.min(1, 980 / total); ctx.translate(CX, 1660); ctx.scale(fit, fit); ctx.translate(-CX, -1660);
+  let x = CX - total / 2; const y = 1660, k = .9 + .1 * eOut(prog(t, s.a - .05, s.a + .1));
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.lineJoin = 'round';
+  s.w.forEach((w, i) => { const on = t >= w[0] - .03; ctx.lineWidth = 12; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.strokeText(w[2], x, y); ctx.fillStyle = on ? (t < w[1] + .1 ? C.yel : C.cream) : 'rgba(244,234,216,.45)'; ctx.fillText(w[2], x, y); x += widths[i] + sp; });
+  ctx.restore();
+}
+function watermark(t) {
+  if (!logoImg.naturalWidth) return; const w = 170, h = w * logoImg.naturalHeight / logoImg.naturalWidth;
+  ctx.save(); ctx.globalAlpha = .75; ctx.drawImage(logoImg, W - w - 50, 1820 - h, w, h); ctx.restore();
+}
+function vignette() { const g = ctx.createRadialGradient(CX, H / 2, 500, CX, H / 2, 1250); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.55)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.letterSpacing = '0px';
+  let i = SHOTS.findIndex(([a, b]) => t >= a && t < b); if (i < 0) i = SHOTS.length - 1;
+  const [a, b, fn] = SHOTS[i], p = (t - a) / (b - a);
+  const z = 1 + .05 * p, sh = t - a < .25 && i > 0 ? (1 - (t - a) / .25) * 14 : 0;
+  ctx.save(); ctx.translate(CX + Math.sin(t * 50) * sh, H / 2 + Math.cos(t * 43) * sh); ctx.scale(z, z); ctx.translate(-CX, -H / 2); fn(t); ctx.restore();
+  vignette();
+  if (t - a < .12 && i > 0) { ctx.fillStyle = `rgba(255,240,220,${.45 * (1 - (t - a) / .12)})`; ctx.fillRect(0, 0, W, H); }
+  header(t); subtitles(t); watermark(t);
+  const f = Math.max(1 - prog(t, 0, .25), prog(t, DURATION - .6, DURATION)); if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f})`; ctx.fillRect(0, 0, W, H); }
+}
+window.DURATION = DURATION; window.renderFrame = renderFrame; window.prepare = async () => {};
+window.READY = (async () => { await Promise.all([document.fonts.load(font(900, 60), 'АБВ'), document.fonts.load('800 60px Unbounded', 'АБВ ABC 10'), logoImg.decode().catch(() => {})]); return true; })();
+</script></body></html>
