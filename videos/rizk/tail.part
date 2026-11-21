@@ -1,0 +1,25 @@
+function subtitles(t) {
+  const s = SUBS.find(x => t >= x.a - .05 && t < x.b + .35); if (!s) return;
+  ctx.save(); ctx.font = font(900, 64); const sp = 18, widths = s.w.map(w => ctx.measureText(w[2]).width), total = widths.reduce((a, b) => a + b, 0) + sp * (s.w.length - 1);
+  const fit = Math.min(1, 980 / total); ctx.translate(CX, 1660); ctx.scale(fit, fit); ctx.translate(-CX, -1660);
+  let x = CX - total / 2; const y = 1660, k = .9 + .1 * eOut(prog(t, s.a - .05, s.a + .1));
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.lineJoin = 'round';
+  s.w.forEach((w, i) => { const on = t >= w[0] - .03; ctx.lineWidth = 14; ctx.strokeStyle = C.bg; ctx.strokeText(w[2], x, y); const dk = (t >= MK.rule && t < MK.throat) || t >= MK.final; if (dk) ctx.strokeStyle = '#0a3328'; ctx.strokeText(w[2], x, y); ctx.fillStyle = on ? (t < w[1] + .1 ? (dk ? C.yel : C.red) : (dk ? C.cream : C.green)) : (dk ? 'rgba(255,250,240,.4)' : 'rgba(15,74,58,.35)'); ctx.fillText(w[2], x, y); x += widths[i] + sp; });
+  ctx.restore();
+}
+function watermark(t) { txt('@kalizhan_ustaz', CX, 1800, 30, 'rgba(15,74,58,.6)', { w: 800 }); }
+function vignette() {}
+function renderFrame(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.letterSpacing = '0px';
+  let i = SHOTS.findIndex(([a, b]) => t >= a && t < b); if (i < 0) i = SHOTS.length - 1;
+  const [a, b, fn] = SHOTS[i], p = (t - a) / (b - a);
+  const z = 1 + .05 * p, sh = t - a < .25 && i > 0 ? (1 - (t - a) / .25) * 14 : 0;
+  ctx.save(); ctx.translate(CX + Math.sin(t * 50) * sh, H / 2 + Math.cos(t * 43) * sh); ctx.scale(z, z); ctx.translate(-CX, -H / 2); fn(t); ctx.restore();
+  vignette();
+  if (t - a < .12 && i > 0) { ctx.fillStyle = `rgba(255,248,235,${.5 * (1 - (t - a) / .12)})`; ctx.fillRect(0, 0, W, H); }
+  header(t); subtitles(t); watermark(t);
+  const f = Math.max(1 - prog(t, 0, .25), prog(t, DURATION - .6, DURATION)); if (f > 0) { ctx.fillStyle = `rgba(15,74,58,${f})`; ctx.fillRect(0, 0, W, H); }
+}
+window.DURATION = DURATION; window.renderFrame = renderFrame; window.prepare = async () => {};
+window.READY = (async () => { await Promise.all([document.fonts.load(font(900, 60), 'АБВ'), document.fonts.load('800 60px Unbounded', 'АБВ ABC 10'), Promise.resolve()]); return true; })();
+</script></body></html>
