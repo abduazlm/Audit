@@ -1,8 +1,8 @@
 """Builds assets/soundtrack.wav for the rizk story: voice (assets/vo.wav) + dark ambient bed + cut whooshes and hits, played at SPEED."""
 import subprocess, numpy as np
-SR = 48000; SPEED = 1.1; DUR = 58.96; D = 0
+SR = 48000; SPEED = 1.1; DUR = 55.42; D = 0
 rng = np.random.default_rng(3); N = int(SR * DUR); L = np.zeros(N); R = np.zeros(N)
-CUTS = [6.62, 10.98, 12.6, 15.86, 17.22, 20.42, 26.1, 30.66, 34.4, 40.4, 43.38, 46.76, 50.8]
+CUTS = [6.94, 11.24, 12.88, 14.16, 16.12, 17.48, 20.68, 26.36, 30.92, 36.86, 39.84, 43.22, 47.26]
 HITS = []
 def place(sig, t, g=1.0, pan=0.0):
     i = int(t * SR); sig = sig[:max(0, N - i)]; L[i:i + len(sig)] += sig * g * np.sqrt((1 - pan) / 2); R[i:i + len(sig)] += sig * g * np.sqrt((1 + pan) / 2)

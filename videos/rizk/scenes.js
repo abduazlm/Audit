@@ -1,7 +1,7 @@
 const WORDS = SUBS.flatMap(s => s.w);
 function cue(sub, after = 0) { const w = WORDS.find(w => w[0] >= after && w[2].includes(sub)); return w ? w[0] : after; }
-const T = { took: cue('ВЗЯЛ'), ate0: cue('СЪЕЛ'), choke: cue('ПОДАВИЛСЯ'), hosp: cue('БОЛЬНИЦЫ'), spit: cue('ВЫПЛЮНУЛ'), stop: cue('ОСТАНОВИЛАСЬ'), took2: cue('ВЗЯЛ', MK.ate), wipe: cue('ПРОТЁР', MK.ate), ate2: cue('СЪЕЛ', MK.ate),
-  never: cue('НИКТО'), take: cue('ОТОБРАТЬ'), feed: cue('НАКОРМИТЬ') };
+const T = { never0: cue('НИКТО'), choke: cue('ПОДАВИЛСЯ'), hosp: cue('БОЛЬНИЦЫ'), spit: cue('ВЫПЛЮНУЛ'), stop: cue('ОСТАНОВИЛАСЬ'), took2: cue('ВЗЯЛ', MK.ate), wipe: cue('ПРОТЁР', MK.ate), ate2: cue('СЪЕЛ', MK.ate),
+  feed: cue('НАКОРМИТЬ') };
 function paper(t) { const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, C.bg); g.addColorStop(1, C.bg2); ctx.fillStyle = g; ctx.fillRect(-300, -300, W + 600, H + 600);
   ctx.fillStyle = 'rgba(15,74,58,.05)'; for (let i = 0; i < 18; i++) { ctx.save(); ctx.translate((i % 6) * 200 + 60, Math.floor(i / 6) * 640 + 160); ctx.rotate(Math.PI / 4); ctx.fillRect(-26, -26, 52, 52); ctx.restore(); } }
 function floor(y = 1300) { ctx.fillStyle = '#e4d6bd'; ctx.fillRect(-300, y, W + 600, 900); ctx.strokeStyle = 'rgba(15,74,58,.12)'; ctx.lineWidth = 3; for (let i = 0; i < 10; i++) { ctx.beginPath(); ctx.moveTo(-300, y + 40 + i * 60); ctx.lineTo(W + 300, y + 40 + i * 60); ctx.stroke(); } }
@@ -32,14 +32,16 @@ function hospital(x, y, s) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); c
   ctx.fillStyle = C.red; ctx.fillRect(-25, -440, 50, 130); ctx.fillRect(-65, -400, 130, 50); for (let r = 0; r < 2; r++) for (let c = 0; c < 4; c++) { ctx.fillStyle = '#bfe3f5'; ctx.fillRect(-220 + c * 115, -270 + r * 120, 80, 80); } ctx.restore(); }
 function monitor(x, y, t, fast) { ctx.save(); ctx.translate(x, y); rr(-170, -110, 340, 220, 20); ctx.fillStyle = '#14231d'; ctx.fill(); ctx.strokeStyle = '#3ddc97'; ctx.lineWidth = 6; ctx.beginPath();
   for (let i = 0; i <= 60; i++) { const xx = -150 + i * 5, ph = ((i / 60) * (fast ? 4 : 2) - t * (fast ? 2.4 : 1.2)) % 1, yy = (ph + 1) % 1 > .45 && (ph + 1) % 1 < .55 ? -70 * Math.sin(((ph + 1) % 1 - .45) * 31.4) : 0; i ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy); } ctx.stroke(); ctx.restore(); }
-function hookText(t) { if (t < T.ate0 - .2) { label('ЭТА ВИНОГРАДИНА', CX, 420, t, .5, C.green, C.cream, 48); label('ЧУТЬ НЕ УБИЛА ЧЕЛОВЕКА', CX, 530, t, 1.3, C.red, C.cream, 44); }
-  else { label('…А ПОТОМ ЕЁ СЪЕЛ', CX, 420, t, T.ate0 - .2, C.green, C.cream, 48); label('ДРУГОЙ', CX, 540, t, T.ate0, C.red, C.cream, 60); } }
 const SHOTS = [[0, MK.eat, s0], [MK.eat, MK.block, s1], [MK.block, MK.amb1, s2], [MK.amb1, MK.blue, s3], [MK.blue, MK.trach, s4], [MK.trach, MK.spit, s5], [MK.spit, MK.roll, s6], [MK.roll, MK.ate, s7],
-  [MK.ate, MK.rule, s8], [MK.rule, MK.throat, s9], [MK.throat, MK.unexp, s10], [MK.unexp, MK.path, s11], [MK.path, MK.final, s12], [MK.final, DURATION, s13]];
-function s0(t) { paper(t); floor(); const p = eOut(prog(t, .2, 2.4)), gx = lerp(-60, 600, p), gy = 1290 - Math.abs(Math.sin(p * 9)) * 60 * (1 - p);
-  const up = prog(t, T.took, T.took + .8); if (t < T.took + .1) grape(gx, gy, 46, p * 14); else { const hx = lerp(600, 760, up), hy = lerp(1290, 900, up); grape(hx, hy, 46); }
-  if (t > T.took - 1) { const reach = 1 - Math.abs(prog(t, T.took - 1, T.took) - 1); guy(lerp(1150, 820, prog(t, T.took - 1.2, T.took - .3)), 1150, 1.4, t, { col: C.gold, hands: t > T.ate0 - .5 ? 'mouth' : 'reach', chew: t > T.ate0 }); }
-  hookText(t); }
+  [MK.ate, MK.throat, s8], [MK.throat, MK.unexp, s10], [MK.unexp, MK.path, s11], [MK.path, MK.final, s12], [MK.final, DURATION, s13]];
+function s0(t) {                                                     // hook: «Перестань переживать за деньги» + the ustaz's rule
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0f4a3a'); g.addColorStop(1, '#0a3328'); ctx.fillStyle = g; ctx.fillRect(-300, -300, W + 600, H + 600);
+  for (let i = 0; i < 14; i++) { const p = ((t * .12 + hash(i)) % 1); ctx.save(); ctx.globalAlpha = .25 * Math.sin(p * Math.PI); txt('₸', hash(i + 4) * W, H - p * H * 1.1, 60 + hash(i + 7) * 60, C.gold, { f: U, w: 800 }); ctx.restore(); }
+  const k = pop(t, .15, .4); ctx.save(); ctx.translate(CX, 470); ctx.scale(k, k); txt('ПЕРЕСТАНЬ', 0, -60, 100, C.cream, { f: U, w: 800 }); txt('ПЕРЕЖИВАТЬ', 0, 50, 100, C.cream, { f: U, w: 800 }); ctx.restore();
+  const k2 = pop(t, .7, .4); ctx.save(); ctx.translate(CX, 660); ctx.scale(k2, k2); rr(-330, -62, 660, 124, 18); ctx.fillStyle = C.red; ctx.fill(); txt('ЗА ДЕНЬГИ', 0, 4, 92, C.cream, { f: U, w: 800 }); ctx.restore();
+  grape(CX, 1150, 120 + Math.sin(t * 2) * 4, 0, .8 + Math.sin(t * 2) * .2);
+  if (t > T.never0) label('НИКТО НЕ ОТБЕРЁТ ТВОЙ РИЗК', CX, 1430, t, T.never0, C.yel, C.ink, 40);
+}
 function s1(t) { paper(t); floor(1350); ctx.fillStyle = '#8a6a4a'; rr(80, 1180, 520, 40, 10); ctx.fill(); ctx.fillRect(110, 1220, 24, 140); ctx.fillRect(550, 1220, 24, 140); bunch(330, 1090, 1.1);
   const ch = t > T.choke; guy(760, 1180, 1.6, t, { hands: ch ? 'throat' : 'mouth', chew: !ch, choke: ch }); if (ch) alarm(760, 920, t);
   label('ЕЛ ВИНОГРАД', CX, 420, t, MK.eat + .2, C.green, C.cream, 46); if (ch) label('И ПОДАВИЛСЯ', CX, 540, t, T.choke, C.red, C.cream, 50); }
@@ -62,9 +64,6 @@ function s8(t) { paper(t); floor(1250); const pick = prog(t, T.took2, T.took2 + 
   if (t < T.took2 + .3) grape(720, 1240, 44); guy(lerp(1150, 820, eOut(prog(t, MK.ate, T.took2))), 1100, 1.5, t, { col: C.gold, walk: t < T.took2, hands: ate ? 'mouth' : pick > 0 ? 'reach' : 'down', chew: ate });
   if (pick > 0 && !ate) grape(lerp(720, 870, pick) + (wipe ? Math.sin(t * 30) * 10 : 0), lerp(1240, 1090, pick), 40);
   label('ПРОХОЖИЙ', CX, 420, t, MK.ate + .1, C.gold, C.cream, 48); if (wipe) label('ПРОТЁР', CX, 540, t, T.wipe, C.green, C.cream, 44); if (ate) label('И СЪЕЛ', CX, 540, t, T.ate2, C.red, C.cream, 54); }
-function s9(t) { const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0f4a3a'); g.addColorStop(1, '#0a3328'); ctx.fillStyle = g; ctx.fillRect(-300, -300, W + 600, H + 600);
-  grape(CX, 1250, 110, 0, .8 + Math.sin(t * 2) * .2); txt('ЕСЛИ АЛЛАХ', CX, 520, 70, C.cream, { f: U, w: 800 }); txt('ПРЕДПИСАЛ ТЕБЕ', CX, 610, 70, C.cream, { f: U, w: 800 }); const k = pop(t, MK.rule + 1.6, .4); ctx.save(); ctx.translate(CX, 740); ctx.scale(k, k); txt('РИЗК', 0, 0, 130, C.yel, { f: U, w: 800 }); ctx.restore();
-  if (t > T.never) label('НИКТО ЕГО НЕ ОТБЕРЁТ', CX, 900, t, T.never, C.red, C.cream, 46); }
 function s10(t) { paper(t); airway(CX - 180, 1050, .9, t, { gy: 0, blocked: 1 }); ctx.save(); ctx.translate(CX + 230, 980); circ(0, 0, 120, C.red); ctx.fillStyle = C.cream; ctx.fillRect(-80, -20, 160, 40); ctx.restore();
   label('НЕ ТВОЁ — НЕ ПРОЙДЁТ', CX, 420, t, MK.throat + .3, C.red, C.cream, 46); }
 const ROUTE = [[180, 760, 'ЕЛ'], [800, 760, 'СКОРАЯ'], [800, 1120, 'БОЛЬНИЦА'], [180, 1120, 'ПОЛ'], [CX, 1450, 'ПРОХОЖИЙ']];
