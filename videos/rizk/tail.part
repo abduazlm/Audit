@@ -7,7 +7,7 @@ function subtitles(t) {
   s.w.forEach((w, i) => { const on = t >= w[0] - .03; ctx.lineWidth = 14; ctx.strokeStyle = C.bg; ctx.strokeText(w[2], x, y); const dk = t < MK.eat || t >= MK.final; if (dk) ctx.strokeStyle = '#0a3328'; ctx.strokeText(w[2], x, y); ctx.fillStyle = on ? (t < w[1] + .1 ? (dk ? C.yel : C.red) : (dk ? C.cream : C.green)) : (dk ? 'rgba(255,250,240,.4)' : 'rgba(15,74,58,.35)'); ctx.fillText(w[2], x, y); x += widths[i] + sp; });
   ctx.restore();
 }
-function watermark(t) { txt('@kalizhan_ustaz', CX, 1800, 30, 'rgba(15,74,58,.6)', { w: 800 }); }
+function watermark(t) {}                                            // no handle on screen (asked by the client)
 function vignette() {}
 function renderFrame(t) {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.letterSpacing = '0px';
